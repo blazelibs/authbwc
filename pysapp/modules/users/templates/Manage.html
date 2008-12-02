@@ -1,0 +1,22 @@
+<% extends settings.template.admin %>
+<% block title %>Manage Users | <{super()}><% endblock %>
+<% block body %>
+    <p><a href="<{ url_for('users:Update')}>">Add User</a></p>
+    
+    <% for user in users %>
+        <% if loop.first %>
+            <ul>
+        <% endif %>
+                <li>
+                    <a href="<{ url_for('users:Update', id=user.id)}>"
+                        ><{user.login_id}> : <{user.email_address}></a>
+                        
+                    (<a href="<{ url_for('users:PermissionMap', uid=user.id)}>">permission map</a>, <a href="<{ url_for('users:Delete', id=user.id)}>">delete</a>)
+                </li>
+        <% if loop.last %>
+            </ul>
+        <% endif %>
+    <% else %>
+        <p>No users currently in the database.  <a href="<{ url_for('users:Update')}>">Add One!</a></p>
+    <% endfor %>
+<% endblock body%>
