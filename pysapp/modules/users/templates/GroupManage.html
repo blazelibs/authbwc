@@ -1,0 +1,22 @@
+<% extends settings.template.admin %>
+<% block title %>Manage Groups | <{super()}><% endblock %>
+<% block body %>
+    <p><a href="<{ url_for('users:GroupUpdate')}>">Add Group</a></p>
+    
+    <% for group in groups %>
+        <% if loop.first %>
+            <ul>
+        <% endif %>
+                <li>
+                    <a href="<{ url_for('users:GroupUpdate', id=group.id)}>"
+                        ><{group.name}></a>
+                        
+                    (<a href="<{ url_for('users:GroupDelete', id=group.id)}>">delete</a>)
+                </li>
+        <% if loop.last %>
+            </ul>
+        <% endif %>
+    <% else %>
+        <p>No groups currently in the database.  <a href="<{ url_for('users:GroupUpdate')}>">Add One!</a></p>
+    <% endfor %>
+<% endblock body%>

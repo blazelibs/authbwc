@@ -1,0 +1,22 @@
+<% extends settings.template.admin %>
+<% block title %>Manage Permissions | <{super()}><% endblock %>
+<% block body %>
+    <p><a href="<{ url_for('users:PermissionUpdate')}>">Add Permission</a></p>
+    
+    <% for permission in permissions %>
+        <% if loop.first %>
+            <ul>
+        <% endif %>
+                <li>
+                    <a href="<{ url_for('users:PermissionUpdate', id=permission.id)}>"
+                        ><{permission.name}></a>
+                        
+                    (<a href="<{ url_for('users:PermissionDelete', id=permission.id)}>">delete</a>)
+                </li>
+        <% if loop.last %>
+            </ul>
+        <% endif %>
+    <% else %>
+        <p>No permissions currently in the database.  <a href="<{ url_for('users:PermissionUpdate')}>">Add One!</a></p>
+    <% endfor %>
+<% endblock body%>

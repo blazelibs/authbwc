@@ -1,0 +1,283 @@
+# -*- coding: utf-8 -*-
+
+from pysmvt import redirect, session, ag, appimport, settings
+from pysmvt import user as usr
+app_base = appimport('base')
+from pysmvt.exceptions import ActionError
+from pysmvt.routing import url_for, index_url
+import actions, forms
+from utils import after_login_url
+
+class Update(app_base.ProtectedPageView):
+    def prep(self):
+        self.require = ('users-manage')
+    
+    def setup(self, id):
+        from forms import UserForm
+        
+        if id is None:
+            self.isAdd = True
+            self.actionName = 'Add'
+            self.message = 'user added'
+        else:
+            self.isAdd = False
+            self.actionName = 'Edit'
+            self.message = 'user edited successfully'
+        
+        self.form = UserForm(self.isAdd)
+        
+        if not self.isAdd:
+            user = actions.user_get(id)
+            
+            if user is None:
+                usr.add_message('error', 'the requested user does not exist')
+                url = url_for('users:Manage')
+                redirect(url)
+                
+            self.form.set_defaults(user.to_dict())
+            self.form.elements.assigned_groups.setDefaultValue(actions.user_group_ids(user))
+            approved, denied = actions.user_assigned_perm_ids(user)
+            self.form.elements.approved_permissions.setDefaultValue(approved)
+            self.form.elements.denied_permissions.setDefaultValue(denied)
+    
+    def post(self, id):        
+        if self.form.isSubmitted() and self.form.isValid():
+            try:
+                actions.user_update(id, **self.form.get_values())
+                usr.add_message('notice', self.message)
+                url = url_for('users:Manage')
+                redirect(url)
+            except ActionError, ae:
+                if ae.type == 'id_dup':
+                    self.form.elements.login_id.addError('That login id is already in use, please choose another')
+            
+        self.default(id)
+    
+    def default(self, id):
+        
+        self.assign('actionName', self.actionName)
+        self.assign('formHtml', self.form.render())
+
+class Manage(app_base.ProtectedPageView):
+    def prep(self):
+        self.require = ('users-manage')
+    
+    def default(self):
+        self.assign('users', actions.user_list())
+    
+class Delete(app_base.ProtectedRespondingView):
+    def prep(self):
+        self.require = ('users-manage')
+    
+    def default(self, id):
+        if actions.user_delete(id):
+            usr.add_message('notice', 'user deleted')
+        else:
+            usr.add_message('error', 'user was not found')
+            
+        url = url_for('users:Manage')
+        redirect(url)
+
+class ChangePassword(app_base.ProtectedPageView):
+    def prep(self):
+        self.authenticated_only = True
+    
+    def setup(self):
+        from forms import ChangePasswordForm
+        self.form = ChangePasswordForm()
+
+    def post(self):
+        if self.form.isSubmitted() and self.form.isValid():
+            actions.user_update_password(usr.get_attr('id'), **self.form.get_values())
+            usr.add_message('notice', 'Your password has been changed successfully.')
+            url = after_login_url()
+            redirect(url)
+
+        self.default()
+
+    def default(self):
+
+        self.assign('formHtml', self.form.render())
+
+class PermissionMap(app_base.ProtectedPageView):
+    def prep(self):
+        self.require = ('users-manage')
+    
+    def default(self, uid):
+        self.assign('user', actions.user_get(uid))
+        self.assign('result', actions.user_permission_map(uid))
+        self.assign('permgroups', actions.user_permission_map_groups(uid))
+
+class Login(app_base.PublicPageView):
+    
+    def setup(self):
+        from forms import LoginForm
+        self.form = LoginForm()
+    
+    def post(self):        
+        if self.form.isSubmitted() and self.form.isValid():
+            user = actions.user_validate(**self.form.get_values())
+            if user:
+                actions.load_session_user(user)
+                usr.add_message('notice', 'You logged in successfully!')
+                if user.reset_required:
+                    url = url_for('users:ChangePassword')
+                else:
+                    url = after_login_url()
+                redirect(url)
+            else:
+                usr.add_message('error', 'Login failed!  Please try again.')
+            
+        self.default()
+    
+    def default(self):
+        
+        self.assign('formHtml', self.form.render())
+
+class Logout(app_base.ProtectedPageView):
+    
+    def prep(self):
+        self.authenticated_only = True
+        
+    def default(self):
+        session['user'].clear()
+            
+        url = url_for('users:Login')
+        redirect(url)
+        
+class GroupUpdate(app_base.ProtectedPageView):
+    def prep(self):
+        self.require = ('users-manage')
+    
+    def setup(self, id):
+        from forms import GroupForm
+        
+        if id is None:
+            self.isAdd = True
+            self.actionName = 'Add'
+            self.message = 'group added'
+        else:
+            self.isAdd = False
+            self.actionName = 'Edit'
+            self.message = 'group edited successfully'
+        
+        self.form = GroupForm(self.isAdd)
+        
+        if not self.isAdd:
+            group = actions.group_get(id)
+            
+            if group is None:
+                usr.add_message('error', 'the requested group does not exist')
+                url = url_for('users:ManageGroups')
+                redirect(url)
+            
+            # assign group form defaults
+            self.form.set_defaults(group.to_dict())
+            self.form.elements.assigned_users.setDefaultValue(actions.group_user_ids(group))
+            approved, denied = actions.group_assigned_perm_ids(group)
+            self.form.elements.approved_permissions.setDefaultValue(approved)
+            self.form.elements.denied_permissions.setDefaultValue(denied)
+    
+    def post(self, id):        
+        if self.form.isSubmitted() and self.form.isValid():
+            try:
+                actions.group_update(id, **self.form.get_values())
+                usr.add_message('notice', self.message)
+                url = url_for('users:GroupManage')
+                redirect(url)
+            except ActionError, ae:
+                if ae.type == 'name_dup':
+                    self.form.elements.name.addError('That group name is already in use, please choose another')
+            
+        self.default(id)
+    
+    def default(self, id):
+        
+        self.assign('actionName', self.actionName)
+        self.assign('formHtml', self.form.render())
+        
+class GroupManage(app_base.ProtectedPageView):
+    def prep(self):
+        self.require = ('users-manage')
+    
+    def default(self):
+        self.assign('groups', actions.group_list())
+
+class GroupDelete(app_base.ProtectedRespondingView):
+    def prep(self):
+        self.require = ('users-manage')
+    
+    def default(self, id):
+        if actions.group_delete(id):
+            usr.add_message('notice', 'group deleted')
+        else:
+            usr.add_message('error', 'groupo was not found')
+            
+        url = url_for('users:GroupManage')
+        redirect(url)
+        
+class PermissionUpdate(app_base.ProtectedPageView):
+    def prep(self):
+        self.require = ('users-manage')
+    
+    def setup(self, id):
+        from forms import PermissionForm
+        
+        if id is None:
+            self.isAdd = True
+            self.actionName = 'Add'
+            self.message = 'permission added'
+        else:
+            self.isAdd = False
+            self.actionName = 'Edit'
+            self.message = 'permission edited successfully'
+        
+        self.form = PermissionForm(self.isAdd)
+        
+        if not self.isAdd:
+            permission = actions.permission_get(id)
+            
+            if permission is None:
+                usr.add_message('error', 'the requested permission does not exist')
+                url = url_for('users:ManagePermissions')
+                redirect(url)
+                
+            self.form.set_defaults(permission.to_dict())
+    
+    def post(self, id):        
+        if self.form.isSubmitted() and self.form.isValid():
+            try:
+                actions.permission_update(id, **self.form.get_values())
+                usr.add_message('notice', self.message)
+                url = url_for('users:PermissionManage')
+                redirect(url)
+            except ActionError, ae:
+                if ae.type == 'name_dup':
+                    self.form.elements.name.addError('That permission name is already in use, please choose another')
+            
+        self.default(id)
+    
+    def default(self, id):
+        
+        self.assign('actionName', self.actionName)
+        self.assign('formHtml', self.form.render())
+        
+class PermissionManage(app_base.ProtectedPageView):
+    def prep(self):
+        self.require = ('users-manage')
+    
+    def default(self):
+        self.assign('permissions', actions.permission_list())
+
+class PermissionDelete(app_base.ProtectedRespondingView):
+    def prep(self):
+        self.require = ('users-manage')
+    
+    def default(self, id):
+        if actions.permission_delete(id):
+            usr.add_message('notice', 'permission deleted')
+        else:
+            usr.add_message('error', 'permission was not found')
+            
+        url = url_for('users:PermissionManage')
+        redirect(url)
