@@ -13,6 +13,8 @@ class UserForm(Form):
         
         el = self.addElement('text', 'login_id', 'Login Id', required=True)
         el.addValidator(MaxLength(150))
+        el.onexc('column login_id is not unique',
+                 'That user already exists.')
         
         el = self.addElement('text', 'email_address', 'Email', required=True)
         el.addValidator(MaxLength(150))
@@ -79,6 +81,8 @@ class GroupForm(Form):
         
         el = self.addElement('text', 'name', 'Group Name', required=True)
         el.addValidator(MaxLength(150))
+        el.onexc('column name is not unique',
+                 'That group already exists.')
         
         el = self.addElement('header', 'group_membership_header', 'Users In Group')
         
@@ -120,6 +124,8 @@ class PermissionForm(Form):
         
         el = self.addElement('text', 'name', 'Permission Name', required=True)
         el.addValidator(MaxLength(150))
+        el.onexc('column name is not unique',
+                 'That permission already exists.')
 
         self.addElement('submit', 'submit', 'Submit')
         
