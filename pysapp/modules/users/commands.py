@@ -3,7 +3,7 @@ from os import path
 from actions import user_add, permission_add, group_add, permission_get_by_name
 from pysmvt import db, settings
 
-def init_db():
+def action_users_initdb():
     ''' sets up the database after the model objects have been created '''
     
     # add the sql views
@@ -16,11 +16,14 @@ def init_db():
         if statement:
             dbsession.execute(statement)
     dbsession.commit()
-
-def init_module():
+broadcast_initdb = action_users_initdb
+    
+def action_users_initmod():
+    ''' sets up the module after the database is setup'''
     addperms_init()
     addadmin_init()
     addadmingroup_init()
+broadcast_initmod = action_users_initmod
 
 def addperms_init():
     # this module's permissions
