@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
-
-from pysmvt import redirect, session, ag, appimport, settings
+from pysmvt import redirect, session, ag, appimportauto, settings
 from pysmvt import user as usr
-app_base = appimport('base')
 from pysmvt.exceptions import ActionError
 from pysmvt.routing import url_for, index_url
 import actions, forms
 from utils import after_login_url
-
-class Update(app_base.ProtectedPageView):
+appimportauto('base', ('ProtectedPageView', 'ProtectedRespondingView', 'PublicPageView', 'PublicTextSnippetView'))
+                       
+class Update(ProtectedPageView):
     def prep(self):
         self.require = ('users-manage')
     
@@ -47,10 +46,11 @@ class Update(app_base.ProtectedPageView):
                 usr.add_message('notice', self.message)
                 url = url_for('users:Manage')
                 redirect(url)
-            except ActionError, ae:
-                if ae.type == 'id_dup':
-                    self.form.elements.login_id.addError('That login id is already in use, please choose another')
-            
+            except Exception, e:
+                # if the form can't handle the exception, re-raise it
+                if self.form.handle_exception(e) == False:
+                    raise
+
         self.default(id)
     
     def default(self, id):
@@ -58,14 +58,14 @@ class Update(app_base.ProtectedPageView):
         self.assign('actionName', self.actionName)
         self.assign('formHtml', self.form.render())
 
-class Manage(app_base.ProtectedPageView):
+class Manage(ProtectedPageView):
     def prep(self):
         self.require = ('users-manage')
     
     def default(self):
         self.assign('users', actions.user_list())
     
-class Delete(app_base.ProtectedRespondingView):
+class Delete(ProtectedRespondingView):
     def prep(self):
         self.require = ('users-manage')
     
@@ -78,7 +78,7 @@ class Delete(app_base.ProtectedRespondingView):
         url = url_for('users:Manage')
         redirect(url)
 
-class ChangePassword(app_base.ProtectedPageView):
+class ChangePassword(ProtectedPageView):
     def prep(self):
         self.authenticated_only = True
     
@@ -99,7 +99,7 @@ class ChangePassword(app_base.ProtectedPageView):
 
         self.assign('formHtml', self.form.render())
 
-class PermissionMap(app_base.ProtectedPageView):
+class PermissionMap(ProtectedPageView):
     def prep(self):
         self.require = ('users-manage')
     
@@ -108,7 +108,7 @@ class PermissionMap(app_base.ProtectedPageView):
         self.assign('result', actions.user_permission_map(uid))
         self.assign('permgroups', actions.user_permission_map_groups(uid))
 
-class Login(app_base.PublicPageView):
+class Login(PublicPageView):
     
     def setup(self):
         from forms import LoginForm
@@ -134,7 +134,7 @@ class Login(app_base.PublicPageView):
         
         self.assign('formHtml', self.form.render())
 
-class Logout(app_base.ProtectedPageView):
+class Logout(ProtectedPageView):
     
     def prep(self):
         self.authenticated_only = True
@@ -145,7 +145,7 @@ class Logout(app_base.ProtectedPageView):
         url = url_for('users:Login')
         redirect(url)
         
-class GroupUpdate(app_base.ProtectedPageView):
+class GroupUpdate(ProtectedPageView):
     def prep(self):
         self.require = ('users-manage')
     
@@ -185,10 +185,11 @@ class GroupUpdate(app_base.ProtectedPageView):
                 usr.add_message('notice', self.message)
                 url = url_for('users:GroupManage')
                 redirect(url)
-            except ActionError, ae:
-                if ae.type == 'name_dup':
-                    self.form.elements.name.addError('That group name is already in use, please choose another')
-            
+            except Exception, e:
+                # if the form can't handle the exception, re-raise it
+                if self.form.handle_exception(e) == False:
+                    raise
+                    
         self.default(id)
     
     def default(self, id):
@@ -196,14 +197,14 @@ class GroupUpdate(app_base.ProtectedPageView):
         self.assign('actionName', self.actionName)
         self.assign('formHtml', self.form.render())
         
-class GroupManage(app_base.ProtectedPageView):
+class GroupManage(ProtectedPageView):
     def prep(self):
         self.require = ('users-manage')
     
     def default(self):
         self.assign('groups', actions.group_list())
 
-class GroupDelete(app_base.ProtectedRespondingView):
+class GroupDelete(ProtectedRespondingView):
     def prep(self):
         self.require = ('users-manage')
     
@@ -216,7 +217,7 @@ class GroupDelete(app_base.ProtectedRespondingView):
         url = url_for('users:GroupManage')
         redirect(url)
         
-class PermissionUpdate(app_base.ProtectedPageView):
+class PermissionUpdate(ProtectedPageView):
     def prep(self):
         self.require = ('users-manage')
     
@@ -251,10 +252,11 @@ class PermissionUpdate(app_base.ProtectedPageView):
                 usr.add_message('notice', self.message)
                 url = url_for('users:PermissionManage')
                 redirect(url)
-            except ActionError, ae:
-                if ae.type == 'name_dup':
-                    self.form.elements.name.addError('That permission name is already in use, please choose another')
-            
+            except Exception, e:
+                # if the form can't handle the exception, re-raise it
+                if self.form.handle_exception(e) == False:
+                    raise
+                    
         self.default(id)
     
     def default(self, id):
@@ -262,14 +264,14 @@ class PermissionUpdate(app_base.ProtectedPageView):
         self.assign('actionName', self.actionName)
         self.assign('formHtml', self.form.render())
         
-class PermissionManage(app_base.ProtectedPageView):
+class PermissionManage(ProtectedPageView):
     def prep(self):
         self.require = ('users-manage')
     
     def default(self):
         self.assign('permissions', actions.permission_list())
 
-class PermissionDelete(app_base.ProtectedRespondingView):
+class PermissionDelete(ProtectedRespondingView):
     def prep(self):
         self.require = ('users-manage')
     
@@ -281,3 +283,20 @@ class PermissionDelete(app_base.ProtectedRespondingView):
             
         url = url_for('users:PermissionManage')
         redirect(url)
+
+class NewUserEmail(PublicTextSnippetView):
+    def default(self, login_id, password):
+        self.assign('login_id', login_id)
+        self.assign('password', password)
+        
+        self.assign('login_url', url_for('users:Login', _external=True))
+        self.assign('index_url', index_url(True))
+        
+class ChangePasswordEmail(PublicTextSnippetView):
+    def default(self, login_id, password):
+        self.assign('login_id', login_id)
+        self.assign('password', password)
+
+        self.assign('login_url', url_for('users:Login', _external=True))
+        self.assign('index_url', index_url(True))
+

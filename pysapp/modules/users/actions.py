@@ -7,8 +7,12 @@ from sqlalchemy.sql import select, and_, text
 from pysmvt.exceptions import ActionError
 from pysmvt import user as usr
 from pysmvt import db
+from utils import send_new_user_email, send_change_password_email
 
 def user_update(id, **kwargs):
+    if kwargs['email_notify']:
+        kwargs['reset_required'] = True
+        
     # some values can not be set directly
     if kwargs.has_key('hash_pass'):
         del(kwargs['hash_pass'])
@@ -17,11 +21,16 @@ def user_update(id, **kwargs):
             user_edit(id, **kwargs)
         else:
             user_add(**kwargs)
-    except DatabaseError:
-        dbsession = db.sess
-        dbsession.rollback()
-        raise ActionError('id_dup')
-    
+    except:
+        db.sess.rollback()
+        raise
+
+    if kwargs['email_notify']:
+        if id is None:
+            send_new_user_email(kwargs['login_id'], kwargs['password'], kwargs['email_address'])
+        else:
+            send_change_password_email(kwargs['login_id'], kwargs['password'], kwargs['email_address'])
+            
 def user_add(**kwargs):
     dbsession = db.sess
     u = User()
@@ -30,6 +39,7 @@ def user_add(**kwargs):
     dbsession.flush()
     permission_assignments_user(u, kwargs['approved_permissions'], kwargs['denied_permissions'])
     dbsession.commit()
+
     return u.id
 
 def user_edit(id, **kwargs):
@@ -168,10 +178,7 @@ def group_update(id, **kwargs):
             group_add(**kwargs)
             
     except DatabaseError, e:
-        dbsession = db.sess
-        dbsession.rollback()
-        if 'column name is not unique' in str(e):
-            raise ActionError('name_dup')
+        db.sess.rollback()
         raise
     
 def group_add(**kwargs):
@@ -247,15 +254,14 @@ def group_assigned_perm_ids(group):
 ## Permissions
 
 def permission_update(id, **kwargs):
-    dbsession = db.sess
-    try: 
+    try:
         if id is not None:
             permission_edit(id, **kwargs)
         else:
             permission_add(**kwargs)
-    except DatabaseError:
-        dbsession.rollback()
-        raise ActionError('name_dup')
+    except:
+        db.sess.rollback()
+        raise
     
 def permission_add(safe=False, **kwargs):
     try:
@@ -318,6 +324,15 @@ def permission_assignments_group(group, approved_perm_ids, denied_perm_ids):
         # do inserts
         dbsession.execute(tbl_gpa.insert(), insval)
 
+    return
+
+def permission_assignments_group_by_name(group_name, approved_perm_list, denied_perm_list=[]):
+    # Note: this function is a wrapper for permission_assignments_group and will commit db trans
+    group = group_get_by_name(group_name)
+    approved_perm_ids = [item.id for item in [permission_get_by_name(perm) for perm in approved_perm_list]]
+    denied_perm_ids = [item.id for item in [permission_get_by_name(perm) for perm in denied_perm_list]]
+    permission_assignments_group(group, approved_perm_ids, denied_perm_ids)
+    db.sess.commit()
     return
 
 def permission_assignments_user(user, approved_perm_ids, denied_perm_ids):
