@@ -4,7 +4,7 @@ from pysmvt.routing import url_for
 from pysmvt.utils import toset
 from formencode.validators import Email, MaxLength, MinLength
 from pyhtmlquickform.validators import Select
-from actions import group_list_options, user_list_options, permission_list_options, user_get, hash_pass
+from actions import group_list_options, user_list_options, permission_list_options, user_get, hash_pass, user_get_by_email
 
 class UserForm(Form):
         
@@ -203,4 +203,30 @@ class ChangePasswordForm(Form):
             errors['password'] = 'password must be different from the old password'
 
         return errors
-        
+
+class LostPasswordForm(Form):
+
+    def __init__(self):
+        Form.__init__(self, 'lost-password-form', class_='generated')
+
+        el = self.addElement('text', 'email_address', 'Email', required=True)
+        el.addValidator(MaxLength(150))
+        el.addValidator(Email(), 'email address is not formatted correctly')
+
+        self.addElement('submit', 'submit', 'Submit')
+
+        self.set_submitted(rg.request.form)
+
+        self.add_validator(self.validate_email)
+
+    def validate_email(self, values):
+        errors = {}
+
+        if not values['email_address']:
+            return
+
+        dbobj = user_get_by_email(values['email_address'])
+        if (dbobj is None):
+            errors['email_address'] = 'email address is not associated with a user'
+
+        return errors

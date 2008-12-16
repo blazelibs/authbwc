@@ -7,6 +7,7 @@ from sqlalchemy.sql import select, and_, text
 from pysmvt.exceptions import ActionError
 from pysmvt import user as usr
 from pysmvt import db
+from pysmvt.utils import randchars
 from utils import send_new_user_email, send_change_password_email
 
 def user_update(id, **kwargs):
@@ -68,11 +69,24 @@ def user_update_password(id, **kwargs):
     u.reset_required = False
     dbsession.commit()
 
+def user_lost_password(email_address):
+    #email_address is validated in LostPasswordForm
+    u = User.get_by(email_address=email_address)
+    new_password = randchars(8)
+
+    u.password = new_password
+    u.reset_required = True
+    send_change_password_email(u.login_id, new_password, email_address)
+    db.sess.commit()
+
 def user_list():
     return User.query.all()
 
 def user_get(id):
     return User.get_by(id=id)
+
+def user_get_by_email(email_address):
+    return User.get_by(email_address=email_address)
     
 def user_delete(id):
     dbsession = db.sess
