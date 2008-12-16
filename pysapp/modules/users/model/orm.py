@@ -9,7 +9,7 @@ __all__ = ['User', 'Group', 'Permission']
 class User(Entity):
 
     login_id = Field(Unicode(150), required=True, index=True, unique=True)
-    email_address = Field(Unicode(150), required=True)
+    email_address = Field(Unicode(150), required=True, unique=True)
     pass_hash = Field(String(128), required=True)
     reset_required = Field(Boolean, default=True, required=True)
     super_user = Field(Boolean, default=True, required=True)

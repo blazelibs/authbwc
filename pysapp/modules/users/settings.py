@@ -18,6 +18,7 @@ class Settings(QuickSettings):
             Rule('/users/login', endpoint='users:Login'),
             Rule('/users/logout', endpoint='users:Logout'),
             Rule('/users/change_password', endpoint='users:ChangePassword'),
+            Rule('/users/recover_password', endpoint='users:LostPassword'),
             Rule('/groups/add', defaults={'id': None}, endpoint='users:GroupUpdate'),
             Rule('/groups/edit/<int:id>', endpoint='users:GroupUpdate'),
             Rule('/groups/manage', endpoint='users:GroupManage'),

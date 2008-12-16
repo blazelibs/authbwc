@@ -99,6 +99,24 @@ class ChangePassword(ProtectedPageView):
 
         self.assign('formHtml', self.form.render())
 
+class LostPassword(PublicPageView):
+    def setup(self):
+        from forms import LostPasswordForm
+        self.form = LostPasswordForm()
+
+    def post(self):
+        if self.form.isSubmitted() and self.form.isValid():
+            actions.user_lost_password(self.form.get_values()['email_address'])
+            usr.add_message('notice', 'Your password has been reset. An email with a temporary password will be sent shortly.')
+            url = index_url()
+            redirect(url)
+
+        self.default()
+
+    def default(self):
+
+        self.assign('formHtml', self.form.render())
+
 class PermissionMap(ProtectedPageView):
     def prep(self):
         self.require = ('users-manage')
