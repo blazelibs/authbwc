@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from os import path
-from actions import user_add, permission_add, group_add, permission_get_by_name
-from pysmvt import db, settings
+from pysmvt import settings
 
 def action_users_initdb():
     ''' sets up the database after the model objects have been created '''
-    
+    from pysmvt import db
     # add the sql views
     dbsession = db.sess
     am_dir = path.dirname(path.abspath(__file__))
@@ -27,11 +26,13 @@ broadcast_initmod = action_users_initmod
 
 def addperms_init():
     # this module's permissions
+    from actions import permission_add
     permission_add(name=u'users-manage', safe='unique')
 
 def addadmin_init():
     from getpass import getpass
-
+    from actions import user_add
+    
     defaults = settings.modules.users.admin
     # add a default administrative user
     if defaults.username and defaults.password and defaults.email:
@@ -51,5 +52,5 @@ def addadmin_init():
              approved_permissions = None, denied_permissions = None )
 
 def addadmingroup_init():
-    perms = [permission_get_by_name(u'users-manage').id]
-    group_add(name=u'admin', assigned_users=[], approved_permissions=perms, denied_permissions=[])
+    from actions import group_add
+    group_add(name=u'admin', assigned_users=[], approved_permissions=[], denied_permissions=[])
