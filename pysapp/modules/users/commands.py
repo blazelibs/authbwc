@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from os import path
 from pysmvt import settings
+from pysmvt.script import console_broadcast
 
+@console_broadcast
 def action_users_initdb():
     ''' sets up the database after the model objects have been created '''
     from pysmvt import db
@@ -15,14 +17,13 @@ def action_users_initdb():
         if statement:
             dbsession.execute(statement)
     dbsession.commit()
-broadcast_initdb = action_users_initdb
-    
+
+@console_broadcast
 def action_users_initmod():
     ''' sets up the module after the database is setup'''
     addperms_init()
     addadmin_init()
     addadmingroup_init()
-broadcast_initmod = action_users_initmod
 
 def addperms_init():
     # this module's permissions
