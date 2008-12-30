@@ -195,14 +195,19 @@ def group_update(id, **kwargs):
         db.sess.rollback()
         raise
     
-def group_add(**kwargs):
+def group_add(safe=False, **kwargs):
     dbsession = db.sess
-    g = Group()
-    g.from_dict(kwargs)
-    g.users = create_users(kwargs['assigned_users'])
-    dbsession.flush()
-    permission_assignments_group(g, kwargs['approved_permissions'], kwargs['denied_permissions'])
-    dbsession.commit()
+    try:
+        g = Group()
+        g.from_dict(kwargs)
+        g.users = create_users(kwargs['assigned_users'])
+        dbsession.flush()
+        permission_assignments_group(g, kwargs['approved_permissions'], kwargs['denied_permissions'])
+        dbsession.commit()
+    except Exception, e:
+        dbsession.rollback()
+        if safe == False or safe not in str(e):
+            raise
 
 def group_edit(id, **kwargs):
     dbsession = db.sess
