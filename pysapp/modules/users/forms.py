@@ -3,7 +3,7 @@ from pysmvt import user
 from pysmvt.routing import url_for
 from pysmvt.utils import toset
 from formencode.validators import MaxLength, MinLength
-from formencode import Invalid
+from pysform.exceptions import ValueInvalid
 from actions import group_list_options, user_list_options, permission_list_options, user_get, hash_pass, user_get_by_email
 
 class UserForm(Form):
@@ -50,21 +50,20 @@ class UserForm(Form):
         
         perm_opts = permission_list_options()
         el = self.add_mselect('approved_permissions', perm_opts, 'Approved')
-        el.add_processor(self.validate_perms)
-        
         el = self.add_mselect('denied_permissions', perm_opts, 'Denied')
-        el.add_processor(self.validate_perms)
 
         self.add_submit('submit')
+        self.add_validator(self.validate_perms)
     
     def validate_perms(self, value):
         assigned = toset(self.approved_permissions.value)
         denied = toset(self.denied_permissions.value)
 
         if len(assigned.intersection(denied)) != 0:
-            raise Invalid('you can not approve and deny the same permission', value, None)
-
-        return value
+            msg = 'you can not approve and deny the same permission'
+            self.denied_permissions.add_error(msg)
+            self.approved_permissions.add_error(msg)
+            raise ValueInvalid()
 
 class GroupForm(Form):
         
@@ -85,21 +84,18 @@ class GroupForm(Form):
         
         perm_opts = permission_list_options()
         el = self.add_mselect('approved_permissions', perm_opts, 'Approved')
-        el.add_processor(self.validate_perms)
         
         el = self.add_mselect('denied_permissions', perm_opts, 'Denied')
-        el.add_processor(self.validate_perms)
-
         self.add_submit('submit')
+        
+        self.add_validator(self.validate_perms)
         
     def validate_perms(self, value):
         assigned = toset(self.approved_permissions.value)
         denied = toset(self.denied_permissions.value)
         
         if len(assigned.intersection(denied)) != 0:
-            raise Invalid('you can not approve and deny the same permission', value, None)
-        
-        return value
+            raise ValueInvalid('you can not approve and deny the same permission')
 
 class PermissionForm(Form):
         
@@ -150,19 +146,17 @@ class ChangePasswordForm(Form):
     def validate_password(self, value):
         dbobj = user_get(user.get_attr('id'))
         if (dbobj.pass_hash != hash_pass(value)):
-            raise Invalid('incorrect password', value, None)
-
-        return value
+            raise ValueInvalid('incorrect password')
 
     def validate_confirm(self, value):
         if (value != self.password.value):
-            raise Invalid('passwords do not match', value, None)
+            raise ValueInvalid('passwords do not match')
 
         return value
 
     def validate_validnew(self, value):
         if (value == self.old_password.value):
-            raise Invalid('password must be different from the old password', value, None)
+            raise ValueInvalid('password must be different from the old password')
 
         return value
 
@@ -180,6 +174,6 @@ class LostPasswordForm(Form):
     def validate_email(self, value):
         dbobj = user_get_by_email(value)
         if (dbobj is None):
-            raise Invalid('email address is not associated with a user', value, None)
+            raise ValueInvalid('email address is not associated with a user')
 
         return value
