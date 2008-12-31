@@ -1,232 +1,185 @@
-from pyhtmlquickform.form import Form
-from pysmvt import user, rg
+from pysapp.forms import Form
+from pysmvt import user
 from pysmvt.routing import url_for
 from pysmvt.utils import toset
-from formencode.validators import Email, MaxLength, MinLength
-from pyhtmlquickform.validators import Select
+from formencode.validators import MaxLength, MinLength
+from formencode import Invalid
 from actions import group_list_options, user_list_options, permission_list_options, user_get, hash_pass, user_get_by_email
 
 class UserForm(Form):
         
     def __init__(self, isAdd):
-        Form.__init__(self, 'user-form', class_='generated')
+        Form.__init__(self, 'user-form')
         
-        el = self.addElement('text', 'login_id', 'Login Id', required=True)
-        el.addValidator(MaxLength(150))
-        el.onexc('column login_id is not unique',
+        el = self.add_text('login_id', 'Login Id', required=True)
+        el.add_processor(MaxLength(150))
+        el.add_handler('column login_id is not unique',
                  'That user already exists.')
         
-        el = self.addElement('text', 'email_address', 'Email', required=True)
-        el.addValidator(MaxLength(150))
-        el.addValidator(Email(), 'email address is not formatted correctly')
+        el = self.add_email('email_address', 'Email', required=True)
+        el.add_processor(MaxLength(150))
         
-        el = self.addElement('password', 'password', 'Password', required=isAdd)
-        el.addValidator(MaxLength(25))
-        el.addValidator(MinLength(6))
-        el.addNote('password will change only if you enter a value above')
+        el = self.add_password('password', 'Password', required=isAdd)
+        el.add_processor(MaxLength(25))
+        el.add_processor(MinLength(6))
+        el.add_note('password will change only if you enter a value above')
         
-        el = self.addElement('password', 'password-confirm', 'Confirm Password', required=isAdd)
-        el.addValidator(MaxLength(25))
+        el = self.add_password('password-confirm', 'Confirm Password', required=isAdd)
+        el.add_processor(MaxLength(25))
         
-        el = self.addElement('checkbox', 'reset_required', 'Password Reset Required')
-        el.addNote("force the user to change their password the next time they login")
-        el.addNote("is set automatically if an administrator changes a password")
+        el = self.add_checkbox('reset_required', 'Password Reset Required')
+        el.add_note("force the user to change their password the next time they login")
+        el.add_note("is set automatically if an administrator changes a password")
         
         # if the current user is not a super user, they can't set the super user
         # field
         if user.get_attr('super_user'):
-            el = self.addElement('checkbox', 'super_user', 'Super User')
-            el.addNote("super users will have all permissions automatically")
+            el = self.add_checkbox('super_user', 'Super User')
+            el.add_note("super users will have all permissions automatically")
         
-        el = self.addElement('checkbox', 'email_notify', 'Email Notification', checked=True)
-        el.addNote("send notification email on password change or new user creation")
-        el.addNote("forces password reset if password is sent out in an email")
+        el = self.add_checkbox('email_notify', 'Email Notification', checked=True)
+        el.add_note("send notification email on password change or new user creation")
+        el.add_note("forces password reset if password is sent out in an email")
         
-        el = self.addElement('header', 'group_membership_header', 'Group Membership')
+        el = self.add_header('group_membership_header', 'Group Membership')
         
         group_opts = group_list_options()
-        el = self.addElement('select', 'assigned_groups', group_opts, 'Assign to', multiple = True)
-        el.addValidator(Select(group_opts))
+        el = self.add_mselect('assigned_groups', group_opts, 'Assign to')
         
-        el = self.addElement('header', 'group_permissions_header', 'User Permissions')
+        el = self.add_header('group_permissions_header', 'User Permissions')
         
         perm_opts = permission_list_options()
-        el = self.addElement('select', 'approved_permissions', perm_opts, 'Approved', multiple = True)
-        el.addValidator(Select(perm_opts))
+        el = self.add_mselect('approved_permissions', perm_opts, 'Approved')
+        el.add_processor(self.validate_perms)
         
-        el = self.addElement('select', 'denied_permissions', perm_opts, 'Denied', multiple = True)
-        el.addValidator(Select(perm_opts))
-        self.addElement('submit', 'submit', 'Submit')
-        
-        self.set_submitted(rg.request.form)
-        
-        self.add_validator(self.validate_perms)
+        el = self.add_mselect('denied_permissions', perm_opts, 'Denied')
+        el.add_processor(self.validate_perms)
+
+        self.add_submit('submit')
     
-    def validate_perms(self, values):
-        errors = {}
-        
-        assigned = toset(values['approved_permissions'])
-        denied = toset(values['denied_permissions'])
-        
+    def validate_perms(self, value):
+        assigned = toset(self.approved_permissions.value)
+        denied = toset(self.denied_permissions.value)
+
         if len(assigned.intersection(denied)) != 0:
-            errors['denied_permissions'] = 'you can not approve and deny the same permission'
-            errors['approved_permissions'] = 'you can not approve and deny the same permission'
-        
-        return errors
+            raise Invalid('you can not approve and deny the same permission', value, None)
+
+        return value
 
 class GroupForm(Form):
         
     def __init__(self, isAdd):
-        Form.__init__(self, 'group-form', class_='generated')
+        Form.__init__(self, 'group-form')
         
-        el = self.addElement('text', 'name', 'Group Name', required=True)
-        el.addValidator(MaxLength(150))
-        el.onexc('column name is not unique',
+        el = self.add_text('name', 'Group Name', required=True)
+        el.add_processor(MaxLength(150))
+        el.add_handler('column name is not unique',
                  'That group already exists.')
         
-        el = self.addElement('header', 'group_membership_header', 'Users In Group')
+        el = self.add_header('group_membership_header', 'Users In Group')
         
         user_opts = user_list_options()
-        el = self.addElement('select', 'assigned_users', user_opts, 'Assign', multiple = True)
-        el.addValidator(Select(user_opts))
+        el = self.add_mselect('assigned_users', user_opts, 'Assign')
 
-        el = self.addElement('header', 'group_permissions_header', 'Group Permissions')
+        el = self.add_header('group_permissions_header', 'Group Permissions')
         
         perm_opts = permission_list_options()
-        el = self.addElement('select', 'approved_permissions', perm_opts, 'Approved', multiple = True)
-        el.addValidator(Select(perm_opts))
+        el = self.add_mselect('approved_permissions', perm_opts, 'Approved')
+        el.add_processor(self.validate_perms)
         
-        el = self.addElement('select', 'denied_permissions', perm_opts, 'Denied', multiple = True)
-        el.addValidator(Select(perm_opts))
+        el = self.add_mselect('denied_permissions', perm_opts, 'Denied')
+        el.add_processor(self.validate_perms)
 
-        self.addElement('submit', 'submit', 'Submit')
+        self.add_submit('submit')
         
-        self.set_submitted(rg.request.form)
-        
-        self.add_validator(self.validate_perms)
-    
-    def validate_perms(self, values):
-        errors = {}
-        
-        assigned = toset(values['approved_permissions'])
-        denied = toset(values['denied_permissions'])
+    def validate_perms(self, value):
+        assigned = toset(self.approved_permissions.value)
+        denied = toset(self.denied_permissions.value)
         
         if len(assigned.intersection(denied)) != 0:
-            errors['denied_permissions'] = 'you can not approve and deny the same permission'
-            errors['approved_permissions'] = 'you can not approve and deny the same permission'
+            raise Invalid('you can not approve and deny the same permission', value, None)
         
-        return errors
+        return value
 
 class PermissionForm(Form):
         
     def __init__(self, isAdd):
-        Form.__init__(self, 'permission-form', class_='generated')
+        Form.__init__(self, 'permission-form')
         
-        el = self.addElement('text', 'name', 'Permission Name', required=True)
-        el.addValidator(MaxLength(150))
-        el.onexc('column name is not unique',
+        el = self.add_text('name', 'Permission Name', required=True)
+        el.add_processor(MaxLength(150))
+        el.add_handler('column name is not unique',
                  'That permission already exists.')
 
-        self.addElement('submit', 'submit', 'Submit')
+        self.add_submit('submit')
         
-        self.set_submitted(rg.request.form)
-
 class LoginForm(Form):
             
     def __init__(self):
-        Form.__init__(self, 'login-form', class_='generated')
+        Form.__init__(self, 'login-form')
         
-        el = self.addElement('text', 'login_id', 'Login Id', required=True)
-        el.addValidator(MaxLength(150))
+        el = self.add_text('login_id', 'Login Id', required=True)
+        el.add_processor(MaxLength(150))
         
-        el = self.addElement('password', 'password', 'Password', required=True)
-        el.addValidator(MaxLength(25))
+        el = self.add_password('password', 'Password', required=True)
+        el.add_processor(MaxLength(25))
 
-        self.addElement('submit', 'submit', 'Submit')
-        
-        self.set_submitted(rg.request.form)
+        self.add_submit('submit')
 
 class ChangePasswordForm(Form):
 
     def __init__(self):
-        Form.__init__(self, 'login-form', class_='generated')
+        Form.__init__(self, 'login-form')
 
-        el = self.addElement('password', 'old_password', 'Old Password', required=True)
-        el.addValidator(MaxLength(25))
+        el = self.add_password('old_password', 'Old Password', required=True)
+        el.add_processor(MaxLength(25))
+        el.add_processor(self.validate_password)
 
-        el = self.addElement('password', 'password', 'New Password', required=True)
-        el.addValidator(MaxLength(25))
-        el.addValidator(MinLength(6))
+        el = self.add_password('password', 'New Password', required=True)
+        el.add_processor(MaxLength(25))
+        el.add_processor(MinLength(6))
+        el.add_processor(self.validate_validnew)
         
-        el = self.addElement('password', 'confirm_password', 'Confirm', required=True)
-        el.addValidator(MaxLength(25))
-        el.addValidator(MinLength(6))
+        el = self.add_password('confirm_password', 'Confirm', required=True)
+        el.add_processor(MaxLength(25))
+        el.add_processor(MinLength(6))
+        el.add_processor(self.validate_confirm)
 
-        self.addElement('submit', 'submit', 'Submit')
-
-        self.set_submitted(rg.request.form)
-
-        self.add_validator(self.validate_password)
-        self.add_validator(self.validate_confirm)
-        self.add_validator(self.validate_validnew)
+        self.add_submit('submit')
         
-    def validate_password(self, values):
-        errors = {}
-
-        if not values['old_password']:
-            return
-
+    def validate_password(self, value):
         dbobj = user_get(user.get_attr('id'))
-        if (dbobj.pass_hash != hash_pass(values['old_password'])):
-            errors['old_password'] = 'incorrect password'
+        if (dbobj.pass_hash != hash_pass(value)):
+            raise Invalid('incorrect password', value, None)
 
-        return errors
+        return value
 
-    def validate_confirm(self, values):
-        errors = {}
+    def validate_confirm(self, value):
+        if (value != self.password.value):
+            raise Invalid('passwords do not match', value, None)
 
-        if not values['old_password']:
-            return
-            
-        if (values['password'] != values['confirm_password']):
-            errors['confirm_password'] = 'passwords do not match'
+        return value
 
-        return errors
+    def validate_validnew(self, value):
+        if (value == self.old_password.value):
+            raise Invalid('password must be different from the old password', value, None)
 
-    def validate_validnew(self, values):
-        errors = {}
-
-        if not values['old_password']:
-            return
-            
-        if (values['old_password'] == values['password']):
-            errors['password'] = 'password must be different from the old password'
-
-        return errors
+        return value
 
 class LostPasswordForm(Form):
 
     def __init__(self):
-        Form.__init__(self, 'lost-password-form', class_='generated')
+        Form.__init__(self, 'lost-password-form')
 
-        el = self.addElement('text', 'email_address', 'Email', required=True)
-        el.addValidator(MaxLength(150))
-        el.addValidator(Email(), 'email address is not formatted correctly')
+        el = self.add_email('email_address', 'Email', required=True)
+        el.add_processor(MaxLength(150))
+        el.add_processor(self.validate_email)
 
-        self.addElement('submit', 'submit', 'Submit')
+        self.add_submit('submit')
 
-        self.set_submitted(rg.request.form)
-
-        self.add_validator(self.validate_email)
-
-    def validate_email(self, values):
-        errors = {}
-
-        if not values['email_address']:
-            return
-
-        dbobj = user_get_by_email(values['email_address'])
+    def validate_email(self, value):
+        dbobj = user_get_by_email(value)
         if (dbobj is None):
-            errors['email_address'] = 'email address is not associated with a user'
+            raise Invalid('email address is not associated with a user', value, None)
 
-        return errors
+        return value

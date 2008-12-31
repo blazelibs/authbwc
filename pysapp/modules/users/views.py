@@ -32,15 +32,14 @@ class Update(ProtectedPageView):
                 usr.add_message('error', 'the requested user does not exist')
                 url = url_for('users:Manage')
                 redirect(url)
-                
-            self.form.set_defaults(user.to_dict())
-            self.form.elements.assigned_groups.setDefaultValue(actions.user_group_ids(user))
-            approved, denied = actions.user_assigned_perm_ids(user)
-            self.form.elements.approved_permissions.setDefaultValue(approved)
-            self.form.elements.denied_permissions.setDefaultValue(denied)
+
+            vals = user.to_dict()
+            vals['assigned_groups'] = actions.user_group_ids(user)
+            vals['approved_permissions'], vals['denied_permissions'] = actions.user_assigned_perm_ids(user)
+            self.form.set_defaults(vals)
     
     def post(self, id):        
-        if self.form.isSubmitted() and self.form.isValid():
+        if self.form.is_valid():
             try:
                 actions.user_update(id, **self.form.get_values())
                 usr.add_message('notice', self.message)
@@ -48,8 +47,11 @@ class Update(ProtectedPageView):
                 redirect(url)
             except Exception, e:
                 # if the form can't handle the exception, re-raise it
-                if self.form.handle_exception(e) == False:
+                if not self.form.handle_exception(e):
                     raise
+        elif self.form.is_submitted():
+            # form was submitted, but invalid
+            self.form.assign_user_errors()
 
         self.default(id)
     
@@ -87,12 +89,15 @@ class ChangePassword(ProtectedPageView):
         self.form = ChangePasswordForm()
 
     def post(self):
-        if self.form.isSubmitted() and self.form.isValid():
+        if self.form.is_valid():
             actions.user_update_password(usr.get_attr('id'), **self.form.get_values())
             usr.add_message('notice', 'Your password has been changed successfully.')
             url = after_login_url()
             redirect(url)
-
+        elif self.form.is_submitted():
+            # form was submitted, but invalid
+            self.form.assign_user_errors()
+            
         self.default()
 
     def default(self):
@@ -105,11 +110,14 @@ class LostPassword(PublicPageView):
         self.form = LostPasswordForm()
 
     def post(self):
-        if self.form.isSubmitted() and self.form.isValid():
-            actions.user_lost_password(self.form.get_values()['email_address'])
+        if self.form.is_valid():
+            actions.user_lost_password(self.form.email_address)
             usr.add_message('notice', 'Your password has been reset. An email with a temporary password will be sent shortly.')
             url = index_url()
             redirect(url)
+        elif self.form.is_submitted():
+            # form was submitted, but invalid
+            self.form.assign_user_errors()
 
         self.default()
 
@@ -133,7 +141,7 @@ class Login(PublicPageView):
         self.form = LoginForm()
     
     def post(self):        
-        if self.form.isSubmitted() and self.form.isValid():
+        if self.form.is_valid():
             user = actions.user_validate(**self.form.get_values())
             if user:
                 actions.load_session_user(user)
@@ -145,6 +153,9 @@ class Login(PublicPageView):
                 redirect(url)
             else:
                 usr.add_message('error', 'Login failed!  Please try again.')
+        elif self.form.is_submitted():
+            # form was submitted, but invalid
+            self.form.assign_user_errors()
             
         self.default()
     
@@ -190,14 +201,13 @@ class GroupUpdate(ProtectedPageView):
                 redirect(url)
             
             # assign group form defaults
-            self.form.set_defaults(group.to_dict())
-            self.form.elements.assigned_users.setDefaultValue(actions.group_user_ids(group))
-            approved, denied = actions.group_assigned_perm_ids(group)
-            self.form.elements.approved_permissions.setDefaultValue(approved)
-            self.form.elements.denied_permissions.setDefaultValue(denied)
+            vals = group.to_dict()
+            vals['assigned_users'] = actions.group_user_ids(group)
+            vals['approved_permissions'], vals['denied_permissions'] = actions.group_assigned_perm_ids(group)
+            self.form.set_defaults(vals)
     
     def post(self, id):        
-        if self.form.isSubmitted() and self.form.isValid():
+        if self.form.is_valid():
             try:
                 actions.group_update(id, **self.form.get_values())
                 usr.add_message('notice', self.message)
@@ -205,8 +215,11 @@ class GroupUpdate(ProtectedPageView):
                 redirect(url)
             except Exception, e:
                 # if the form can't handle the exception, re-raise it
-                if self.form.handle_exception(e) == False:
+                if not self.form.handle_exception(e):
                     raise
+        elif self.form.is_submitted():
+            # form was submitted, but invalid
+            self.form.assign_user_errors()
                     
         self.default(id)
     
@@ -264,7 +277,7 @@ class PermissionUpdate(ProtectedPageView):
             self.form.set_defaults(permission.to_dict())
     
     def post(self, id):        
-        if self.form.isSubmitted() and self.form.isValid():
+        if self.form.is_valid():
             try:
                 actions.permission_update(id, **self.form.get_values())
                 usr.add_message('notice', self.message)
@@ -274,6 +287,9 @@ class PermissionUpdate(ProtectedPageView):
                 # if the form can't handle the exception, re-raise it
                 if self.form.handle_exception(e) == False:
                     raise
+        elif self.form.is_submitted():
+            # form was submitted, but invalid
+            self.form.assign_user_errors()
                     
         self.default(id)
     
