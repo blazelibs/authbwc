@@ -134,28 +134,26 @@ class ChangePasswordForm(Form):
         el = self.add_password('password', 'New Password', required=True)
         el.add_processor(MaxLength(25))
         el.add_processor(MinLength(6))
-        el.add_processor(self.validate_validnew)
         
         el = self.add_password('confirm_password', 'Confirm', required=True)
         el.add_processor(MaxLength(25))
         el.add_processor(MinLength(6))
-        el.add_processor(self.validate_confirm)
 
         self.add_submit('submit')
+        self.add_validator(self.validate_validnew)
+        self.add_validator(self.validate_confirm)
         
     def validate_password(self, value):
         dbobj = user_get(user.get_attr('id'))
         if (dbobj.pass_hash != hash_pass(value)):
             raise ValueInvalid('incorrect password')
 
-    def validate_confirm(self, value):
-        if (value != self.password.value):
+    def validate_confirm(self, form):
+        if (form.confirm_password.value != form.password.value):
             raise ValueInvalid('passwords do not match')
 
-        return value
-
     def validate_validnew(self, value):
-        if (value == self.old_password.value):
+        if (self.password.value == self.old_password.value):
             raise ValueInvalid('password must be different from the old password')
 
         return value

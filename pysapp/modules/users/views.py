@@ -111,10 +111,13 @@ class LostPassword(PublicPageView):
 
     def post(self):
         if self.form.is_valid():
-            actions.user_lost_password(self.form.email_address)
-            usr.add_message('notice', 'Your password has been reset. An email with a temporary password will be sent shortly.')
-            url = index_url()
-            redirect(url)
+            em_address = self.form.email_address.value
+            if actions.user_lost_password(em_address):
+                usr.add_message('notice', 'Your password has been reset. An email with a temporary password will be sent shortly.')
+                url = index_url()
+                redirect(url)
+            else:
+                usr.add_message('error', 'Did not find a user with email address: %s' % em_address)
         elif self.form.is_submitted():
             # form was submitted, but invalid
             self.form.assign_user_errors()

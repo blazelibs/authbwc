@@ -72,12 +72,15 @@ def user_update_password(id, **kwargs):
 def user_lost_password(email_address):
     #email_address is validated in LostPasswordForm
     u = User.get_by(email_address=email_address)
+    if not u:
+        return False
+    
     new_password = randchars(8)
-
     u.password = new_password
     u.reset_required = True
     send_change_password_email(u.login_id, new_password, email_address)
     db.sess.commit()
+    return True    
 
 def user_list():
     return User.query.all()
