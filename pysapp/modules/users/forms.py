@@ -145,18 +145,24 @@ class ChangePasswordForm(Form):
         
     def validate_password(self, value):
         dbobj = user_get(user.get_attr('id'))
-        if (dbobj.pass_hash != hash_pass(value)):
+        if dbobj.pass_hash != hash_pass(value):
             raise ValueInvalid('incorrect password')
+            
+        return value
 
     def validate_confirm(self, form):
-        if (form.confirm_password.value != form.password.value):
-            raise ValueInvalid('passwords do not match')
+        if form.confirm_password.value != form.password.value:
+            err = 'did not match password'
+            form.confirm_password.add_error(err)
+            raise ValueInvalid()
 
-    def validate_validnew(self, value):
-        if (self.password.value == self.old_password.value):
-            raise ValueInvalid('password must be different from the old password')
-
-        return value
+    def validate_validnew(self, form):
+        print form.password.value
+        print form.old_password.value
+        if form.password.value == form.old_password.value:
+            err = 'password must be different from the old password'
+            form.password.add_error(err)
+            raise ValueInvalid()
 
 class LostPasswordForm(Form):
 
