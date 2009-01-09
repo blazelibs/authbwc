@@ -157,8 +157,6 @@ class ChangePasswordForm(Form):
             raise ValueInvalid()
 
     def validate_validnew(self, form):
-        print form.password.value
-        print form.old_password.value
         if form.password.value == form.old_password.value:
             err = 'password must be different from the old password'
             form.password.add_error(err)
