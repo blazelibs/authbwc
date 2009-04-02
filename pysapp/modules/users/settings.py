@@ -2,6 +2,7 @@
 
 from werkzeug.routing import Rule
 from pysmvt.config import QuickSettings
+from pysapp.utils import ControlPanelSection, ControlPanelGroup, ControlPanelLink
 
 class Settings(QuickSettings):
 
@@ -28,6 +29,23 @@ class Settings(QuickSettings):
             Rule('/permissions/manage', endpoint='users:PermissionManage'),
             Rule('/permissions/delete/<int:id>', endpoint='users:PermissionDelete'),
         ]
+        self.cp_nav.enabled=True
+        self.cp_nav.section = ControlPanelSection(
+            "Users",
+            'users-manage',
+            ControlPanelGroup(
+                ControlPanelLink('User Add', 'users:Update'),
+                ControlPanelLink('Users Manage', 'users:Manage'),
+            ),
+            ControlPanelGroup(
+                ControlPanelLink('Group Add', 'users:GroupUpdate'),
+                ControlPanelLink('Groups Manage', 'users:GroupManage'),
+            ),
+            ControlPanelGroup(
+                ControlPanelLink('Permission Add', 'users:PermissionUpdate'),
+                ControlPanelLink('Permissions Manage', 'users:PermissionManage'),
+            )
+        )
         
         # where should we go after a user logins in?  If nothing is set,
         # default to index_url()
