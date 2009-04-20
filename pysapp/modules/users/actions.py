@@ -11,7 +11,7 @@ from pysmvt.utils import randchars
 from utils import send_new_user_email, send_change_password_email
 
 def user_update(id, **kwargs):
-    if kwargs['email_notify']:
+    if kwargs['password']:
         kwargs['reset_required'] = True
         
     # some values can not be set directly
@@ -29,7 +29,7 @@ def user_update(id, **kwargs):
     if kwargs['email_notify']:
         if id is None:
             send_new_user_email(kwargs['login_id'], kwargs['password'], kwargs['email_address'])
-        else:
+        elif kwargs['password']:
             send_change_password_email(kwargs['login_id'], kwargs['password'], kwargs['email_address'])
             
 def user_add(**kwargs):
