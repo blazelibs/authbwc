@@ -17,39 +17,41 @@ def user_update(id, **kwargs):
     # some values can not be set directly
     if kwargs.has_key('hash_pass'):
         del(kwargs['hash_pass'])
+
+    if id is None:
+        u = User()
+    else:
+        u = User.get_by(id=id)
+    
     try: 
-        if id is not None:
-            user_edit(id, **kwargs)
-        else:
-            user_add(**kwargs)
+        u.from_dict(kwargs)
+        u.groups = create_groups(kwargs['assigned_groups'])
+        db.sess.flush()
+        permission_assignments_user(u, kwargs['approved_permissions'], kwargs['denied_permissions'])
+
+        # if email fails, db trans will roll back
+        if kwargs['email_notify']:
+            if id is None:
+                send_new_user_email(kwargs['login_id'], kwargs['password'], kwargs['email_address'])
+            elif kwargs['password']:
+                send_change_password_email(kwargs['login_id'], kwargs['password'], kwargs['email_address'])
+
+        db.sess.commit()
     except:
         db.sess.rollback()
         raise
 
-    if kwargs['email_notify']:
-        if id is None:
-            send_new_user_email(kwargs['login_id'], kwargs['password'], kwargs['email_address'])
-        elif kwargs['password']:
-            send_change_password_email(kwargs['login_id'], kwargs['password'], kwargs['email_address'])
-            
-def user_add(**kwargs):
-    dbsession = db.sess
-    u = User()
-    u.from_dict(kwargs)
-    u.groups = create_groups(kwargs['assigned_groups'])
-    dbsession.flush()
-    permission_assignments_user(u, kwargs['approved_permissions'], kwargs['denied_permissions'])
-    dbsession.commit()
+    return u
 
-    return u.id
+def user_add(safe=False, **kwargs):
+    u = None
+    try:
+        u = user_update(None, **kwargs)
+    except Exception, e:
+        if safe == False or safe not in str(e):
+            raise
 
-def user_edit(id, **kwargs):
-    dbsession = db.sess
-    u = User.get_by(id=id)
-    u.from_dict(kwargs)
-    u.groups = create_groups(kwargs['assigned_groups'])
-    permission_assignments_user(u, kwargs['approved_permissions'], kwargs['denied_permissions'])
-    dbsession.commit()
+    return u
 
 def create_groups(group_ids):
     groups = []
