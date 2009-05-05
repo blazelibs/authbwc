@@ -30,7 +30,8 @@ def user_update(id, **kwargs):
         permission_assignments_user(u, kwargs['approved_permissions'], kwargs['denied_permissions'])
 
         # if email fails, db trans will roll back
-        if kwargs['email_notify']:
+        #  initmod call will not have this flag
+        if kwargs.has_key('email_notify') and kwargs['email_notify']:
             if id is None:
                 send_new_user_email(kwargs['login_id'], kwargs['password'], kwargs['email_address'])
             elif kwargs['password']:
