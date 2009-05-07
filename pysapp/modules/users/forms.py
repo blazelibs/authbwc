@@ -18,6 +18,8 @@ class UserForm(Form):
         
         el = self.add_email('email_address', 'Email', required=True)
         el.add_processor(MaxLength(150))
+        el.add_handler('column email_address is not unique',
+                 'A user with that email address already exists.')
         
         el = self.add_password('password', 'Password', required=isAdd)
         el.add_processor(MaxLength(25))

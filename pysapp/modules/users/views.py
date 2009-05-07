@@ -39,6 +39,10 @@ class Update(ProtectedPageView):
             self.form.set_defaults(vals)
     
     def post(self, id):        
+        self.form_submission(id)
+        self.default(id)
+    
+    def form_submission(self, id):
         if self.form.is_valid():
             try:
                 actions.user_update(id, **self.form.get_values())
@@ -49,12 +53,12 @@ class Update(ProtectedPageView):
                 # if the form can't handle the exception, re-raise it
                 if not self.form.handle_exception(e):
                     raise
-        elif self.form.is_submitted():
-            # form was submitted, but invalid
-            self.form.assign_user_errors()
+        elif not self.form.is_submitted():
+            return
+        
+        # form was submitted, but invalid
+        self.form.assign_user_errors()
 
-        self.default(id)
-    
     def default(self, id):
         
         self.assign('actionName', self.actionName)
