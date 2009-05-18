@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from os import path
 from pysmvt import settings
-from pysmvt.script import console_broadcast
+from pysmvt.script import console_broadcast, console_dispatch
 
 @console_broadcast
 def action_users_initdb():
@@ -55,3 +55,12 @@ def addadmin_init():
 def addadmingroup_init():
     from actions import group_add
     group_add(name=u'admin', assigned_users=[], approved_permissions=[], denied_permissions=[], safe='unique')
+
+@console_dispatch
+def action_users_addadmin():
+    """ used to add an admin user to the database """
+    # ovverride settings so that we can force the prompts
+    username = settings.modules.users.admin.username
+    settings.modules.users.admin.username = None
+    addadmin_init()
+    settings.modules.users.admin.username = username
