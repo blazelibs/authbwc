@@ -49,7 +49,7 @@ def user_add(safe=False, **kwargs):
     try:
         u = user_update(None, **kwargs)
     except Exception, e:
-        if safe == False or safe not in str(e):
+        if safe == False or safe.lower() not in str(e).lower():
             raise
 
     return u
