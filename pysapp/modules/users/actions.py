@@ -7,7 +7,7 @@ from sqlalchemy.sql import select, and_, text
 from pysmvt.exceptions import ActionError
 from pysmvt import user as usr
 from pysmvt import db
-from pysmvt.utils import randchars
+from pysmvt.utils import randchars, tolist
 from utils import send_new_user_email, send_change_password_email
 
 def user_update(id, **kwargs):
@@ -281,6 +281,22 @@ def group_assigned_perm_ids(group):
 
     return approved, denied
 
+def group_add_permissions_to_existing(gname, approved=[], denied=[]):
+    g = group_get_by_name(gname)
+    capproved, cdenied = group_assigned_perm_ids(g)
+    for permid in tolist(approved):
+        if permid not in capproved:
+            capproved.append(permid)
+    for permid in tolist(denied):
+        if permid not in cdenied:
+            cdenied.append(permid)
+    try:
+        permission_assignments_group(g, capproved, cdenied)
+        db.sess.commit()
+    except:
+        db.sess.rollback()
+        raise
+        
 ## Permissions
 
 def permission_update(id, **kwargs):
@@ -296,18 +312,20 @@ def permission_update(id, **kwargs):
 def permission_add(safe=False, **kwargs):
     try:
         dbsession = db.sess
-        g = Permission()
-        g.from_dict(kwargs)
+        p = Permission()
+        p.from_dict(kwargs)
         dbsession.commit()
+        return p
     except Exception, e:
         dbsession.rollback()
         if safe == False or safe not in str(e):
             raise
+        return permission_get_by_name(kwargs['name'])
 
 def permission_edit(id, **kwargs):
     dbsession = db.sess
-    g = Permission.get_by(id=id)
-    g.from_dict(kwargs)
+    p = Permission.get_by(id=id)
+    p.from_dict(kwargs)
     dbsession.commit()
 
 def permission_list():
