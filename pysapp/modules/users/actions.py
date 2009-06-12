@@ -201,14 +201,15 @@ def group_update(id, **kwargs):
         db.sess.rollback()
         raise
     
-def group_add(safe=False, **kwargs):
+def group_add(safe=False, name=None, assigned_users=None, approved_permissions=None,
+            denied_permissions=None):
     dbsession = db.sess
     try:
         g = Group()
-        g.from_dict(kwargs)
-        g.users = create_users(kwargs['assigned_users'])
+        g.name = name
+        g.users = create_users(assigned_users)
         dbsession.flush()
-        permission_assignments_group(g, kwargs['approved_permissions'], kwargs['denied_permissions'])
+        permission_assignments_group(g, approved_permissions, denied_permissions)
         dbsession.commit()
     except Exception, e:
         dbsession.rollback()
@@ -255,6 +256,10 @@ def group_delete(id):
         dbsession.commit()
         return True
     return False
+
+def group_delete_by_name(name):
+    group = group_get_by_name(name)
+    return group_delete(group.id)
 
 def group_user_ids(group):
     users = User.query.filter(User.groups.any(id=group.id)).all()
