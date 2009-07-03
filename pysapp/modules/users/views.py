@@ -2,7 +2,7 @@
 from pysmvt import redirect, session, ag, appimportauto, settings
 from pysmvt import user as usr
 from pysmvt.exceptions import ActionError
-from pysmvt.routing import url_for, index_url
+from pysmvt.routing import url_for, current_url
 import actions, forms
 from utils import after_login_url
 appimportauto('base', ('ProtectedPageView', 'ProtectedRespondingView', 'PublicPageView', 'PublicTextSnippetView'))
@@ -118,7 +118,7 @@ class LostPassword(PublicPageView):
             em_address = self.form.email_address.value
             if actions.user_lost_password(em_address):
                 usr.add_message('notice', 'Your password has been reset. An email with a temporary password will be sent shortly.')
-                url = index_url()
+                url = current_url(root_only=True)
                 redirect(url)
             else:
                 usr.add_message('error', 'Did not find a user with email address: %s' % em_address)
@@ -331,7 +331,7 @@ class NewUserEmail(PublicTextSnippetView):
         self.assign('password', password)
         
         self.assign('login_url', url_for('users:Login', _external=True))
-        self.assign('index_url', index_url(True))
+        self.assign('index_url', current_url(root_only=True))
         
 class ChangePasswordEmail(PublicTextSnippetView):
     def default(self, login_id, password):
@@ -339,5 +339,5 @@ class ChangePasswordEmail(PublicTextSnippetView):
         self.assign('password', password)
 
         self.assign('login_url', url_for('users:Login', _external=True))
-        self.assign('index_url', index_url(True))
+        self.assign('index_url', current_url(root_only=True))
 

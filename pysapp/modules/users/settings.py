@@ -48,7 +48,7 @@ class Settings(QuickSettings):
         )
         
         # where should we go after a user logins in?  If nothing is set,
-        # default to index_url()
+        # default to current_url(root_only=True)
         self.after_login_url = None
         
         # default values can be set when doing initmod() to avoid the command
