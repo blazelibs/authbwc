@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from os import path
-from pysmvt import settings
+from pysmvt import settings, modimport
 from pysmvt.script import console_broadcast, console_dispatch
 
 @console_broadcast
@@ -32,7 +32,7 @@ def addperms_init():
 
 def addadmin_init():
     from getpass import getpass
-    from actions import user_add
+    user_add = modimport('users.actions', 'user_add')
     
     defaults = settings.modules.users.admin
     # add a default administrative user
