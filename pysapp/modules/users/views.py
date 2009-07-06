@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-from pysmvt import redirect, session, ag, appimportauto, settings
+from pysmvt import redirect, session, ag, appimportauto, settings, modimportauto
 from pysmvt import user as usr
 from pysmvt.exceptions import ActionError
 from pysmvt.routing import url_for, current_url
 import actions, forms
 from utils import after_login_url
 appimportauto('base', ('ProtectedPageView', 'ProtectedRespondingView', 'PublicPageView', 'PublicTextSnippetView'))
-                       
+modimportauto('users.actions', ('user_validate','load_session_user'))
+
 class Update(ProtectedPageView):
     def prep(self):
         self.require = ('users-manage')
@@ -149,9 +150,9 @@ class Login(PublicPageView):
     
     def post(self):        
         if self.form.is_valid():
-            user = actions.user_validate(**self.form.get_values())
+            user = user_validate(**self.form.get_values())
             if user:
-                actions.load_session_user(user)
+                load_session_user(user)
                 usr.add_message('notice', 'You logged in successfully!')
                 if user.reset_required:
                     url = url_for('users:ChangePassword')
