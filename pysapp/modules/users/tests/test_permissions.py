@@ -20,7 +20,9 @@ class TestNotAuthenticated(object):
             '/groups/add',
             '/groups/edit/1',
             '/groups/manage',
-            '/groups/delete/1'
+            '/groups/delete/1',
+            '/permissions/manage',
+            '/permissions/edit/1'
         )
         for route in routes:
             yield self.check_unauthorized, route
@@ -63,7 +65,9 @@ class TestNoPerms(object):
             '/groups/add',
             '/groups/edit/1',
             '/groups/manage',
-            '/groups/delete/1'
+            '/groups/delete/1',
+            '/permissions/manage',
+            '/permissions/edit/1'
         )
         for route in routes:
             yield self.check_forbidden, route
@@ -118,7 +122,9 @@ class TestUsersManage(object):
             '/groups/add',
             '/groups/edit/1',
             '/groups/manage',
-            '/groups/delete/1'
+            '/groups/delete/1',
+            '/permissions/manage',
+            '/permissions/edit/1'
         )
         for route in routes:
             yield self.check_ok, route

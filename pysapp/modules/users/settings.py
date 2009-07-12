@@ -24,10 +24,8 @@ class Settings(QuickSettings):
             Rule('/groups/edit/<int:id>', endpoint='users:GroupUpdate'),
             Rule('/groups/manage', endpoint='users:GroupManage'),
             Rule('/groups/delete/<int:id>', endpoint='users:GroupDelete'),
-            Rule('/permissions/add', defaults={'id': None}, endpoint='users:PermissionUpdate'),
             Rule('/permissions/edit/<int:id>', endpoint='users:PermissionUpdate'),
             Rule('/permissions/manage', endpoint='users:PermissionManage'),
-            Rule('/permissions/delete/<int:id>', endpoint='users:PermissionDelete'),
         ]
         self.cp_nav.enabled=True
         self.cp_nav.section = ControlPanelSection(
@@ -42,7 +40,6 @@ class Settings(QuickSettings):
                 ControlPanelLink('Groups Manage', 'users:GroupManage'),
             ),
             ControlPanelGroup(
-                ControlPanelLink('Permission Add', 'users:PermissionUpdate'),
                 ControlPanelLink('Permissions Manage', 'users:PermissionManage'),
             )
         )

@@ -3,10 +3,14 @@ from pysmvt import redirect, session, ag, appimportauto, settings, modimportauto
 from pysmvt import user as usr
 from pysmvt.exceptions import ActionError
 from pysmvt.routing import url_for, current_url
+from pysmvt.htmltable import Col
 import actions, forms
 from utils import after_login_url
-appimportauto('base', ('ProtectedPageView', 'ProtectedRespondingView', 'PublicPageView', 'PublicTextSnippetView'))
+appimportauto('base', ('ProtectedPageView', 'ProtectedRespondingView',
+    'PublicPageView', 'PublicTextSnippetView', 'ManageCommon', 'UpdateCommon'))
 modimportauto('users.actions', ('user_validate','load_session_user'))
+
+_modname = 'users'
 
 class Update(ProtectedPageView):
     def prep(self):
@@ -253,75 +257,21 @@ class GroupDelete(ProtectedRespondingView):
         url = url_for('users:GroupManage')
         redirect(url)
         
-class PermissionUpdate(ProtectedPageView):
+class PermissionUpdate(UpdateCommon):
     def prep(self):
-        self.require = ('users-manage')
-    
-    def post_auth_setup(self, id):
-        from forms import PermissionForm
-        
-        if id is None:
-            self.isAdd = True
-            self.actionName = 'Add'
-            self.message = 'permission added'
-        else:
-            self.isAdd = False
-            self.actionName = 'Edit'
-            self.message = 'permission edited successfully'
-        
-        self.form = PermissionForm(self.isAdd)
-        
-        if not self.isAdd:
-            permission = actions.permission_get(id)
-            
-            if permission is None:
-                usr.add_message('error', 'the requested permission does not exist')
-                url = url_for('users:ManagePermissions')
-                redirect(url)
-                
-            self.form.set_defaults(permission.to_dict())
-    
-    def post(self, id):        
-        if self.form.is_valid():
-            try:
-                actions.permission_update(id, **self.form.get_values())
-                usr.add_message('notice', self.message)
-                url = url_for('users:PermissionManage')
-                redirect(url)
-            except Exception, e:
-                # if the form can't handle the exception, re-raise it
-                if self.form.handle_exception(e) == False:
-                    raise
-        elif self.form.is_submitted():
-            # form was submitted, but invalid
-            self.form.assign_user_errors()
-                    
-        self.default(id)
-    
-    def default(self, id):
-        
-        self.assign('actionName', self.actionName)
-        self.assign('formHtml', self.form.render())
-        
-class PermissionManage(ProtectedPageView):
-    def prep(self):
-        self.require = ('users-manage')
-    
-    def default(self):
-        self.assign('permissions', actions.permission_list())
+        UpdateCommon.prep(self, _modname, 'permission', 'Permission')
 
-class PermissionDelete(ProtectedRespondingView):
+class PermissionManage(ManageCommon):
     def prep(self):
-        self.require = ('users-manage')
-    
-    def default(self, id):
-        if actions.permission_delete(id):
-            usr.add_message('notice', 'permission deleted')
-        else:
-            usr.add_message('error', 'permission was not found')
-            
-        url = url_for('users:PermissionManage')
-        redirect(url)
+        ManageCommon.prep(self, _modname, 'permission', 'permissions', 'Permission')
+        self.delete_link_require = None
+        self.template_name = 'permission_manage'
+        
+    def create_table(self):
+        ManageCommon.create_table(self)
+        t = self.table
+        t.name = Col('Permission', width_td="35%")
+        t.description = Col('Description')
 
 class NewUserEmail(PublicTextSnippetView):
     def default(self, login_id, password):

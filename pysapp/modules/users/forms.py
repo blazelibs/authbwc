@@ -68,7 +68,7 @@ class UserForm(Form):
 
 class GroupForm(Form):
         
-    def __init__(self, isAdd):
+    def __init__(self):
         Form.__init__(self, 'group-form')
         
         el = self.add_text('name', 'Group Name', required=True)
@@ -100,13 +100,16 @@ class GroupForm(Form):
 
 class PermissionForm(Form):
         
-    def __init__(self, isAdd):
+    def __init__(self):
         Form.__init__(self, 'permission-form')
         
         el = self.add_text('name', 'Permission Name', required=True)
-        el.add_processor(MaxLength(150))
+        el.add_processor(MaxLength(250))
         el.add_handler('column name is not unique',
                  'That permission already exists.')
+        
+        el = self.add_text('description', 'Description')
+        el.add_processor(MaxLength(250))
 
         self.add_submit('submit')
         
