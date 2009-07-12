@@ -11,7 +11,7 @@ from pysmvt.utils import randchars, tolist
 from utils import send_new_user_email, send_change_password_email
 
 def user_update(id, **kwargs):
-    if kwargs['password']:
+    if kwargs.get('password'):
         kwargs['reset_required'] = True
         
     # some values can not be set directly
@@ -25,9 +25,9 @@ def user_update(id, **kwargs):
     
     try: 
         u.from_dict(kwargs)
-        u.groups = create_groups(kwargs['assigned_groups'])
+        u.groups = create_groups(kwargs.get('assigned_groups', []))
         db.sess.flush()
-        permission_assignments_user(u, kwargs['approved_permissions'], kwargs['denied_permissions'])
+        permission_assignments_user(u, kwargs.get('approved_permissions', []), kwargs.get('denied_permissions', []))
 
         # if email fails, db trans will roll back
         #  initmod call will not have this flag
