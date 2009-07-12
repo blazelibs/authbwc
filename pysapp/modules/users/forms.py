@@ -26,8 +26,7 @@ class UserForm(Form):
         el.add_processor(MinLength(6))
         el.add_note('password will change only if you enter a value above')
         
-        el = self.add_password('password-confirm', 'Confirm Password', required=isAdd)
-        el.add_processor(MaxLength(25))
+        el = self.add_confirm('password-confirm', 'Confirm Password', required=isAdd, match='password')
         
         el = self.add_checkbox('reset_required', 'Password Reset Required')
         el.add_note("force the user to change their password the next time they login")

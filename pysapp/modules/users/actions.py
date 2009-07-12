@@ -193,9 +193,9 @@ def load_session_user(user):
 def group_update(id, **kwargs):
     try: 
         if id is not None:
-            group_edit(id, **kwargs)
+           return group_edit(id, **kwargs)
         else:
-            group_add(**kwargs)
+           return group_add(**kwargs)
             
     except DatabaseError, e:
         db.sess.rollback()
@@ -211,6 +211,7 @@ def group_add(safe=False, name=None, assigned_users=None, approved_permissions=N
         dbsession.flush()
         permission_assignments_group(g, approved_permissions, denied_permissions)
         dbsession.commit()
+        return g
     except Exception, e:
         dbsession.rollback()
         if safe == False or safe not in str(e):
@@ -223,6 +224,7 @@ def group_edit(id, **kwargs):
     g.users = create_users(kwargs['assigned_users'])
     permission_assignments_group(g, kwargs['approved_permissions'], kwargs['denied_permissions'])
     dbsession.commit()
+    return g
 
 def create_users(user_ids):
     users = []
