@@ -30,6 +30,9 @@ def login_client_with_permissions(client, approved_perms=None, denied_perms=None
     user.reset_required=False
     db.sess.commit()
     
+    # save id for later since the request to the app will kill the session
+    user_id = user.id
+    
     # login with the user
     topost = {'login_id': username,
           'password': password,
@@ -38,3 +41,5 @@ def login_client_with_permissions(client, approved_perms=None, denied_perms=None
     assert r.status_code == 200, r.status
     assert 'You logged in successfully!' in r.data
     assert BaseRequest(environ).url == 'http://localhost/'
+    
+    return user_id
