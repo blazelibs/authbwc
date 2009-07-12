@@ -12,7 +12,7 @@ class Update(ProtectedPageView):
     def prep(self):
         self.require = ('users-manage')
     
-    def setup(self, id):
+    def post_auth_setup(self, id):
         from forms import UserForm
         
         if id is None:
@@ -171,10 +171,7 @@ class Login(PublicPageView):
         
         self.assign('formHtml', self.form.render())
 
-class Logout(ProtectedPageView):
-    
-    def prep(self):
-        self.authenticated_only = True
+class Logout(PublicPageView):
         
     def default(self):
         session['user'].clear()
@@ -186,7 +183,7 @@ class GroupUpdate(ProtectedPageView):
     def prep(self):
         self.require = ('users-manage')
     
-    def setup(self, id):
+    def post_auth_setup(self, id):
         from forms import GroupForm
         
         if id is None:
@@ -260,7 +257,7 @@ class PermissionUpdate(ProtectedPageView):
     def prep(self):
         self.require = ('users-manage')
     
-    def setup(self, id):
+    def post_auth_setup(self, id):
         from forms import PermissionForm
         
         if id is None:
