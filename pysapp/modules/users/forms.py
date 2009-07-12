@@ -53,7 +53,11 @@ class UserForm(Form):
         el = self.add_mselect('approved_permissions', perm_opts, 'Approved')
         el = self.add_mselect('denied_permissions', perm_opts, 'Denied')
 
-        self.add_submit('submit')
+        self.add_header('submit-fields-header', '')
+        sg = self.add_elgroup('submit-group', class_='submit-only')
+        el = sg.add_submit('submit')
+        el = sg.add_cancel('cancel')
+        
         self.add_validator(self.validate_perms)
     
     def validate_perms(self, value):
@@ -87,8 +91,12 @@ class GroupForm(Form):
         el = self.add_mselect('approved_permissions', perm_opts, 'Approved')
         
         el = self.add_mselect('denied_permissions', perm_opts, 'Denied')
-        self.add_submit('submit')
-        
+
+        self.add_header('submit-fields-header', '')
+        sg = self.add_elgroup('submit-group', class_='submit-only')
+        el = sg.add_submit('submit')
+        el = sg.add_cancel('cancel')
+                
         self.add_validator(self.validate_perms)
         
     def validate_perms(self, value):
@@ -111,7 +119,11 @@ class PermissionForm(Form):
         el = self.add_text('description', 'Description')
         el.add_processor(MaxLength(250))
 
-        self.add_submit('submit')
+        self.add_header('submit-fields-header', '')
+        sg = self.add_elgroup('submit-group', class_='submit-only')
+        el = sg.add_submit('submit')
+        el = sg.add_cancel('cancel')
+        
         
 class LoginForm(Form):
             

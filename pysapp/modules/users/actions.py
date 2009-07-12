@@ -202,7 +202,7 @@ def group_update(id, **kwargs):
         raise
     
 def group_add(safe=False, name=None, assigned_users=None, approved_permissions=None,
-            denied_permissions=None):
+            denied_permissions=None, **kwargs):
     dbsession = db.sess
     try:
         g = Group()

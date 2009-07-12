@@ -11,10 +11,10 @@ class Settings(QuickSettings):
 
         
         self.routes = [
-            Rule('/users/add', defaults={'id': None}, endpoint='users:Update'),
-            Rule('/users/edit/<int:id>', endpoint='users:Update'),
-            Rule('/users/manage', endpoint='users:Manage'),
-            Rule('/users/delete/<int:id>', endpoint='users:Delete'),
+            Rule('/users/add', defaults={'id': None}, endpoint='users:UserUpdate'),
+            Rule('/users/edit/<int:id>', endpoint='users:UserUpdate'),
+            Rule('/users/manage', endpoint='users:UserManage'),
+            Rule('/users/delete/<int:id>', endpoint='users:UserDelete'),
             Rule('/users/permissions/<int:uid>', endpoint='users:PermissionMap'),
             Rule('/users/login', endpoint='users:Login'),
             Rule('/users/logout', endpoint='users:Logout'),
@@ -32,8 +32,8 @@ class Settings(QuickSettings):
             "Users",
             'users-manage',
             ControlPanelGroup(
-                ControlPanelLink('User Add', 'users:Update'),
-                ControlPanelLink('Users Manage', 'users:Manage'),
+                ControlPanelLink('User Add', 'users:UserUpdate'),
+                ControlPanelLink('Users Manage', 'users:UserManage'),
             ),
             ControlPanelGroup(
                 ControlPanelLink('Group Add', 'users:GroupUpdate'),
