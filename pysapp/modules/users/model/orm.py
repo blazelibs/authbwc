@@ -41,7 +41,7 @@ class Group(Entity):
 class Permission(Entity):
 
     name = Field(Unicode(250), required=True, index=True, unique=True)
-    
+    description = Field(Unicode(250))
     using_options(tablename="users_permission", metadata=db.meta, session=db.Session)
     
     def __repr__(self):
