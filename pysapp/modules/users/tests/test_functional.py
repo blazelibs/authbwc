@@ -127,7 +127,8 @@ class TestUserViews(object):
             'user-form-submit-flag':'submitted',
             'approved_permissions': ap,
             'denied_permissions': dp,
-            'assigned_groups': gp
+            'assigned_groups': gp,
+            'super_user': 1
         }
         r = self.c.post('users/add', data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
@@ -175,3 +176,54 @@ class TestUserViews(object):
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
         assert 'Password: Enter a value less than 25 characters long' in r.data
+
+class TestUserViewsSuperUser(object):
+
+    @classmethod
+    def setup_class(cls):
+        cls.c = Client(ag._wsgi_test_app, BaseResponse)
+        perms = [u'users-manage', u'users-test1', u'users-test2']
+        cls.userid = login_client_with_permissions(cls.c, perms, super_user=True)
+    
+    def test_super_user_protection(self):
+        r = self.c.get('users/add')
+        assert 'name="super_user"' in r.data
+        
+    def test_fields_saved(self):
+        ap = permission_get_by_name(u'users-test1').id
+        dp = permission_get_by_name(u'users-test2').id
+        gp = group_add(name=u'test-group', approved_permissions=[],
+                      denied_permissions=[], assigned_users=[], safe='unique').id
+        topost = {
+            'login_id': 'usersavedsu',
+            'password': 'testtest',
+            'email_address': 'usersavedsu@example.com',
+            'password-confirm': 'testtest',
+            'email': 'test@exacmple.com',
+            'user-form-submit-flag':'submitted',
+            'approved_permissions': ap,
+            'denied_permissions': dp,
+            'assigned_groups': gp,
+            'super_user': 1
+        }
+        r = self.c.post('users/add', data=topost, follow_redirects=True)
+        assert r.status_code == 200, r.status
+        assert 'user added' in r.data
+        
+        user = user_get_by_email(u'usersavedsu@example.com')
+        assert user.login_id == 'usersavedsu'
+        assert user.reset_required
+        assert user.super_user
+        assert user.pass_hash
+        assert user.groups[0].name == 'test-group'
+        assert len(user.groups) == 1
+        
+        found = 3
+        for permrow in user_permission_map(user.id):
+            if permrow['permission_name'] == u'users-test1':
+                assert permrow['resulting_approval']
+                found -= 1
+            if permrow['permission_name'] in (u'users-test2', u'users-manage'):
+                assert not permrow['resulting_approval']
+                found -= 1
+        assert found == 0

@@ -216,6 +216,7 @@ def group_add(safe=False, name=None, assigned_users=None, approved_permissions=N
         dbsession.rollback()
         if safe == False or safe not in str(e):
             raise
+        return group_get_by_name(name)
 
 def group_edit(id, **kwargs):
     dbsession = db.sess
