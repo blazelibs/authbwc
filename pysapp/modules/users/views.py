@@ -3,97 +3,66 @@ from pysmvt import redirect, session, ag, appimportauto, settings, modimportauto
 from pysmvt import user as usr
 from pysmvt.exceptions import ActionError
 from pysmvt.routing import url_for, current_url
-from pysmvt.htmltable import Col
+from pysmvt.htmltable import Col, YesNo, Link, Table
 import actions, forms
 from utils import after_login_url
 appimportauto('base', ('ProtectedPageView', 'ProtectedRespondingView',
-    'PublicPageView', 'PublicTextSnippetView', 'ManageCommon', 'UpdateCommon'))
-modimportauto('users.actions', ('user_validate','load_session_user'))
+    'PublicPageView', 'PublicTextSnippetView', 'ManageCommon', 'UpdateCommon',
+    'DeleteCommon'))
+modimportauto('users.actions', ('user_validate','load_session_user',
+    'user_assigned_perm_ids', 'user_group_ids'))
 
 _modname = 'users'
 
-class Update(ProtectedPageView):
+class UserUpdate(UpdateCommon):
     def prep(self):
-        self.require = ('users-manage')
-    
+        UpdateCommon.prep(self, _modname, 'user', 'User')
+
     def post_auth_setup(self, id):
-        from forms import UserForm
-        
-        if id is None:
-            self.isAdd = True
-            self.actionName = 'Add'
-            self.message = 'user added'
-        else:
-            self.isAdd = False
-            self.actionName = 'Edit'
-            self.message = 'user edited successfully'
-        
-        self.form = UserForm(self.isAdd)
-        
+        self.determine_add_edit(id)
+        self.form = self.formcls(self.isAdd)
         if not self.isAdd:
-            user = actions.user_get(id)
-            
-            if user is None:
-                usr.add_message('error', 'the requested user does not exist')
-                url = url_for('users:Manage')
-                redirect(url)
-
-            vals = user.to_dict()
-            vals['assigned_groups'] = actions.user_group_ids(user)
-            vals['approved_permissions'], vals['denied_permissions'] = actions.user_assigned_perm_ids(user)
+            self.dbobj = self.action_get(id)
+            if self.dbobj is None:
+                user.add_message('error', self.message_exists_not % {'objectname':self.objectname})
+                self.on_edit_error()
+            vals = self.dbobj.to_dict()
+            vals['assigned_groups'] = user_group_ids(self.dbobj)
+            vals['approved_permissions'], vals['denied_permissions'] = user_assigned_perm_ids(self.dbobj)
             self.form.set_defaults(vals)
-    
-    def post(self, id):        
-        self.form_submission(id)
-        self.default(id)
-    
-    def form_submission(self, id):
-        if self.form.is_valid():
-            try:
-                actions.user_update(id, **self.form.get_values())
-                usr.add_message('notice', self.message)
-                url = url_for('users:Manage')
-                redirect(url)
-            except Exception, e:
-                # if the form can't handle the exception, re-raise it
-                if not self.form.handle_exception(e):
-                    raise
-        elif not self.form.is_submitted():
-            return
+
+class UserManage(ManageCommon):
+    def prep(self):
+        ManageCommon.prep(self, _modname, 'user', 'users', 'User')
         
-        # form was submitted, but invalid
-        self.form.assign_user_errors()
+    def create_table(self):
+        ManageCommon.create_table(self)
+        t = self.table
+        t.login_id = Col('Login')
+        t.email_address = Col('Email')
+        t.super_user = YesNo('Super User')
+        t.reset_required = YesNo('Reset Required')
+        t.permission_map = Link( 'Permission Map',
+                 validate_url=False,
+                 urlfrom=lambda uobj: url_for('users:PermissionMap', uid=uobj.id),
+                 extractor = lambda row: 'view permission map'
+            )
+
+class UserDelete(DeleteCommon):
+    def prep(self):
+        DeleteCommon.prep(self, _modname, 'user', 'User')
 
     def default(self, id):
-        
-        self.assign('actionName', self.actionName)
-        self.assign('formHtml', self.form.render())
-
-class Manage(ProtectedPageView):
-    def prep(self):
-        self.require = ('users-manage')
-    
-    def default(self):
-        self.assign('users', actions.user_list())
-    
-class Delete(ProtectedRespondingView):
-    def prep(self):
-        self.require = ('users-manage')
-    
-    def default(self, id):
-        if actions.user_delete(id):
-            usr.add_message('notice', 'user deleted')
-        else:
-            usr.add_message('error', 'user was not found')
-            
-        url = url_for('users:Manage')
-        redirect(url)
+        if id == usr.get_attr('id'):
+            usr.add_message('error', 'You cannot delete your own user account')
+            redirect(url_for(self.endpoint_manage))
+        DeleteCommon.default(self, id)
 
 class ChangePassword(ProtectedPageView):
     def prep(self):
         self.authenticated_only = True
     
-    def setup(self):
+    def post_auth_setup(self):
         from forms import ChangePasswordForm
         self.form = ChangePasswordForm()
 
@@ -183,80 +152,37 @@ class Logout(PublicPageView):
         url = url_for('users:Login')
         redirect(url)
         
-class GroupUpdate(ProtectedPageView):
+class GroupUpdate(UpdateCommon):
     def prep(self):
-        self.require = ('users-manage')
-    
-    def post_auth_setup(self, id):
-        from forms import GroupForm
-        
-        if id is None:
-            self.isAdd = True
-            self.actionName = 'Add'
-            self.message = 'group added'
-        else:
-            self.isAdd = False
-            self.actionName = 'Edit'
-            self.message = 'group edited successfully'
-        
-        self.form = GroupForm(self.isAdd)
-        
-        if not self.isAdd:
-            group = actions.group_get(id)
-            
-            if group is None:
-                usr.add_message('error', 'the requested group does not exist')
-                url = url_for('users:ManageGroups')
-                redirect(url)
-            
-            # assign group form defaults
-            vals = group.to_dict()
-            vals['assigned_users'] = actions.group_user_ids(group)
-            vals['approved_permissions'], vals['denied_permissions'] = actions.group_assigned_perm_ids(group)
-            self.form.set_defaults(vals)
-    
-    def post(self, id):        
-        if self.form.is_valid():
-            try:
-                actions.group_update(id, **self.form.get_values())
-                usr.add_message('notice', self.message)
-                url = url_for('users:GroupManage')
-                redirect(url)
-            except Exception, e:
-                # if the form can't handle the exception, re-raise it
-                if not self.form.handle_exception(e):
-                    raise
-        elif self.form.is_submitted():
-            # form was submitted, but invalid
-            self.form.assign_user_errors()
-                    
-        self.default(id)
-    
-    def default(self, id):
-        
-        self.assign('actionName', self.actionName)
-        self.assign('formHtml', self.form.render())
-        
-class GroupManage(ProtectedPageView):
-    def prep(self):
-        self.require = ('users-manage')
-    
-    def default(self):
-        self.assign('groups', actions.group_list())
+        UpdateCommon.prep(self, _modname, 'group', 'Group')
 
-class GroupDelete(ProtectedRespondingView):
+    def post_auth_setup(self, id):
+        self.determine_add_edit(id)
+        self.form = self.formcls()
+        if not self.isAdd:
+            self.dbobj = self.action_get(id)
+            if self.dbobj is None:
+                user.add_message('error', self.message_exists_not % {'objectname':self.objectname})
+                self.on_edit_error()
+            vals = self.dbobj.to_dict()
+            vals['assigned_users'] = actions.group_user_ids(self.dbobj)
+            vals['approved_permissions'], vals['denied_permissions'] = actions.group_assigned_perm_ids(self.dbobj)
+            self.form.set_defaults(vals)
+
+class GroupManage(ManageCommon):
     def prep(self):
-        self.require = ('users-manage')
-    
-    def default(self, id):
-        if actions.group_delete(id):
-            usr.add_message('notice', 'group deleted')
-        else:
-            usr.add_message('error', 'groupo was not found')
-            
-        url = url_for('users:GroupManage')
-        redirect(url)
+        ManageCommon.prep(self, _modname, 'group', 'groups', 'Group')
+        self.table = Table(class_='dataTable manage', style="width: 60%")
         
+    def create_table(self):
+        ManageCommon.create_table(self)
+        t = self.table
+        t.name = Col('Name')
+        
+class GroupDelete(DeleteCommon):
+    def prep(self):
+        DeleteCommon.prep(self, _modname, 'group', 'Group')
+
 class PermissionUpdate(UpdateCommon):
     def prep(self):
         UpdateCommon.prep(self, _modname, 'permission', 'Permission')

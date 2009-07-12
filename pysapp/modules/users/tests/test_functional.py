@@ -123,7 +123,6 @@ class TestUserViews(object):
             'password': 'testtest',
             'email_address': 'usersaved@example.com',
             'password-confirm': 'testtest',
-            'email': 'test@exacmple.com',
             'user-form-submit-flag':'submitted',
             'approved_permissions': ap,
             'denied_permissions': dp,
@@ -151,6 +150,63 @@ class TestUserViews(object):
                 assert not permrow['resulting_approval']
                 found -= 1
         assert found == 0
+        
+        # now test an edit
+        topost = {
+            'login_id': 'usersaved',
+            'email_address': 'usersaved@example.com',
+            'user-form-submit-flag':'submitted',
+            'approved_permissions': dp,
+            'denied_permissions': ap,
+            'assigned_groups': None,
+            'super_user': 1
+        }
+        r = self.c.post('users/edit/%s' % user.id, data=topost, follow_redirects=True)
+        assert 'user edited successfully' in r.data
+        
+        user = user_get_by_email(u'usersaved@example.com')
+        assert user.login_id == 'usersaved'
+        assert not user.reset_required
+        assert not user.super_user
+        assert user.pass_hash
+        assert len(user.groups) == 0
+        
+        found = 3
+        for permrow in user_permission_map(user.id):
+            if permrow['permission_name'] == u'users-test2':
+                assert permrow['resulting_approval']
+                found -= 1
+            if permrow['permission_name'] in (u'users-test1', u'users-manage'):
+                assert not permrow['resulting_approval']
+                found -= 1
+        assert found == 0
+        
+        # test edit w/ reset required
+        # now test an edit
+        topost = {
+            'login_id': 'usersaved',
+            'email_address': 'usersaved@example.com',
+            'user-form-submit-flag':'submitted',
+            'approved_permissions': dp,
+            'denied_permissions': ap,
+            'assigned_groups': None,
+            'super_user': 1,
+            'reset_required': 1
+        }
+        r = self.c.post('users/edit/%s' % user.id, data=topost, follow_redirects=True)
+        assert 'user edited successfully' in r.data
+        
+        user = user_get_by_email(u'usersaved@example.com')
+        assert user.login_id == 'usersaved'
+        assert user.reset_required
+        assert not user.super_user
+        assert user.pass_hash
+        assert len(user.groups) == 0
+        
+        # now test a delete
+        r = self.c.get('users/delete/%s' % user.id, follow_redirects=True)
+        assert r.status_code == 200, r.status
+        assert 'user deleted' in r.data
     
     def test_password_complexity(self):
         topost = {
@@ -177,6 +233,11 @@ class TestUserViews(object):
         assert r.status_code == 200, r.status
         assert 'Password: Enter a value less than 25 characters long' in r.data
 
+    def test_same_user_delete(self):
+        r = self.c.get('users/delete/%s' % self.userid, follow_redirects=True)
+        assert r.status_code == 200, r.status
+        assert 'You cannot delete your own user account' in r.data
+        
 class TestUserViewsSuperUser(object):
 
     @classmethod
