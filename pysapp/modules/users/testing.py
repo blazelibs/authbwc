@@ -23,7 +23,7 @@ def login_client_with_permissions(client, approved_perms=None, denied_perms=None
     username = u'user_for_testing_%s' % randchars(15)
     password = randchars(15)
     user = user_update(None, login_id=username, email_address=u'%s@example.com' % username,
-         password=password, super_user = super_user,
+         password=password, super_user = super_user, assigned_groups = [],
          approved_permissions = appr_perm_ids, denied_permissions = denied_perm_ids)
     
     # turn login flag off
