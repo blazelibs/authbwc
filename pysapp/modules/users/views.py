@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 from pysmvt import redirect, session, ag, appimportauto, settings, modimportauto
 from pysmvt import user as usr
 from pysmvt.exceptions import ActionError
@@ -85,6 +86,54 @@ class ChangePassword(ProtectedPageView):
     def default(self):
 
         self.assign('formHtml', self.form.render())
+        
+class ResetPassword(PublicPageView):
+    
+    def setup(self, login_id, key):
+        # this probably should never happen, but doesn't hurt to check
+        if not key or not login_id:
+            self.abort()
+        user = actions.user_get_by_login(login_id)
+        if not user:
+            self.abort()
+        if key != user.pass_reset_key:
+            self.abort()
+        expires_on = user.pass_reset_ts + datetime.timedelta(hours=settings.modules.users.password_rest_expires_after)
+        if datetime.datetime.utcnow() > expires_on:
+            self.abort('password reset link expired')
+    
+        self.user = user
+        self.form = forms.NewPasswordForm()
+
+    def post(self, login_id, key):
+        if self.form.is_valid():
+            actions.user_update_password(self.user.id, **self.form.get_values())
+            usr.add_message('notice', 'Your password has been reset successfully.')
+            
+            # at this point, the user has been verified, and we can setup the user
+            # session and kill the reset 
+            actions.load_session_user(self.user)
+            actions.user_kill_reset_key(self.user)
+            
+            # redirect as if this was a login
+            url = after_login_url()
+            redirect(url)
+        elif self.form.is_submitted():
+            # form was submitted, but invalid
+            self.form.assign_user_errors()
+        self.assign_form()
+        
+    def get(self, login_id, key):
+        usr.add_message('Notice', "Please choose a new password to complete the reset request.")
+        self.assign_form()
+
+    def assign_form(self):
+        self.assign('form', self.form)
+
+    def abort(self, msg='invalid reset request'):
+        usr.add_message('error', '%s, use the form below to resend reset link' % msg)
+        url = url_for('users:LostPassword')
+        redirect(url)
 
 class LostPassword(PublicPageView):
     def setup(self):
@@ -95,7 +144,7 @@ class LostPassword(PublicPageView):
         if self.form.is_valid():
             em_address = self.form.email_address.value
             if actions.user_lost_password(em_address):
-                usr.add_message('notice', 'Your password has been reset. An email with a temporary password will be sent shortly.')
+                usr.add_message('notice', 'An email with a link to reset your password has been sent.')
                 url = current_url(root_only=True)
                 redirect(url)
             else:
@@ -222,3 +271,6 @@ class ChangePasswordEmail(PublicTextSnippetView):
         self.assign('login_url', url_for('users:Login', _external=True))
         self.assign('index_url', current_url(root_only=True))
 
+class PasswordResetEmail(PublicTextSnippetView):
+    def default(self, user):
+        self.assign('user', user)

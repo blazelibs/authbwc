@@ -1,3 +1,4 @@
+import datetime
 from model.orm import User, Group, Permission
 from model.metadata import group_permission_assignments as tbl_gpa
 from model.metadata import user_permission_assignments as tbl_upa
@@ -8,7 +9,8 @@ from pysmvt.exceptions import ActionError
 from pysmvt import user as usr
 from pysmvt import db
 from pysmvt.utils import randchars, tolist
-from utils import send_new_user_email, send_change_password_email
+from utils import send_new_user_email, send_change_password_email, \
+    send_password_reset_email
 
 def user_update(id, **kwargs):
     if kwargs.get('password'):
@@ -78,12 +80,25 @@ def user_lost_password(email_address):
     if not u:
         return False
     
-    new_password = randchars(8)
-    u.password = new_password
-    u.reset_required = True
-    send_change_password_email(u.login_id, new_password, email_address)
-    db.sess.commit()
-    return True    
+    u.pass_reset_key = randchars(12)
+    u.pass_reset_ts = datetime.datetime.utcnow()
+    try:
+        db.sess.flush()
+        send_password_reset_email(u)
+        db.sess.commit()
+    except:
+        db.sess.rollback()
+        raise
+    return True
+
+def user_kill_reset_key(user):
+    user.pass_reset_key = None
+    user.pass_reset_ts = None
+    try:
+        db.sess.commit()
+    except:
+        db.sess.rollback()
+        raise
 
 def user_list():
     return User.query.all()
@@ -93,6 +108,9 @@ def user_get(id):
 
 def user_get_by_email(email_address):
     return User.get_by(email_address=email_address)
+
+def user_get_by_login(login_id):
+    return User.get_by(login_id=login_id)
     
 def user_delete(id):
     dbsession = db.sess

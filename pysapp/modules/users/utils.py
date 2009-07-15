@@ -22,3 +22,9 @@ def send_change_password_email(login_id, password, email_address):
     body = getview('users:ChangePasswordEmail', login_id=login_id, password=password)
     email = EmailMessage(subject, body, None, [email_address])
     email.send()
+
+def send_password_reset_email(user):
+    subject = '%s - User Password Reset' % (settings.name.full)
+    body = getview('users:PasswordResetEmail', user=user)
+    email = EmailMessage(subject, body, None, [user.email_address])
+    email.send()
