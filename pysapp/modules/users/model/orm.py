@@ -18,7 +18,9 @@ class User(Entity):
     name_last = Field(Unicode(255))
     inactive_flag = Field(SmallInteger, required=True, default=False)
     inactive_date = Field(DateTime)
-
+    pass_reset_ts = Field(DateTime)
+    pass_reset_key = Field(String(12))
+    
     groups = ManyToMany('Group', tablename='users_user_group_map', ondelete='cascade')
     
     using_options(tablename="users_user", inheritance='multi', metadata=db.meta, session=db.Session)

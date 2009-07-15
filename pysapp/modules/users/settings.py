@@ -20,6 +20,7 @@ class Settings(QuickSettings):
             Rule('/users/logout', endpoint='users:Logout'),
             Rule('/users/change_password', endpoint='users:ChangePassword'),
             Rule('/users/recover_password', endpoint='users:LostPassword'),
+            Rule('/users/password-reset/<login_id>/<key>', endpoint='users:ResetPassword'),
             Rule('/groups/add', defaults={'id': None}, endpoint='users:GroupUpdate'),
             Rule('/groups/edit/<int:id>', endpoint='users:GroupUpdate'),
             Rule('/groups/manage', endpoint='users:GroupManage'),
@@ -54,3 +55,5 @@ class Settings(QuickSettings):
         self.admin.password = None
         self.admin.email = None
 
+        # how long should a password reset link be good for? (in hours)
+        self.password_rest_expires_after = 24

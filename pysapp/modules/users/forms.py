@@ -191,6 +191,19 @@ class ChangePasswordForm(Form):
             form.password.add_error(err)
             raise ValueInvalid()
 
+class NewPasswordForm(Form):
+
+    def __init__(self):
+        Form.__init__(self, 'login-form')
+
+        pel = self.add_password('password', 'Password', required=True)
+        pel.add_processor(MaxLength(25))
+        pel.add_processor(MinLength(6))
+        
+        el = self.add_confirm('password-confirm', 'Confirm Password', required=True, match=pel)
+        
+        self.add_submit('submit')
+
 class LostPasswordForm(Form):
 
     def __init__(self):
