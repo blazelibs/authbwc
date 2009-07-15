@@ -36,12 +36,16 @@ class UserManage(ManageCommon):
         ManageCommon.prep(self, _modname, 'user', 'users', 'User')
         
     def create_table(self):
+        def determine_inactive(user):
+            return user.inactive
+        
         ManageCommon.create_table(self)
         t = self.table
-        t.login_id = Col('Login')
-        t.email_address = Col('Email')
+        t.login_id = Col('Login Id')
+        t.name = Col('Name')
         t.super_user = YesNo('Super User')
         t.reset_required = YesNo('Reset Required')
+        t.inactive = YesNo('Inactive', extractor=determine_inactive)
         t.permission_map = Link( 'Permission Map',
                  validate_url=False,
                  urlfrom=lambda uobj: url_for('users:PermissionMap', uid=uobj.id),
@@ -125,13 +129,16 @@ class Login(PublicPageView):
         if self.form.is_valid():
             user = user_validate(**self.form.get_values())
             if user:
-                load_session_user(user)
-                usr.add_message('notice', 'You logged in successfully!')
-                if user.reset_required:
-                    url = url_for('users:ChangePassword')
+                if user.inactive:
+                    usr.add_message('error', 'That user is inactive.')
                 else:
-                    url = after_login_url()
-                redirect(url)
+                    load_session_user(user)
+                    usr.add_message('notice', 'You logged in successfully!')
+                    if user.reset_required:
+                        url = url_for('users:ChangePassword')
+                    else:
+                        url = after_login_url()
+                    redirect(url)
             else:
                 usr.add_message('error', 'Login failed!  Please try again.')
         elif self.form.is_submitted():

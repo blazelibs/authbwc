@@ -11,6 +11,12 @@ class UserForm(Form):
     def __init__(self, isAdd):
         Form.__init__(self, 'user-form')
         
+        el = self.add_text('name_first', 'First Name')
+        el.add_processor(MaxLength(255))
+        
+        el = self.add_text('name_last', 'Last Name')
+        el.add_processor(MaxLength(255))
+        
         el = self.add_text('login_id', 'Login Id', required=True)
         el.add_processor(MaxLength(150))
         el.add_handler('column login_id is not unique',
@@ -41,6 +47,13 @@ class UserForm(Form):
         el = self.add_checkbox('email_notify', 'Email Notification', checked=True)
         el.add_note("send notification email on password change or new user creation")
         el.add_note("forces password reset if password is sent out in an email")
+        
+        el = self.add_checkbox('inactive_flag', 'Inactive', checked=False)
+        el.add_note("setting this will prevent this user from logging in")
+        
+        el = self.add_date('inactive_date', 'Inactive Date')
+        el.add_note("setting this will prevent this user from logging in after"
+                    " the date given (regardless of the checkbox setting above)")
         
         el = self.add_header('group_membership_header', 'Group Membership')
         

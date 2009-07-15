@@ -9,6 +9,29 @@ def login_client_with_permissions(client, approved_perms=None, denied_perms=None
         Creates a user with the given permissions and then logs in with said
         user.
     """
+    
+    # create user
+    user = create_user_with_permissions(approved_perms, denied_perms, super_user)
+    
+    # save id for later since the request to the app will kill the session
+    user_id = user.id
+    
+    # login with the user
+    req, resp = login_client_as_user(client, user.login_id, user.text_password)
+    assert resp.status_code == 200, resp.status
+    assert 'You logged in successfully!' in resp.data
+    assert req.url == 'http://localhost/'
+    
+    return user_id
+
+def login_client_as_user(client, username, password):
+    topost = {'login_id': username,
+          'password': password,
+          'login-form-submit-flag':'1'}
+    environ, r = client.post('users/login', data=topost, as_tuple=True, follow_redirects=True)
+    return BaseRequest(environ), r
+
+def create_user_with_permissions(approved_perms=None, denied_perms=None, super_user=False):
     appr_perm_ids = []
     denied_perm_ids = []
     # create the permissions
@@ -30,16 +53,7 @@ def login_client_with_permissions(client, approved_perms=None, denied_perms=None
     user.reset_required=False
     db.sess.commit()
     
-    # save id for later since the request to the app will kill the session
-    user_id = user.id
+    # make text password available
+    user.text_password = password
     
-    # login with the user
-    topost = {'login_id': username,
-          'password': password,
-          'login-form-submit-flag':'1'}
-    environ, r = client.post('users/login', data=topost, as_tuple=True, follow_redirects=True)
-    assert r.status_code == 200, r.status
-    assert 'You logged in successfully!' in r.data
-    assert BaseRequest(environ).url == 'http://localhost/'
-    
-    return user_id
+    return user
