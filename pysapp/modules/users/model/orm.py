@@ -1,8 +1,9 @@
 from pysmvt import db
 from elixir import Entity, Field, Integer, String, Unicode, \
                    setup_all, create_all, using_options, \
-                   ManyToMany, Boolean, SmallInteger
+                   ManyToMany, Boolean, SmallInteger, DateTime
 from hashlib import sha512
+from datetime import datetime
 
 __all__ = ['User', 'Group', 'Permission']
 
@@ -13,7 +14,11 @@ class User(Entity):
     pass_hash = Field(String(128), required=True)
     reset_required = Field(SmallInteger, default=True, required=True)
     super_user = Field(SmallInteger, default=False, required=True)
-    
+    name_first = Field(Unicode(255))
+    name_last = Field(Unicode(255))
+    inactive_flag = Field(SmallInteger, required=True, default=False)
+    inactive_date = Field(DateTime)
+
     groups = ManyToMany('Group', tablename='users_user_group_map', ondelete='cascade')
     
     using_options(tablename="users_user", inheritance='multi', metadata=db.meta, session=db.Session)
@@ -26,6 +31,19 @@ class User(Entity):
             self.pass_hash = sha512(password).hexdigest()
 
     password = property(None,set_password)
+
+    def _get_inactive(self):
+        if self.inactive_flag:
+            return True
+        if self.inactive_date and self.inactive_date < datetime.now():
+            return True
+        return False
+    inactive = property(_get_inactive)
+
+    def _get_name(self):
+        retval = '%s %s' % (self.name_first if self.name_first else '', self.name_last if self.name_last else '')
+        return retval.strip()
+    name = property(_get_name)
 
 class Group(Entity):
 

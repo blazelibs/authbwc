@@ -1,7 +1,9 @@
-from pysmvt import modimportauto, ag
+import datetime
+from pysmvt import modimportauto, ag, db
 from werkzeug import Client, BaseResponse, BaseRequest
 
-modimportauto('users.testing', ['login_client_with_permissions'])
+modimportauto('users.testing', ['login_client_with_permissions',
+    'login_client_as_user', 'create_user_with_permissions'])
 modimportauto('users.actions', ['user_get', 'permission_get_by_name',
     'user_get_by_email', 'group_add', 'user_permission_map'])
             
@@ -32,7 +34,11 @@ class TestUserViews(object):
             'email_address': 'test@example.com',
             'password-confirm': 'testtest',
             'email': 'test@exacmple.com',
-            'user-form-submit-flag':'submitted'
+            'user-form-submit-flag':'submitted',
+            'inactive_flag': False,
+            'inactive_date': '',
+            'name_first': '',
+            'name_last': ''
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
@@ -54,7 +60,11 @@ class TestUserViews(object):
             'email_address': user.email_address,
             'password-confirm': 'testtest',
             'email': 'test@exacmple.com',
-            'user-form-submit-flag':'submitted'
+            'user-form-submit-flag':'submitted',
+            'inactive_flag': False,
+            'inactive_date': '',
+            'name_first': '',
+            'name_last': ''
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
@@ -127,7 +137,11 @@ class TestUserViews(object):
             'approved_permissions': ap,
             'denied_permissions': dp,
             'assigned_groups': gp,
-            'super_user': 1
+            'super_user': 1,
+            'inactive_flag': False,
+            'inactive_date': '10/11/2010',
+            'name_first': 'test',
+            'name_last': 'user'
         }
         r = self.c.post('users/add', data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
@@ -140,6 +154,9 @@ class TestUserViews(object):
         assert user.pass_hash
         assert user.groups[0].name == 'test-group'
         assert len(user.groups) == 1
+        assert user.inactive_date == datetime.datetime(2010, 10, 11), user.inactive_date
+        assert user.name_first == 'test'
+        assert user.name_last == 'user'
         
         found = 3
         for permrow in user_permission_map(user.id):
@@ -159,7 +176,11 @@ class TestUserViews(object):
             'approved_permissions': dp,
             'denied_permissions': ap,
             'assigned_groups': None,
-            'super_user': 1
+            'super_user': 1,
+            'inactive_flag': False,
+            'inactive_date': '10/10/2010',
+            'name_first': 'test2',
+            'name_last': 'user2'
         }
         r = self.c.post('users/edit/%s' % user.id, data=topost, follow_redirects=True)
         assert 'user edited successfully' in r.data
@@ -170,6 +191,9 @@ class TestUserViews(object):
         assert not user.super_user
         assert user.pass_hash
         assert len(user.groups) == 0
+        assert user.inactive_date == datetime.datetime(2010, 10, 10), user.inactive_date
+        assert user.name_first == 'test2'
+        assert user.name_last == 'user2'
         
         found = 3
         for permrow in user_permission_map(user.id):
@@ -182,7 +206,6 @@ class TestUserViews(object):
         assert found == 0
         
         # test edit w/ reset required
-        # now test an edit
         topost = {
             'login_id': 'usersaved',
             'email_address': 'usersaved@example.com',
@@ -191,7 +214,11 @@ class TestUserViews(object):
             'denied_permissions': ap,
             'assigned_groups': None,
             'super_user': 1,
-            'reset_required': 1
+            'reset_required': 1,
+            'inactive_flag': False,
+            'inactive_date': '',
+            'name_first': '',
+            'name_last': ''
         }
         r = self.c.post('users/edit/%s' % user.id, data=topost, follow_redirects=True)
         assert 'user edited successfully' in r.data
@@ -265,7 +292,11 @@ class TestUserViewsSuperUser(object):
             'approved_permissions': ap,
             'denied_permissions': dp,
             'assigned_groups': gp,
-            'super_user': 1
+            'super_user': 1,
+            'inactive_flag': False,
+            'inactive_date': '',
+            'name_first': '',
+            'name_last': ''
         }
         r = self.c.post('users/add', data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
@@ -288,3 +319,18 @@ class TestUserViewsSuperUser(object):
                 assert not permrow['resulting_approval']
                 found -= 1
         assert found == 0
+
+def test_inactive_login():
+    # create a user
+    user = create_user_with_permissions()
+    
+    # set the user's inactive flag
+    user.inactive_flag = True
+    db.sess.commit()
+    
+    # log user in
+    client = Client(ag._wsgi_test_app, BaseResponse)
+    req, resp = login_client_as_user(client, user.login_id, user.text_password)
+    assert resp.status_code == 200, resp.status
+    assert 'That user is inactive.' in resp.data
+    assert req.url == 'http://localhost/users/login'
