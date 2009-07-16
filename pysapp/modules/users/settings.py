@@ -27,6 +27,7 @@ class Settings(QuickSettings):
             Rule('/groups/delete/<int:id>', endpoint='users:GroupDelete'),
             Rule('/permissions/edit/<int:id>', endpoint='users:PermissionUpdate'),
             Rule('/permissions/manage', endpoint='users:PermissionManage'),
+            Rule('/users/profile', endpoint='users:UserProfile'),
         ]
         self.cp_nav.enabled=True
         self.cp_nav.section = ControlPanelSection(

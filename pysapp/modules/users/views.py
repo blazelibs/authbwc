@@ -5,13 +5,17 @@ from pysmvt import user as usr
 from pysmvt.exceptions import ActionError
 from pysmvt.routing import url_for, current_url
 from pysmvt.htmltable import Col, YesNo, Link, Table
-import actions, forms
-from utils import after_login_url
+
 appimportauto('base', ('ProtectedPageView', 'ProtectedRespondingView',
     'PublicPageView', 'PublicTextSnippetView', 'ManageCommon', 'UpdateCommon',
     'DeleteCommon'))
 modimportauto('users.actions', ('user_validate','load_session_user',
-    'user_assigned_perm_ids', 'user_group_ids'))
+    'user_assigned_perm_ids', 'user_group_ids', 'user_get',
+    'user_update_password', 'user_get_by_login', 'load_session_user',
+    'user_kill_reset_key', 'user_lost_password', 'user_permission_map',
+    'user_permission_map_groups', 'group_user_ids', 'group_assigned_perm_ids',
+    'user_update'))
+modimportauto('users.utils', ('after_login_url'))
 
 _modname = 'users'
 
@@ -73,7 +77,7 @@ class ChangePassword(ProtectedPageView):
 
     def post(self):
         if self.form.is_valid():
-            actions.user_update_password(usr.get_attr('id'), **self.form.get_values())
+            user_update_password(usr.get_attr('id'), **self.form.get_values())
             usr.add_message('notice', 'Your password has been changed successfully.')
             url = after_login_url()
             redirect(url)
@@ -93,7 +97,7 @@ class ResetPassword(PublicPageView):
         # this probably should never happen, but doesn't hurt to check
         if not key or not login_id:
             self.abort()
-        user = actions.user_get_by_login(login_id)
+        user = user_get_by_login(login_id)
         if not user:
             self.abort()
         if key != user.pass_reset_key:
@@ -107,13 +111,13 @@ class ResetPassword(PublicPageView):
 
     def post(self, login_id, key):
         if self.form.is_valid():
-            actions.user_update_password(self.user.id, **self.form.get_values())
+            user_update_password(self.user.id, **self.form.get_values())
             usr.add_message('notice', 'Your password has been reset successfully.')
             
             # at this point, the user has been verified, and we can setup the user
             # session and kill the reset 
-            actions.load_session_user(self.user)
-            actions.user_kill_reset_key(self.user)
+            load_session_user(self.user)
+            user_kill_reset_key(self.user)
             
             # redirect as if this was a login
             url = after_login_url()
@@ -143,7 +147,7 @@ class LostPassword(PublicPageView):
     def post(self):
         if self.form.is_valid():
             em_address = self.form.email_address.value
-            if actions.user_lost_password(em_address):
+            if user_lost_password(em_address):
                 usr.add_message('notice', 'An email with a link to reset your password has been sent.')
                 url = current_url(root_only=True)
                 redirect(url)
@@ -159,14 +163,54 @@ class LostPassword(PublicPageView):
 
         self.assign('formHtml', self.form.render())
 
+class UserProfile(UpdateCommon):
+    def prep(self):
+        UpdateCommon.prep(self, _modname, 'user', 'UserProfile')
+        self.authenticated_only = True
+        self.actionname = 'Update'
+        self.objectname = 'Profile'
+        
+    def post_auth_setup(self):
+        self.assign_form()
+        self.user_id = usr.get_attr('id')
+        dbobj = user_get(self.user_id)
+
+        if dbobj is None:
+            usr.add_message('error', self.message_exists_not % {'objectname':self.objectname})
+            self.on_edit_error()
+
+        self.form.set_defaults(dbobj.to_dict())        
+        self.dbobj = dbobj
+        
+    def on_cancel(self):
+        usr.add_message('notice', 'no changes made to your profile')
+        redirect(current_url(root_only=True))
+        
+    def do_update(self, id):
+        formvals = self.form.get_values()
+        # assigned groups and permissions stay the same for profile submissions
+        formvals['assigned_groups'] = user_group_ids(self.dbobj)
+        formvals['approved_permissions'], formvals['denied_permissions'] = \
+                user_assigned_perm_ids(self.dbobj)
+        formvals['pass_reset_ok'] = False
+        user_update(id, **formvals)
+        usr.add_message('notice', 'profile updated succesfully')
+        self.default()
+    
+    def post(self):        
+        UpdateCommon.post(self, self.user_id)
+    
+    def default(self, id=None):
+        UpdateCommon.default(self, self.user_id)
+    
 class PermissionMap(ProtectedPageView):
     def prep(self):
         self.require = ('users-manage')
     
     def default(self, uid):
-        self.assign('user', actions.user_get(uid))
-        self.assign('result', actions.user_permission_map(uid))
-        self.assign('permgroups', actions.user_permission_map_groups(uid))
+        self.assign('user', user_get(uid))
+        self.assign('result', user_permission_map(uid))
+        self.assign('permgroups', user_permission_map_groups(uid))
 
 class Login(PublicPageView):
     
@@ -221,8 +265,8 @@ class GroupUpdate(UpdateCommon):
                 user.add_message('error', self.message_exists_not % {'objectname':self.objectname})
                 self.on_edit_error()
             vals = self.dbobj.to_dict()
-            vals['assigned_users'] = actions.group_user_ids(self.dbobj)
-            vals['approved_permissions'], vals['denied_permissions'] = actions.group_assigned_perm_ids(self.dbobj)
+            vals['assigned_users'] = group_user_ids(self.dbobj)
+            vals['approved_permissions'], vals['denied_permissions'] = group_assigned_perm_ids(self.dbobj)
             self.form.set_defaults(vals)
 
 class GroupManage(ManageCommon):
