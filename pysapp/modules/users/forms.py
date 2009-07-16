@@ -1,77 +1,95 @@
 from pysapp.forms import Form
-from pysmvt import user
+from pysmvt import user, modimportauto
 from pysmvt.routing import url_for
 from pysmvt.utils import toset
 from formencode.validators import MaxLength, MinLength
 from pysform.exceptions import ValueInvalid
-from actions import group_list_options, user_list_options, permission_list_options, user_get, hash_pass, user_get_by_email
 
-class UserForm(Form):
-        
-    def __init__(self, isAdd):
-        Form.__init__(self, 'user-form')
-        
-        el = self.add_text('name_first', 'First Name')
-        el.add_processor(MaxLength(255))
-        
-        el = self.add_text('name_last', 'Last Name')
-        el.add_processor(MaxLength(255))
-        
+modimportauto('users.actions', ('group_list_options','user_list_options',
+    'permission_list_options','user_get','hash_pass',
+    'user_get_by_email'))
+
+class UserFormBase(Form):
+    def add_name_fields(self):
+        fnel = self.add_text('name_first', 'First Name')
+        fnel.add_processor(MaxLength(255))
+        flel = self.add_text('name_last', 'Last Name')
+        flel.add_processor(MaxLength(255))
+        return fnel, flel
+    
+    def add_login_id_field(self):
         el = self.add_text('login_id', 'Login Id', required=True)
         el.add_processor(MaxLength(150))
         el.add_handler('column login_id is not unique',
                  'That user already exists.')
-        
+        return el
+    
+    def add_email_field(self):
         el = self.add_email('email_address', 'Email', required=True)
         el.add_processor(MaxLength(150))
         el.add_handler('column email_address is not unique',
                  'A user with that email address already exists.')
-        
-        el = self.add_password('password', 'Password', required=isAdd)
+        return el
+    
+    def add_password_field(self, required):
+        el = self.add_password('password', 'Password', required=required)
         el.add_processor(MaxLength(25))
         el.add_processor(MinLength(6))
-        el.add_note('password will change only if you enter a value above')
-        
-        el = self.add_confirm('password-confirm', 'Confirm Password', required=isAdd, match='password')
-        
+        return el
+    
+    def add_password_fields(self, required):
+        el = self.add_password_field(required)
+        cel = self.add_confirm('password-confirm', 'Confirm Password', required=required, match=el)
+        return el, cel
+
+    def add_password_reset_field(self):
         el = self.add_checkbox('reset_required', 'Password Reset Required')
         el.add_note("force the user to change their password the next time they login")
         el.add_note("is set automatically if an administrator changes a password")
-        
+        return el
+    
+    def add_super_user_field(self):
         # if the current user is not a super user, they can't set the super user
         # field
         if user.get_attr('super_user'):
             el = self.add_checkbox('super_user', 'Super User')
             el.add_note("super users will have all permissions automatically")
-        
+            return el
+
+    def add_email_notify(self):
         el = self.add_checkbox('email_notify', 'Email Notification', checked=True)
         el.add_note("send notification email on password change or new user creation")
         el.add_note("forces password reset if password is sent out in an email")
-        
-        el = self.add_checkbox('inactive_flag', 'Inactive', checked=False)
-        el.add_note("setting this will prevent this user from logging in")
-        
-        el = self.add_date('inactive_date', 'Inactive Date')
-        el.add_note("setting this will prevent this user from logging in after"
-                    " the date given (regardless of the checkbox setting above)")
-        
-        el = self.add_header('group_membership_header', 'Group Membership')
-        
-        group_opts = group_list_options()
-        el = self.add_mselect('assigned_groups', group_opts, 'Assign to')
-        
-        el = self.add_header('group_permissions_header', 'User Permissions')
-        
-        perm_opts = permission_list_options()
-        el = self.add_mselect('approved_permissions', perm_opts, 'Approved')
-        el = self.add_mselect('denied_permissions', perm_opts, 'Denied')
+        return el
 
-        self.add_header('submit-fields-header', '')
-        sg = self.add_elgroup('submit-group', class_='submit-only')
-        el = sg.add_submit('submit')
-        el = sg.add_cancel('cancel')
+    def add_inactive_fields(self):
+        iflag = self.add_checkbox('inactive_flag', 'Inactive', checked=False)
+        iflag.add_note("setting this will prevent this user from logging in")
         
-        self.add_validator(self.validate_perms)
+        idate = self.add_date('inactive_date', 'Inactive Date')
+        idate.add_note("setting this will prevent this user from logging in after"
+                    " the date given (regardless of the checkbox setting above)")
+        return iflag, idate
+    
+    def add_group_membership_section(self):
+        hel = self.add_header('group_membership_header', 'Group Membership')
+        group_opts = group_list_options()
+        gel = self.add_mselect('assigned_groups', group_opts, 'Assign to')
+        return hel, gel
+    
+    def add_user_permissions_section(self):
+        hel = self.add_header('user_permissions_header', 'User Permissions')
+        perm_opts = permission_list_options()
+        gel = self.add_mselect('approved_permissions', perm_opts, 'Approved')
+        gel = self.add_mselect('denied_permissions', perm_opts, 'Denied')
+        return hel, gel
+    
+    def add_submit_buttons(self):
+        hel = self.add_header('submit-fields-header', '')
+        sg = self.add_elgroup('submit-group', class_='submit-only')
+        sel = sg.add_submit('submit')
+        cel = sg.add_cancel('cancel')
+        return hel, sg, sel, cel
     
     def validate_perms(self, value):
         assigned = toset(self.approved_permissions.value)
@@ -82,6 +100,40 @@ class UserForm(Form):
             self.denied_permissions.add_error(msg)
             self.approved_permissions.add_error(msg)
             raise ValueInvalid()
+
+class UserForm(UserFormBase):
+        
+    def __init__(self, isAdd):
+        UserFormBase.__init__(self, 'user-form')
+        
+        self.add_name_fields()
+        self.add_login_id_field()
+        self.add_email_field()
+        pasel, confel = self.add_password_fields(isAdd)
+        pasel.add_note('password will change only if you enter a value above')
+        self.add_password_reset_field()
+        self.add_super_user_field()
+        self.add_email_notify()
+        self.add_inactive_fields()
+        
+        self.add_group_membership_section()
+        self.add_user_permissions_section()
+        
+        self.add_submit_buttons()
+        
+        self.add_validator(self.validate_perms)
+
+class UserProfileForm(UserFormBase):
+        
+    def __init__(self):
+        UserFormBase.__init__(self, 'user-profile-form')
+        
+        self.add_name_fields()
+        self.add_email_field()
+        self.add_login_id_field()
+        pasel, confel = self.add_password_fields(False)
+        pasel.add_note('password will change only if you enter a value above')
+        self.add_submit_buttons()
 
 class GroupForm(Form):
         
@@ -151,26 +203,19 @@ class LoginForm(Form):
 
         self.add_submit('submit')
 
-class ChangePasswordForm(Form):
+class ChangePasswordForm(UserFormBase):
 
     def __init__(self):
-        Form.__init__(self, 'login-form')
+        UserFormBase.__init__(self, 'login-form')
 
         el = self.add_password('old_password', 'Old Password', required=True)
         el.add_processor(MaxLength(25))
         el.add_processor(self.validate_password)
 
-        el = self.add_password('password', 'New Password', required=True)
-        el.add_processor(MaxLength(25))
-        el.add_processor(MinLength(6))
-        
-        el = self.add_password('confirm_password', 'Confirm', required=True)
-        el.add_processor(MaxLength(25))
-        el.add_processor(MinLength(6))
+        self.add_password_fields(True)
 
         self.add_submit('submit')
         self.add_validator(self.validate_validnew)
-        self.add_validator(self.validate_confirm)
         
     def validate_password(self, value):
         dbobj = user_get(user.get_attr('id'))
@@ -178,12 +223,6 @@ class ChangePasswordForm(Form):
             raise ValueInvalid('incorrect password')
             
         return value
-
-    def validate_confirm(self, form):
-        if form.confirm_password.value != form.password.value:
-            err = 'did not match password'
-            form.confirm_password.add_error(err)
-            raise ValueInvalid()
 
     def validate_validnew(self, form):
         if form.password.value == form.old_password.value:

@@ -22,7 +22,8 @@ class TestNotAuthenticated(object):
             '/groups/manage',
             '/groups/delete/1',
             '/permissions/manage',
-            '/permissions/edit/1'
+            '/permissions/edit/1',
+            '/users/profile'
         )
         for route in routes:
             yield self.check_unauthorized, route
@@ -81,6 +82,7 @@ class TestNoPerms(object):
             '/users/login',
             '/users/recover_password',
             '/users/change_password',
+            '/users/profile'
         )
         for route in routes:
             yield self.check_ok, route

@@ -13,7 +13,7 @@ from utils import send_new_user_email, send_change_password_email, \
     send_password_reset_email
 
 def user_update(id, **kwargs):
-    if kwargs.get('password'):
+    if kwargs.get('password') and kwargs.get('pass_reset_ok', True):
         kwargs['reset_required'] = True
         
     # some values can not be set directly
@@ -33,7 +33,7 @@ def user_update(id, **kwargs):
 
         # if email fails, db trans will roll back
         #  initmod call will not have this flag
-        if kwargs.has_key('email_notify') and kwargs['email_notify']:
+        if kwargs.get('email_notify'):
             if id is None:
                 send_new_user_email(kwargs['login_id'], kwargs['password'], kwargs['email_address'])
             elif kwargs['password']:
