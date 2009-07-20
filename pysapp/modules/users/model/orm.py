@@ -47,6 +47,12 @@ class User(Entity):
         return retval.strip()
     name = property(_get_name)
 
+    def _get_name_or_login(self):
+        if self.name:
+            return self.name
+        return self.login_id
+    name_or_login = property(_get_name_or_login)
+
 class Group(Entity):
 
     name = Field(Unicode(150), required=True, index=True, unique=True)
