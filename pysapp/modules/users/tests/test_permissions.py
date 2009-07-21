@@ -1,8 +1,10 @@
 from pysmvt import modimportauto, appimportauto, ag
 from werkzeug import Client, BaseResponse, BaseRequest
 
-modimportauto('users.testing', ['login_client_with_permissions'])
-            
+modimportauto('users.testing', ('login_client_with_permissions',
+    'create_user_with_permissions'))
+modimportauto('users.actions', ('group_add'))
+
 class TestNotAuthenticated(object):
 
     @classmethod
@@ -112,29 +114,40 @@ class TestUsersManage(object):
         login_client_with_permissions(cls.c, cls.perms)
 
     def test_ok(self):
+        # add another user so that we can be sure we are not deleting the
+        # user the Client is currently logged in as, which would cause a 302
+        user_id = create_user_with_permissions().id
+        # add a group so we get 200s when working with it instead of 302s
+        group_id = group_add(name=u'TestUsersManage.test_ok-group').id
+        
         routes = (
             '/users/add',
             '/users/login',
             '/users/recover_password',
             '/users/change_password',
-            '/users/edit/1',
+            '/users/edit/%s' % user_id,
             '/users/manage',
-            '/users/delete/1',
-            '/users/permissions/1',
+            '/users/permissions/%s' % user_id,
             '/groups/add',
-            '/groups/edit/1',
+            '/groups/edit/%s' % group_id,
             '/groups/manage',
-            '/groups/delete/1',
             '/permissions/manage',
             '/permissions/edit/1'
         )
         for route in routes:
-            yield self.check_ok, route
-            break
+            yield self.check_code, 200, route
     
-    def check_ok(self, route):
+        routes = (
+            '/users/delete/%s' % user_id,
+            '/groups/delete/%s' % group_id,            
+        )
+        
+        for route in routes:
+            yield self.check_code, 302, route
+
+    def check_code(self, code, route):
         r = self.c.get(route)
-        assert r.status_code == 200, "%s -- %s" % (route, r.status)
+        assert r.status_code == code, "%s -- %s" % (route, r.status)
     
     def test_logout(self):
         """
