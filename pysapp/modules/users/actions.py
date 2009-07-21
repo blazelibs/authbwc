@@ -13,18 +13,26 @@ from utils import send_new_user_email, send_change_password_email, \
     send_password_reset_email
 
 def user_update(id, **kwargs):
+    
+    if id is None:
+        u = User()
+        # when creating a new user, if the password is not set, assign it as
+        # a random string assuming the email will get sent out to the user
+        # and they will change it when they login
+        if not kwargs.get('password', None):
+            kwargs['password'] = randchars(8)
+    else:
+        u = User.get_by(id=id)
+    
+    # automatically turn on reset_password when the password get set manually
+    # (i.e. when an admin does it), unless told not to (when a user does it
+    # for their own account)
     if kwargs.get('password') and kwargs.get('pass_reset_ok', True):
         kwargs['reset_required'] = True
         
     # some values can not be set directly
     if kwargs.has_key('hash_pass'):
-        del(kwargs['hash_pass'])
-
-    if id is None:
-        u = User()
-    else:
-        u = User.get_by(id=id)
-    
+        del(kwargs['hash_pass'])   
     try: 
         u.from_dict(kwargs)
         u.groups = create_groups(kwargs.get('assigned_groups', []))
