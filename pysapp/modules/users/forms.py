@@ -41,6 +41,13 @@ class UserFormBase(Form):
         el = self.add_password_field(required)
         cel = self.add_confirm('password-confirm', 'Confirm Password', required=required, match=el)
         return el, cel
+    
+    def add_password_notes(self, isAdd, pasel, cel):
+        if isAdd:
+            pasel.add_note('leave blank to assign random password')
+        else:
+            pasel.add_note('leave blank and password will not change')
+        pasel.add_note('if set, user will be forced to reset password the next time they login')
 
     def add_password_reset_field(self):
         el = self.add_checkbox('reset_required', 'Password Reset Required')
@@ -71,10 +78,16 @@ class UserFormBase(Form):
                     " the date given (regardless of the checkbox setting above)")
         return iflag, idate
     
-    def add_group_membership_section(self):
+    def get_group_options(self):
+        return group_list_options()
+        
+    def add_group_membership_section(self, multi=True, required=False):
         hel = self.add_header('group_membership_header', 'Group Membership')
-        group_opts = group_list_options()
-        gel = self.add_mselect('assigned_groups', group_opts, 'Assign to')
+        group_opts = self.get_group_options()
+        if multi:
+            gel = self.add_mselect('assigned_groups', group_opts, 'Assign to', required=required)
+        else:
+            gel = self.add_select('assigned_groups', group_opts, 'Assign to', required=required)
         return hel, gel
     
     def add_user_permissions_section(self):
