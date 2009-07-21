@@ -23,8 +23,6 @@ class TestUserViews(object):
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
         assert 'Email: field is required' in r.data
-        assert 'Confirm Password: field is required' in r.data
-        assert 'Password: field is required' in r.data
         assert 'Login Id: field is required' in r.data
         
     def test_loginid_unique(self):
@@ -131,9 +129,7 @@ class TestUserViews(object):
                       denied_permissions=[], assigned_users=[], safe='unique').id
         topost = {
             'login_id': 'usersaved',
-            'password': 'testtest',
             'email_address': 'usersaved@example.com',
-            'password-confirm': 'testtest',
             'user-form-submit-flag':'submitted',
             'approved_permissions': ap,
             'denied_permissions': dp,

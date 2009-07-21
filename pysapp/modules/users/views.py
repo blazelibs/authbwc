@@ -262,7 +262,7 @@ class GroupUpdate(UpdateCommon):
         if not self.isAdd:
             self.dbobj = self.action_get(id)
             if self.dbobj is None:
-                user.add_message('error', self.message_exists_not % {'objectname':self.objectname})
+                usr.add_message('error', self.message_exists_not % {'objectname':self.objectname})
                 self.on_edit_error()
             vals = self.dbobj.to_dict()
             vals['assigned_users'] = group_user_ids(self.dbobj)
