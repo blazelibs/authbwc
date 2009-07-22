@@ -84,7 +84,7 @@ class UserDelete(DeleteCommon):
     def default(self, id):
         if id == usr.get_attr('id'):
             usr.add_message('error', 'You cannot delete your own user account')
-            redirect(url_for(self.endpoint_manage))
+            self.on_complete()
         DeleteCommon.default(self, id)
 
 class ChangePassword(ProtectedPageView):
