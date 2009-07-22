@@ -23,6 +23,16 @@ class UserUpdate(UpdateCommon):
     def prep(self):
         UpdateCommon.prep(self, _modname, 'user', 'User')
 
+    def auth(self, id):
+        UpdateCommon.auth(self)
+        
+        # prevent non-super users from editing super users
+        if id:
+            sess_user_obj = user_get(usr.get_attr('id'))
+            edited_user_obj = user_get(id)
+            if edited_user_obj.super_user and not sess_user_obj.super_user:
+                self.is_authorized = False
+
     def post_auth_setup(self, id):
         self.determine_add_edit(id)
         self.form = self.formcls(self.isAdd)
@@ -60,6 +70,16 @@ class UserManage(ManageCommon):
 class UserDelete(DeleteCommon):
     def prep(self):
         DeleteCommon.prep(self, _modname, 'user', 'User')
+    
+    def auth(self, id):
+        DeleteCommon.auth(self)
+        
+        # prevent non-super users from deleting super users
+        if id:
+            sess_user_obj = user_get(usr.get_attr('id'))
+            edited_user_obj = user_get(id)
+            if edited_user_obj.super_user and not sess_user_obj.super_user:
+                self.is_authorized = False
 
     def default(self, id):
         if id == usr.get_attr('id'):

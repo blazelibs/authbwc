@@ -377,6 +377,16 @@ class TestUserProfileView(object):
         assert p2 in denied
         assert gp in user_group_ids(user)
     
+    def test_no_super_delete(self):
+        su = create_user_with_permissions(super_user=True)
+        r = self.c.get('users/delete/%s' % su.id)
+        assert r.status_code == 403, r.status
+
+    def test_no_super_edit(self):
+        su = create_user_with_permissions(super_user=True)
+        r = self.c.get('users/edit/%s' % su.id)
+        assert r.status_code == 403, r.status
+
 class TestUserViewsSuperUser(object):
 
     @classmethod
@@ -432,6 +442,18 @@ class TestUserViewsSuperUser(object):
                 found -= 1
         assert found == 0
 
+    def test_super_edit(self):
+        su = create_user_with_permissions(super_user=True)
+        r = self.c.get('users/edit/%s' % su.id, follow_redirects=True)
+        assert r.status_code == 200, r.status
+        assert 'Edit User' in r.data
+
+    def test_super_delete(self):
+        su = create_user_with_permissions(super_user=True)
+        r = self.c.get('users/delete/%s' % su.id, follow_redirects=True)
+        assert r.status_code == 200, r.status
+        assert 'user deleted' in r.data
+        
 def test_inactive_login():
     # create a user
     user = create_user_with_permissions()
