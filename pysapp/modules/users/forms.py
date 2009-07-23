@@ -8,6 +8,7 @@ from pysform.exceptions import ValueInvalid
 modimportauto('users.actions', ('group_list_options','user_list_options',
     'permission_list_options','user_get','hash_pass',
     'user_get_by_email'))
+modimportauto('users.utils', 'validate_password_complexity')
 
 class UserFormBase(Form):
     def add_name_fields(self):
@@ -33,8 +34,7 @@ class UserFormBase(Form):
     
     def add_password_field(self, required):
         el = self.add_password('password', 'Password', required=required)
-        el.add_processor(MaxLength(25))
-        el.add_processor(MinLength(6))
+        el.add_processor(self.validate_password_complexity)
         return el
     
     def add_password_fields(self, required):
@@ -113,6 +113,12 @@ class UserFormBase(Form):
             self.denied_permissions.add_error(msg)
             self.approved_permissions.add_error(msg)
             raise ValueInvalid()
+
+    def validate_password_complexity(self, value):
+        ret = validate_password_complexity(value)
+        if not ret == True:
+            raise ValueInvalid(ret)
+        return value
 
 class UserForm(UserFormBase):
         
