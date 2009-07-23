@@ -28,3 +28,11 @@ def send_password_reset_email(user):
     body = getview('users:PasswordResetEmail', user=user)
     email = EmailMessage(subject, body, None, [user.email_address])
     email.send()
+
+def validate_password_complexity(password):
+    if len(password) < 6:
+        return 'Enter a value at least 6 characters long'
+    if len(password) > 25:
+        return 'Enter a value less than 25 characters long'
+    return True
+    
