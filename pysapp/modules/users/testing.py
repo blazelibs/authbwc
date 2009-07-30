@@ -1,6 +1,7 @@
 from pysmvt import modimportauto, db
 from pysutils import tolist, randchars
 from werkzeug import BaseRequest
+from pysmvt.test import Client
 
 modimportauto('users.actions', ['user_update', 'permission_add'])
 
@@ -28,8 +29,13 @@ def login_client_as_user(client, username, password):
     topost = {'login_id': username,
           'password': password,
           'login-form-submit-flag':'1'}
-    environ, r = client.post('users/login', data=topost, as_tuple=True, follow_redirects=True)
-    return BaseRequest(environ), r
+    if isinstance(client, Client):
+        # pysmvt client handles follow_redirects differently
+        return client.post('users/login', data=topost, follow_redirects=True)
+    else:
+        # werkzeug Client
+        environ, r = client.post('users/login', data=topost, as_tuple=True, follow_redirects=True)
+        return BaseRequest(environ), r
 
 def create_user_with_permissions(approved_perms=None, denied_perms=None, super_user=False):
     appr_perm_ids = []
