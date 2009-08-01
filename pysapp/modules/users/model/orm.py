@@ -4,6 +4,7 @@ from elixir import Entity, Field, Integer, String, Unicode, \
                    ManyToMany, Boolean, SmallInteger, DateTime
 from hashlib import sha512
 from datetime import datetime
+from pysapp.lib.db import SmallIntBool
 
 __all__ = ['User', 'Group', 'Permission']
 
@@ -12,11 +13,11 @@ class User(Entity):
     login_id = Field(Unicode(150), required=True, index=True, unique=True)
     email_address = Field(Unicode(150), required=True, unique=True)
     pass_hash = Field(String(128), required=True)
-    reset_required = Field(SmallInteger, default=True, required=True)
-    super_user = Field(SmallInteger, default=False, required=True)
+    reset_required = Field(SmallIntBool, default=True, required=True)
+    super_user = Field(SmallIntBool, default=False, required=True)
     name_first = Field(Unicode(255))
     name_last = Field(Unicode(255))
-    inactive_flag = Field(SmallInteger, required=True, default=False)
+    inactive_flag = Field(SmallIntBool, required=True, default=False)
     inactive_date = Field(DateTime)
     pass_reset_ts = Field(DateTime)
     pass_reset_key = Field(String(12))
