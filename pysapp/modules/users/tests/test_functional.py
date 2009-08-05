@@ -1,7 +1,9 @@
 import datetime
+import smtplib
+import minimock
 from pysmvt import modimportauto, ag, db
-from werkzeug import Client, BaseResponse, BaseRequest
-
+from werkzeug import BaseResponse, BaseRequest
+from pysmvt.test import Client
 modimportauto('users.testing', ['login_client_with_permissions',
     'login_client_as_user', 'create_user_with_permissions'])
 modimportauto('users.actions', ['user_get', 'permission_get_by_name',
@@ -140,9 +142,10 @@ class TestUserViews(object):
             'name_first': 'test',
             'name_last': 'user'
         }
-        r = self.c.post('users/add', data=topost, follow_redirects=True)
+        req, r = self.c.post('users/add', data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
         assert 'user added' in r.data
+        assert req.url.endswith('users/manage')
         
         user = user_get_by_email(u'usersaved@example.com')
         assert user.login_id == 'usersaved'
@@ -179,8 +182,9 @@ class TestUserViews(object):
             'name_first': 'test2',
             'name_last': 'user2'
         }
-        r = self.c.post('users/edit/%s' % user.id, data=topost, follow_redirects=True)
+        req, r = self.c.post('users/edit/%s' % user.id, data=topost, follow_redirects=True)
         assert 'user edited successfully' in r.data
+        assert req.url.endswith('users/manage')
         
         user = user_get_by_email(u'usersaved@example.com')
         assert user.login_id == 'usersaved'
@@ -217,8 +221,9 @@ class TestUserViews(object):
             'name_first': '',
             'name_last': ''
         }
-        r = self.c.post('users/edit/%s' % user.id, data=topost, follow_redirects=True)
+        req, r = self.c.post('users/edit/%s' % user.id, data=topost, follow_redirects=True)
         assert 'user edited successfully' in r.data
+        assert req.url.endswith('users/manage')
         
         user = user_get_by_email(u'usersaved@example.com')
         assert user.login_id == 'usersaved'
@@ -228,9 +233,10 @@ class TestUserViews(object):
         assert len(user.groups) == 0
         
         # now test a delete
-        r = self.c.get('users/delete/%s' % user.id, follow_redirects=True)
+        req, r = self.c.get('users/delete/%s' % user.id, follow_redirects=True)
         assert r.status_code == 200, r.status
         assert 'user deleted' in r.data
+        assert req.url.endswith('users/manage')
     
     def test_password_complexity(self):
         topost = {
@@ -258,9 +264,10 @@ class TestUserViews(object):
         assert 'Password: Enter a value less than 25 characters long' in r.data
 
     def test_same_user_delete(self):
-        r = self.c.get('users/delete/%s' % self.userid, follow_redirects=True)
+        resp, r = self.c.get('users/delete/%s' % self.userid, follow_redirects=True)
         assert r.status_code == 200, r.status
         assert 'You cannot delete your own user account' in r.data
+        assert resp.url.endswith('users/manage')
 
 
 class TestUserProfileView(object):
@@ -339,9 +346,10 @@ class TestUserProfileView(object):
     def test_cancel(self):
         topost = self.get_to_post()
         topost['cancel'] = 'submitted'
-        r = self.c.post('users/profile', data=topost, follow_redirects=True)
+        req, r = self.c.post('users/profile', data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
         assert 'no changes made to your profile' in r.data
+        assert req.url == 'http://localhost/'
     
     def test_password_changes(self):
         user = user_get(self.userid)
@@ -420,9 +428,10 @@ class TestUserViewsSuperUser(object):
             'name_first': '',
             'name_last': ''
         }
-        r = self.c.post('users/add', data=topost, follow_redirects=True)
+        req, r = self.c.post('users/add', data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
         assert 'user added' in r.data
+        assert req.url.endswith('users/manage')
         
         user = user_get_by_email(u'usersavedsu@example.com')
         assert user.login_id == 'usersavedsu'
@@ -444,15 +453,16 @@ class TestUserViewsSuperUser(object):
 
     def test_super_edit(self):
         su = create_user_with_permissions(super_user=True)
-        r = self.c.get('users/edit/%s' % su.id, follow_redirects=True)
+        r = self.c.get('users/edit/%s' % su.id)
         assert r.status_code == 200, r.status
         assert 'Edit User' in r.data
 
     def test_super_delete(self):
         su = create_user_with_permissions(super_user=True)
-        r = self.c.get('users/delete/%s' % su.id, follow_redirects=True)
+        req, r  = self.c.get('users/delete/%s' % su.id, follow_redirects=True)
         assert r.status_code == 200, r.status
         assert 'user deleted' in r.data
+        assert req.url.endswith('users/manage')
         
 def test_inactive_login():
     # create a user
@@ -468,3 +478,95 @@ def test_inactive_login():
     assert resp.status_code == 200, resp.status
     assert 'That user is inactive.' in resp.data
     assert req.url == 'http://localhost/users/login'
+    
+class TestRecoverPassword(object):
+    
+    @classmethod
+    def setup_class(cls):
+        cls.c = Client(ag._wsgi_test_app, BaseResponse)
+    
+    def test_invalid_user(self):
+        
+        topost = {
+            'email_address': u'user@notreallythere.com',
+            'lost-password-form-submit-flag': 'submitted',
+        }
+        r = self.c.post('users/recover_password', data=topost)
+        assert r.status_code == 200, r.status
+        assert 'email address is not associated with a user' in r.data
+    
+    def test_invalid_reset_link(self):
+        
+        req, resp = self.c.get('users/password-reset/nothere/invalidkey', follow_redirects=True)
+        assert resp.status_code == 200, resp.status
+        assert 'Recover Password' in resp.data
+        assert 'invalid reset request, use the form below to resend reset link' in resp.data
+        assert req.url.endswith('users/recover_password')
+    
+    def test_password_reset(self):
+        """ has to be done in the same test function so that order is assured"""
+        
+        user = create_user_with_permissions()
+        user_id = user.id
+        
+        r = self.c.get('users/recover_password')
+        assert r.status_code == 200, r.status
+        assert 'Recover Password' in r.data
+        
+        # setup the mock objects so we can test the email getting sent out
+        tt = minimock.TraceTracker()
+        smtplib.SMTP = minimock.Mock('smtplib.SMTP', tracker=None)
+        smtplib.SMTP.mock_returns = minimock.Mock('smtp_connection', tracker=tt)
+        
+        # test posting to the restore password view
+        user = user_get(user_id)
+        topost = {
+            'email_address': user.email_address,
+            'lost-password-form-submit-flag': 'submitted',
+        }
+        req, r = self.c.post('users/recover_password', data=topost, follow_redirects=True)
+        assert r.status_code == 200, r.status
+        assert 'email with a link to reset your password has been sent' in r.data
+        assert req.url == 'http://localhost/'
+        
+        # test the mock strings (i.e. test the email that was sent out)
+        user = user_get(user_id)
+        assert tt.check('Called smtp_connection.sendmail(...%s...has been issu'
+                        'ed to reset the password...' % user.email_address)
+        # restore the mocked objects
+        minimock.restore()
+        
+        # now test resetting the password
+        r = self.c.get('/users/password-reset/%s/%s' % (user.login_id, user.pass_reset_key))
+        assert r.status_code == 200
+        assert 'Reset Password' in r.data
+        assert 'Please choose a new password to complete the reset request' in r.data
+        
+        # expire the date
+        user = user_get(user_id)
+        orig_reset_ts = user.pass_reset_ts
+        user.pass_reset_ts = datetime.datetime(2000, 10, 10)
+        db.sess.commit()
+        
+        # check expired message
+        req, resp = self.c.get('/users/password-reset/%s/%s' % (user.login_id, user.pass_reset_key), follow_redirects=True)
+        assert resp.status_code == 200, resp.status
+        assert 'Recover Password' in resp.data
+        assert 'password reset link expired, use the form below to resend reset link' in resp.data
+        assert req.url.endswith('users/recover_password')
+        
+        # unexpire the date
+        user = user_get(user_id)
+        user.pass_reset_ts = orig_reset_ts
+        db.sess.commit()
+        
+        # check posting the new passwords
+        topost = {
+            'password': 'TestPassword2',
+            'password-confirm': 'TestPassword2',
+            'new-pass-form-submit-flag': 'submitted',
+        }
+        req, r = self.c.post('/users/password-reset/%s/%s' % (user.login_id, user.pass_reset_key), data=topost, follow_redirects=True)
+        assert r.status_code == 200, r.status
+        assert 'Your password has been reset successfully' in r.data
+        assert req.url == 'http://localhost/'
