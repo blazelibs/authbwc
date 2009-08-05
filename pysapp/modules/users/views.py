@@ -16,7 +16,8 @@ modimportauto('users.actions', ('user_validate','load_session_user',
     'user_permission_map_groups', 'group_user_ids', 'group_assigned_perm_ids',
     'user_update'))
 modimportauto('users.utils', ('after_login_url'))
-
+modimportauto('users.forms', ('ChangePasswordForm', 'NewPasswordForm',
+    'LostPasswordForm', 'LoginForm'))
 _modname = 'users'
 
 class UserUpdate(UpdateCommon):
@@ -92,7 +93,6 @@ class ChangePassword(ProtectedPageView):
         self.authenticated_only = True
     
     def post_auth_setup(self):
-        from forms import ChangePasswordForm
         self.form = ChangePasswordForm()
 
     def post(self):
@@ -127,7 +127,7 @@ class ResetPassword(PublicPageView):
             self.abort('password reset link expired')
     
         self.user = user
-        self.form = forms.NewPasswordForm()
+        self.form = NewPasswordForm()
 
     def post(self, login_id, key):
         if self.form.is_valid():
@@ -161,7 +161,6 @@ class ResetPassword(PublicPageView):
 
 class LostPassword(PublicPageView):
     def setup(self):
-        from forms import LostPasswordForm
         self.form = LostPasswordForm()
 
     def post(self):
@@ -235,7 +234,6 @@ class PermissionMap(ProtectedPageView):
 class Login(PublicPageView):
     
     def setup(self):
-        from forms import LoginForm
         self.form = LoginForm()
     
     def post(self):        

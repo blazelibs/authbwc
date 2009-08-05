@@ -226,7 +226,7 @@ class LoginForm(Form):
 class ChangePasswordForm(UserFormBase):
 
     def __init__(self):
-        UserFormBase.__init__(self, 'login-form')
+        UserFormBase.__init__(self, 'change-pass-form')
 
         el = self.add_password('old_password', 'Old Password', required=True)
         el.add_processor(MaxLength(25))
@@ -253,7 +253,7 @@ class ChangePasswordForm(UserFormBase):
 class NewPasswordForm(Form):
 
     def __init__(self):
-        Form.__init__(self, 'login-form')
+        Form.__init__(self, 'new-pass-form')
 
         pel = self.add_password('password', 'Password', required=True)
         pel.add_processor(MaxLength(25))
