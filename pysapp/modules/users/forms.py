@@ -32,14 +32,14 @@ class UserFormBase(Form):
                  'A user with that email address already exists.')
         return el
     
-    def add_password_field(self, required):
-        el = self.add_password('password', 'Password', required=required)
+    def add_password_field(self, required, label='Password'):
+        el = self.add_password('password', label, required=required)
         el.add_processor(self.validate_password_complexity)
         return el
     
-    def add_password_fields(self, required):
-        el = self.add_password_field(required)
-        cel = self.add_confirm('password-confirm', 'Confirm Password', required=required, match=el)
+    def add_password_fields(self, required, label='Password'):
+        el = self.add_password_field(required, label)
+        cel = self.add_confirm('password-confirm', 'Confirm %s'%label, required=required, match=el)
         return el, cel
     
     def add_password_notes(self, isAdd, pasel, cel):
@@ -76,6 +76,7 @@ class UserFormBase(Form):
         idate = self.add_date('inactive_date', 'Inactive Date')
         idate.add_note("setting this will prevent this user from logging in after"
                     " the date given (regardless of the checkbox setting above)")
+        idate.add_note('date format: mm/dd/yyyy')
         return iflag, idate
     
     def get_group_options(self):
@@ -228,11 +229,11 @@ class ChangePasswordForm(UserFormBase):
     def __init__(self):
         UserFormBase.__init__(self, 'change-pass-form')
 
-        el = self.add_password('old_password', 'Old Password', required=True)
+        el = self.add_password('old_password', 'Current Password', required=True)
         el.add_processor(MaxLength(25))
         el.add_processor(self.validate_password)
 
-        self.add_password_fields(True)
+        self.add_password_fields(True, 'New Password')
 
         self.add_submit('submit')
         self.add_validator(self.validate_validnew)
