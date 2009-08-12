@@ -1,13 +1,7 @@
-from pysmvt import modimportauto, db, appimportauto
+from pysmvt import modimport, db, appimportauto
 from pysutils import tolist, randchars
 from werkzeug import BaseRequest
 from pysmvt.test import Client
-appimportauto('testing', 'setup_db_structure')
-
-# ensure database is setup, or we can have problems with the autoloaded views
-setup_db_structure()
-
-modimportauto('users.actions', ['user_update', 'permission_add'])
 
 def login_client_with_permissions(client, approved_perms=None, denied_perms=None, super_user=False):
     """
@@ -42,6 +36,9 @@ def login_client_as_user(client, username, password):
         return BaseRequest(environ), r
 
 def create_user_with_permissions(approved_perms=None, denied_perms=None, super_user=False):
+    user_update = modimport('users.actions', 'user_update')
+    permission_add = modimport('users.actions', 'permission_add')
+    
     appr_perm_ids = []
     denied_perm_ids = []
     # create the permissions
