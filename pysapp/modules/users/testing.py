@@ -1,7 +1,11 @@
-from pysmvt import modimportauto, db
+from pysmvt import modimportauto, db, appimportauto
 from pysutils import tolist, randchars
 from werkzeug import BaseRequest
 from pysmvt.test import Client
+appimportauto('testing', 'setup_db_structure')
+
+# ensure database is setup, or we can have problems with the autoloaded views
+setup_db_structure()
 
 modimportauto('users.actions', ['user_update', 'permission_add'])
 
