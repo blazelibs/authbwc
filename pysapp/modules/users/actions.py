@@ -3,14 +3,17 @@ from model.orm import User, Group, Permission
 from model.metadata import group_permission_assignments as tbl_gpa
 from model.metadata import user_permission_assignments as tbl_upa
 from hashlib import sha512
+from sqlalchemy import Column, literal
 from sqlalchemy.exc import DatabaseError
-from sqlalchemy.sql import select, and_, text
+from sqlalchemy.sql import select, and_, text, alias, join, case, or_
 from pysmvt.exceptions import ActionError
 from pysmvt import user as usr
-from pysmvt import db
+from pysmvt import db, modimportauto
 from pysmvt.utils import randchars, tolist
 from utils import send_new_user_email, send_change_password_email, \
     send_password_reset_email
+
+modimportauto('users.model.autoloads', ('vuserperms'))
 
 def user_update(id, **kwargs):
     
@@ -151,6 +154,29 @@ def user_assigned_perm_ids(user):
     denied = [r[0] for r in execute(s)]
 
     return approved, denied
+
+def user_get_by_permissions_query(permissions):
+    q = db.sess.query(User).select_from(
+        User.table.join(vuserperms, User.id == vuserperms.c.user_id)
+    ).filter(
+        or_(
+            vuserperms.c.user_approved == 1,
+            and_(
+                vuserperms.c.user_approved == None,
+                or_(
+                    vuserperms.c.group_denied == None,
+                    vuserperms.c.group_denied >= 0,
+                ),
+                vuserperms.c.group_approved >= 1
+            )
+        )
+    ).filter(
+        vuserperms.c.permission_name.in_(tolist(permissions))
+    )
+    return q
+
+def user_get_by_permissions(permissions):
+    return user_get_by_permissions_query(permissions).all()
 
 def user_permission_map(uid):
     dbsession = db.sess
@@ -403,11 +429,11 @@ def permission_assignments_group(group, approved_perm_ids, denied_perm_ids):
 
     return
 
-def permission_assignments_group_by_name(group_name, approved_perm_list, denied_perm_list=[]):
+def permission_assignments_group_by_name(group_name, approved_perm_list=[], denied_perm_list=[]):
     # Note: this function is a wrapper for permission_assignments_group and will commit db trans
     group = group_get_by_name(group_name)
-    approved_perm_ids = [item.id for item in [permission_get_by_name(perm) for perm in approved_perm_list]]
-    denied_perm_ids = [item.id for item in [permission_get_by_name(perm) for perm in denied_perm_list]]
+    approved_perm_ids = [item.id for item in [permission_get_by_name(perm) for perm in tolist(approved_perm_list)]]
+    denied_perm_ids = [item.id for item in [permission_get_by_name(perm) for perm in tolist(denied_perm_list)]]
     permission_assignments_group(group, approved_perm_ids, denied_perm_ids)
     db.sess.commit()
     return
