@@ -1,9 +1,5 @@
-from pysmvt import modimportauto, appimportauto, ag
+from pysmvt import modimportauto, ag
 from werkzeug import Client, BaseResponse, BaseRequest
-appimportauto('testing', 'setup_db_structure')
-
-# ensure database is setup, or we can have problems with the autoloaded views
-setup_db_structure()
 
 modimportauto('users.testing', ('login_client_with_permissions',
     'create_user_with_permissions'))

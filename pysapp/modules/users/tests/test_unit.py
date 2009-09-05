@@ -1,9 +1,5 @@
 import datetime
-from pysmvt import modimportauto, db, appimportauto, modimport
-appimportauto('testing', 'setup_db_structure')
-
-# ensure database is setup, or we can have problems with the autoloaded views
-setup_db_structure()
+from pysmvt import modimportauto, db, modimport
 
 modimportauto('users.testing', ['create_user_with_permissions'])
 modimportauto('users.actions', ['user_get', 'user_get_by_permissions',

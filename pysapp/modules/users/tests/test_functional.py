@@ -1,13 +1,9 @@
 import datetime
 import smtplib
 import minimock
-from pysmvt import modimportauto, ag, db, appimportauto
+from pysmvt import modimportauto, ag, db
 from werkzeug import BaseResponse, BaseRequest
 from pysmvt.test import Client
-appimportauto('testing', 'setup_db_structure')
-
-# ensure database is setup, or we can have problems with the autoloaded views
-setup_db_structure()
 
 modimportauto('users.testing', ['login_client_with_permissions',
     'login_client_as_user', 'create_user_with_permissions'])
