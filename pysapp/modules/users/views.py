@@ -265,7 +265,7 @@ class Login(PublicPageView):
 class Logout(PublicPageView):
         
     def default(self):
-        session['user'].clear()
+        session.invalidate()
             
         url = url_for('users:Login')
         redirect(url)
