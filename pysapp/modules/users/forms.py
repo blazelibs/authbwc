@@ -1,9 +1,9 @@
-from pysapp.forms import Form
-from pysmvt import user, modimportauto
+from pysmvt import user, modimportauto, appimportauto
 from pysmvt.routing import url_for
 from pysmvt.utils import toset
 from formencode.validators import MaxLength, MinLength
 from pysform.exceptions import ValueInvalid
+appimportauto('forms', 'Form')
 
 modimportauto('users.actions', ('group_list_options','user_list_options',
     'permission_list_options','user_get','hash_pass',
