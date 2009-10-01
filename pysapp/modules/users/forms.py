@@ -7,7 +7,7 @@ appimportauto('forms', ('Form', 'UniqueValidator'))
 
 modimportauto('users.actions', ('group_list_options','user_list_options',
     'permission_list_options','user_get','hash_pass',
-    'user_get_by_email', 'user_get_by_login'))
+    'user_get_by_email', 'user_get_by_login', 'group_get_by_name'))
 modimportauto('users.utils', 'validate_password_complexity')
 
 class UserFormBase(Form):
@@ -162,8 +162,8 @@ class GroupForm(Form):
         
         el = self.add_text('name', 'Group Name', required=True)
         el.add_processor(MaxLength(150))
-        el.add_handler('column name is not unique',
-                 'That group already exists.')
+        el.add_processor(UniqueValidator(fn=group_get_by_name),
+                 'a group with that name already exists')
         
         el = self.add_header('group_membership_header', 'Users In Group')
         
@@ -196,10 +196,7 @@ class PermissionForm(Form):
     def __init__(self):
         Form.__init__(self, 'permission-form')
         
-        el = self.add_text('name', 'Permission Name', required=True)
-        el.add_processor(MaxLength(250))
-        el.add_handler('column name is not unique',
-                 'That permission already exists.')
+        el = self.add_static('name', 'Permission Name', required=True)
         
         el = self.add_text('description', 'Description')
         el.add_processor(MaxLength(250))

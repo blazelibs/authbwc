@@ -570,3 +570,45 @@ class TestRecoverPassword(object):
         assert r.status_code == 200, r.status
         assert 'Your password has been reset successfully' in r.data
         assert req.url == 'http://localhost/'
+        
+class TestGroupViews(object):
+
+    @classmethod
+    def setup_class(cls):
+        cls.c = Client(ag._wsgi_test_app, BaseResponse)
+        perms = [u'users-manage', u'users-test1', u'users-test2']
+        cls.userid = login_client_with_permissions(cls.c, perms)
+        
+    def test_required_fields(self):
+        topost = {
+          'group-form-submit-flag':'submitted'
+        }
+        req, resp = self.c.post('groups/add', data=topost, follow_redirects=True)
+        assert resp.status_code == 200, resp.status
+        assert 'Group Name: field is required' in resp.data
+        
+    def test_group_name_unique(self):
+        topost = {
+            'approved_permissions': [],
+            'assigned_users': [],
+            'denied_permissions': [],
+            'group-form-submit-flag': u'submitted',
+            'name': u'test_group_name_unique',
+            'submit': u'Submit'
+        }
+        req, resp = self.c.post('groups/add', data=topost, follow_redirects=True)
+        assert '/groups/manage' in req.url
+        assert resp.status_code == 200, resp.status
+        assert 'group added successfully' in resp.data
+        
+        topost = {
+            'approved_permissions': [],
+            'assigned_users': [],
+            'denied_permissions': [],
+            'group-form-submit-flag': u'submitted',
+            'name': u'test_group_name_unique',
+            'submit': u'Submit'
+        }
+        resp = self.c.post('groups/add', data=topost)
+        assert resp.status_code == 200, resp.status
+        assert 'a group with that name already exists' in resp.data
