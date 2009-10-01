@@ -35,7 +35,6 @@ class TestUserViews(object):
             'password': 'testtest',
             'email_address': 'test@example.com',
             'password-confirm': 'testtest',
-            'email': 'test@exacmple.com',
             'user-form-submit-flag':'submitted',
             'inactive_flag': False,
             'inactive_date': '',
