@@ -72,5 +72,5 @@ class Permission(Entity):
     using_options(tablename="users_permission", metadata=db.meta, session=db.Session)
     
     def __repr__(self):
-        return '<Permission "%s" : %d>' % self.name
+        return '<Permission: "%s">' % self.name
 
