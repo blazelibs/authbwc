@@ -3,11 +3,11 @@ from pysmvt.routing import url_for
 from pysmvt.utils import toset
 from formencode.validators import MaxLength, MinLength
 from pysform.exceptions import ValueInvalid
-appimportauto('forms', 'Form')
+appimportauto('forms', ('Form', 'UniqueValidator'))
 
 modimportauto('users.actions', ('group_list_options','user_list_options',
     'permission_list_options','user_get','hash_pass',
-    'user_get_by_email'))
+    'user_get_by_email', 'user_get_by_login'))
 modimportauto('users.utils', 'validate_password_complexity')
 
 class UserFormBase(Form):
@@ -21,14 +21,13 @@ class UserFormBase(Form):
     def add_login_id_field(self):
         el = self.add_text('login_id', 'Login Id', required=True)
         el.add_processor(MaxLength(150))
-        el.add_handler('column login_id is not unique',
-                 'That user already exists.')
+        el.add_processor(UniqueValidator(fn=user_get_by_login), 'That user already exists.')
         return el
     
     def add_email_field(self):
         el = self.add_email('email_address', 'Email', required=True)
         el.add_processor(MaxLength(150))
-        el.add_handler('column email_address is not unique',
+        el.add_processor(UniqueValidator(fn=user_get_by_email),
                  'A user with that email address already exists.')
         return el
     
