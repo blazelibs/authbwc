@@ -8,7 +8,7 @@ appimportauto('forms', ('Form', 'UniqueValidator'))
 modimportauto('users.actions', ('group_list_options','user_list_options',
     'permission_list_options','user_get','hash_pass',
     'user_get_by_email', 'user_get_by_login', 'group_get_by_name'))
-modimportauto('users.utils', 'validate_password_complexity')
+modimportauto('users.utils', ('validate_password_complexity', 'note_password_complexity'))
 
 class UserFormBase(Form):
     def add_name_fields(self):
@@ -31,13 +31,15 @@ class UserFormBase(Form):
                  'A user with that email address already exists.')
         return el
     
-    def add_password_field(self, required, label='Password'):
+    def add_password_field(self, required, label='Password', add_note=True):
         el = self.add_password('password', label, required=required)
         el.add_processor(self.validate_password_complexity)
+        if add_note:
+            el.add_note(self.note_password_complexity)
         return el
     
-    def add_password_fields(self, required, label='Password'):
-        el = self.add_password_field(required, label)
+    def add_password_fields(self, required, label='Password', add_note=True):
+        el = self.add_password_field(required, label, add_note)
         cel = self.add_confirm('password-confirm', 'Confirm %s'%label, required=required, match=el)
         return el, cel
     
@@ -247,17 +249,13 @@ class ChangePasswordForm(UserFormBase):
             form.password.add_error(err)
             raise ValueInvalid()
 
-class NewPasswordForm(Form):
+class NewPasswordForm(UserFormBase):
 
     def __init__(self):
         Form.__init__(self, 'new-pass-form')
 
-        pel = self.add_password('password', 'Password', required=True)
-        pel.add_processor(MaxLength(25))
-        pel.add_processor(MinLength(6))
-        
-        el = self.add_confirm('password-confirm', 'Confirm Password', required=True, match=pel)
-        
+        add_password_fields(self, True):
+
         self.add_submit('submit')
 
 class LostPasswordForm(Form):

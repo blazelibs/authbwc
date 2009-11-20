@@ -35,4 +35,6 @@ def validate_password_complexity(password):
     if len(password) > 25:
         return 'Enter a value less than 25 characters long'
     return True
-    
+
+def note_password_complexity():
+    return 'Password must be at lest 6 characters long and no great then 25 characters long'
