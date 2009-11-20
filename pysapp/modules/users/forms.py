@@ -35,7 +35,7 @@ class UserFormBase(Form):
         el = self.add_password('password', label, required=required)
         el.add_processor(self.validate_password_complexity)
         if add_note:
-            el.add_note(self.note_password_complexity)
+            el.add_note(note_password_complexity)
         return el
     
     def add_password_fields(self, required, label='Password', add_note=True):
