@@ -254,7 +254,7 @@ class NewPasswordForm(UserFormBase):
     def __init__(self):
         Form.__init__(self, 'new-pass-form')
 
-        add_password_fields(self, True):
+        self.add_password_fields(self, True):
 
         self.add_submit('submit')
 
