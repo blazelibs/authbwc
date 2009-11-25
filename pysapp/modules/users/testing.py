@@ -37,16 +37,20 @@ def login_client_as_user(client, username, password):
 
 def create_user_with_permissions(approved_perms=None, denied_perms=None, super_user=False):
     user_update = modimport('users.actions', 'user_update')
-    permission_add = modimport('users.actions', 'permission_add')
+    permission_get_by_name = modimport('users.actions', 'permission_get_by_name')
     
     appr_perm_ids = []
     denied_perm_ids = []
     # create the permissions
     for perm in tolist(approved_perms):
-        p = permission_add(name=perm, safe='unique')
+        p = permission_get_by_name(perm)
+        if p is None:
+            raise ValueError('permission %s does not exist' % perm)
         appr_perm_ids.append(p.id)
     for perm in tolist(denied_perms):
-        p = permission_add(name=perm, safe='unique')
+        p = permission_get_by_name(perm)
+        if p is None:
+            raise ValueError('permission %s does not exist' % perm)
         denied_perm_ids.append(p.id)
 
     # create the user
