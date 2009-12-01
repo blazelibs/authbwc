@@ -20,7 +20,7 @@ def action_users_initdb():
     
     # this module's permissions
     from actions import permission_add
-    permission_add(name=u'users-manage')
+    permission_add(name=u'users-manage', safe='unique')
 
 @console_broadcast
 def action_users_testdata():
