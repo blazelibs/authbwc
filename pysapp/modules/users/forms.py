@@ -1,3 +1,4 @@
+from pysutils import tolist
 from pysmvt import user, modimportauto, appimportauto
 from pysmvt.routing import url_for
 from pysmvt.utils import toset
@@ -35,7 +36,8 @@ class UserFormBase(Form):
         el = self.add_password('password', label, required=required)
         el.add_processor(self.validate_password_complexity)
         if add_note:
-            el.add_note(note_password_complexity())
+            for note in tolist(note_password_complexity()):
+                el.add_note(note)
         return el
     
     def add_password_fields(self, required, label='Password', add_note=True):
