@@ -60,6 +60,10 @@ def addadmin_init():
              super_user = True, assigned_groups = None,
              approved_permissions = None, denied_permissions = None, safe='unique' )
 
+def addadmingroup_init():
+    from actions import group_add
+    group_add(name=u'admin', assigned_users=[], approved_permissions=[], denied_permissions=[], safe='unique')
+
 @console_dispatch
 def action_users_addadmin():
     """ used to add an admin user to the database """
