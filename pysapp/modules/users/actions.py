@@ -314,7 +314,9 @@ def group_delete(id):
 
 def group_delete_by_name(name):
     group = group_get_by_name(name)
-    return group_delete(group.id)
+    if group:
+        return group_delete(group.id)
+    return False
 
 def group_user_ids(group):
     users = User.query.filter(User.groups.any(id=group.id)).all()
