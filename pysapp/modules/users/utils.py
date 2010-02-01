@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from pysmvt import settings, getview
+from pysmvt import settings, getview, modimport
 from pysmvt.routing import current_url
 from pysmvt.mail import EmailMessage
 
@@ -38,3 +38,25 @@ def validate_password_complexity(password):
 
 def note_password_complexity():
     return 'min 6 chars, max 25 chars'
+
+def add_administrative_user(allow_profile_defaults=True):
+    from getpass import getpass
+    user_add = modimport('users.actions', 'user_add')
+    
+    defaults = settings.modules.users.admin
+    # add a default administrative user
+    if allow_profile_defaults and defaults.username and defaults.password and defaults.email:
+        ulogin = defaults.username
+        uemail = defaults.email
+        p1 = defaults.password
+    else:
+        ulogin = raw_input("User's Login id:\n> ")
+        uemail = raw_input("User's email:\n> ")
+        while True:
+            p1 = getpass("User's password:\n> ")
+            p2 = getpass("confirm password:\n> ")
+            if p1 == p2:
+                break
+    user_add(login_id = unicode(ulogin), email_address = unicode(uemail), password = p1,
+             super_user = True, assigned_groups = None,
+             approved_permissions = None, denied_permissions = None, safe='unique' )
