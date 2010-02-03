@@ -31,7 +31,7 @@ class UserUpdate(UpdateCommon):
         if id:
             sess_user_obj = user_get(usr.get_attr('id'))
             edited_user_obj = user_get(id)
-            if edited_user_obj.super_user and not sess_user_obj.super_user:
+            if edited_user_obj and edited_user_obj.super_user and not sess_user_obj.super_user:
                 self.is_authorized = False
 
     def post_auth_setup(self, id):
