@@ -40,7 +40,7 @@ class UserUpdate(UpdateCommon):
         if not self.isAdd:
             self.dbobj = self.action_get(id)
             if self.dbobj is None:
-                user.add_message('error', self.message_exists_not % {'objectname':self.objectname})
+                usr.add_message('error', self.message_exists_not % {'objectname':self.objectname})
                 self.on_edit_error()
             vals = self.dbobj.to_dict()
             vals['assigned_groups'] = user_group_ids(self.dbobj)
@@ -79,7 +79,7 @@ class UserDelete(DeleteCommon):
         if id:
             sess_user_obj = user_get(usr.get_attr('id'))
             edited_user_obj = user_get(id)
-            if edited_user_obj.super_user and not sess_user_obj.super_user:
+            if edited_user_obj and edited_user_obj.super_user and not sess_user_obj.super_user:
                 self.is_authorized = False
 
     def default(self, id):

@@ -269,6 +269,14 @@ class TestUserViews(object):
         assert 'You cannot delete your own user account' in r.data
         assert resp.url.endswith('users/manage')
 
+    def test_non_existing_id(self):
+        non_existing_id = 9999
+        while user_get(non_existing_id):
+            non_existing_id += 1000
+        r = self.c.get('users/edit/%s' % non_existing_id)
+        assert r.status_code == 302, r.status
+        r = self.c.get('users/delete/%s' % non_existing_id)
+        assert r.status_code == 302, r.status
 
 class TestUserProfileView(object):
 
