@@ -3,7 +3,7 @@ from werkzeug import Client, BaseResponse, BaseRequest
 
 modimportauto('users.testing', ('login_client_with_permissions',
     'create_user_with_permissions'))
-modimportauto('users.actions', ('group_add'))
+modimportauto('users.actions', ('group_add','permission_list_options'))
 
 class TestNotAuthenticated(object):
 
@@ -119,6 +119,8 @@ class TestUsersManage(object):
         user_id = create_user_with_permissions().id
         # add a group so we get 200s when working with it instead of 302s
         group_id = group_add(name=u'TestUsersManage.test_ok-group').id
+        # get a list of permissions (there should be at least one) so we have a real id
+        permission_id = permission_list_options()[0][0]
         
         routes = (
             '/users/add',
@@ -132,7 +134,7 @@ class TestUsersManage(object):
             '/groups/edit/%s' % group_id,
             '/groups/manage',
             '/permissions/manage',
-            '/permissions/edit/1'
+            '/permissions/edit/%s' % permission_id,
         )
         for route in routes:
             yield self.check_code, 200, route
