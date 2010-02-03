@@ -273,10 +273,14 @@ class TestUserViews(object):
         non_existing_id = 9999
         while user_get(non_existing_id):
             non_existing_id += 1000
-        r = self.c.get('users/edit/%s' % non_existing_id)
-        assert r.status_code == 302, r.status
-        r = self.c.get('users/delete/%s' % non_existing_id)
-        assert r.status_code == 302, r.status
+        req, resp = self.c.get('users/edit/%s' % non_existing_id, follow_redirects=True)
+        assert req.url.endswith('/users/manage'), req.url
+        assert resp.status_code == 200, r.status
+        assert 'the requested user does not exist' in resp.data[0:250]
+        req, resp = self.c.get('users/delete/%s' % non_existing_id, follow_redirects=True)
+        assert req.url.endswith('/users/manage'), req.url
+        assert resp.status_code == 200, r.status
+        assert 'user was not found' in resp.data[0:250], resp.data[0:250]
 
 class TestUserProfileView(object):
 
