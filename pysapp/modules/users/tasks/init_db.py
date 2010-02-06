@@ -4,18 +4,19 @@ from pysapp.lib.db import run_module_sql
 def action_20_custom_sql():
     run_module_sql('users', 'create_views', use_dialect=True)
 
+@attributes('base-data')
 def action_30_base_data():    
     # this module's permissions
     from ..actions import permission_add
     permission_add(name=u'users-manage', safe='unique')
 
-@attributes('-test')
-def action_30_admin_user():
+@attributes('+dev')
+def action_40_admin_user():
     from ..utils import add_administrative_user
     add_administrative_user()
 
 @attributes('+test')
-def action_30_test_data():
+def action_40_test_data():
     from ..actions import permission_add
     permission_add(name=u'ugp_approved')
     permission_add(name=u'ugp_denied')
