@@ -51,7 +51,7 @@ class TestUserViews(object):
             'user-form-submit-flag':'submitted'
         }
         r = self.c.post('users/add', data=topost)
-        assert 'Login Id: Enter a value less than 150 characters long' in r.data
+        assert 'Login Id: Enter a value not greater than 150 characters long' in r.data
     
     def test_email_unique(self):
         user = user_get(self.userid)
@@ -78,7 +78,7 @@ class TestUserViews(object):
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Email: Enter a value less than 150 characters long' in r.data
+        assert 'Email: Enter a value not greater than 150 characters long' in r.data
     
     def test_email_format(self):
         topost = {
