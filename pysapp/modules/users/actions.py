@@ -10,9 +10,8 @@ from pysmvt.exceptions import ActionError
 from pysmvt import user as usr
 from pysmvt import db, modimportauto
 from pysmvt.utils import randchars, tolist
-from utils import send_new_user_email, send_change_password_email, \
-    send_password_reset_email
-
+modimportauto('users.utils', ('send_new_user_email', 'send_change_password_email',
+    'send_password_reset_email'))
 modimportauto('users.model.autoloads', ('vuserperms'))
 
 def user_update(id, **kwargs):
@@ -46,7 +45,7 @@ def user_update(id, **kwargs):
         #  initmod call will not have this flag
         if kwargs.get('email_notify'):
             if id is None:
-                send_new_user_email(kwargs['login_id'], kwargs['password'], kwargs['email_address'])
+                send_new_user_email(u, kwargs['password'])
             elif kwargs['password']:
                 send_change_password_email(kwargs['login_id'], kwargs['password'], kwargs['email_address'])
 
