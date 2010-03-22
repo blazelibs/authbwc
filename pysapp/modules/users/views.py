@@ -318,8 +318,8 @@ class PermissionManage(ManageCommon):
         t.description = Col('Description')
 
 class NewUserEmail(PublicTextSnippetView):
-    def default(self, login_id, password):
-        self.assign('login_id', login_id)
+    def default(self, user_obj, password):
+        self.assign('user_obj', user_obj)
         self.assign('password', password)
         
         self.assign('login_url', url_for('users:Login', _external=True))

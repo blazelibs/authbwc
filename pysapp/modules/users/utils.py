@@ -11,10 +11,10 @@ def after_login_url():
             return settings.modules.users.after_login_url
     return current_url(root_only=True)
 
-def send_new_user_email(login_id, password, email_address):
+def send_new_user_email(user_obj, password):
     subject = '%s - User Login Information' % (settings.name.full)
-    body = getview('users:NewUserEmail', login_id=login_id, password=password)
-    email = EmailMessage(subject, body, None, [email_address])
+    body = getview('users:NewUserEmail', user_obj=user_obj, password=password)
+    email = EmailMessage(subject, body, None, [user_obj.email_address])
     email.send()
 
 def send_change_password_email(login_id, password, email_address):
