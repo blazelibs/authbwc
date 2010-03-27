@@ -1,7 +1,8 @@
 from pysmvt import modimport, db, appimportauto
 from pysutils import tolist, randchars
-from werkzeug import BaseRequest
+from werkzeug import BaseRequest, Client as WerkzeugClient
 from pysmvt.test import Client
+import paste.fixture
 
 def login_client_with_permissions(client, approved_perms=None, denied_perms=None, super_user=False):
     """
@@ -16,24 +17,32 @@ def login_client_with_permissions(client, approved_perms=None, denied_perms=None
     user_id = user.id
     
     # login with the user
-    req, resp = login_client_as_user(client, user.login_id, user.text_password)
-    assert resp.status_code == 200, resp.status
-    assert 'You logged in successfully!' in resp.data
-    assert req.url == 'http://localhost/'
-    
+    login_client_as_user(client, user.login_id, user.text_password)
+
     return user_id
 
 def login_client_as_user(client, username, password):
     topost = {'login_id': username,
           'password': password,
           'login-form-submit-flag':'1'}
-    if isinstance(client, Client):
-        # pysmvt client handles follow_redirects differently
-        return client.post('users/login', data=topost, follow_redirects=True)
+    if isinstance(client, (Client, WerkzeugClient)):
+        if isinstance(client, Client):
+            # pysmvt client handles follow_redirects differently
+            req, resp = client.post('users/login', data=topost, follow_redirects=True)
+        else:
+            # werkzeug Client
+            environ, resp = client.post('users/login', data=topost, as_tuple=True, follow_redirects=True)
+            req = BaseRequest(environ)
+        assert resp.status_code == 200, resp.status
+        assert 'You logged in successfully!' in resp.data, resp.data[0:500]
+        assert req.url == 'http://localhost/'
+    elif isinstance(client, paste.fixture.TestApp):
+        res = client.post('/users/login', params=topost)
+        res = res.follow()
+        assert res.request.url == '/', res.request.url
+        res.mustcontain('You logged in successfully!')
     else:
-        # werkzeug Client
-        environ, r = client.post('users/login', data=topost, as_tuple=True, follow_redirects=True)
-        return BaseRequest(environ), r
+        raise TypeError('client is of an unexpected type: %s' % client.__class__)
 
 def create_user_with_permissions(approved_perms=None, denied_perms=None, super_user=False):
     user_update = modimport('users.actions', 'user_update')
