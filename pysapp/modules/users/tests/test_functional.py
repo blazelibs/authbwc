@@ -486,7 +486,10 @@ def test_inactive_login():
     
     # log user in
     client = Client(ag._wsgi_test_app, BaseResponse)
-    req, resp = login_client_as_user(client, user.login_id, user.text_password)
+    topost = {'login_id': user.login_id,
+          'password': user.text_password,
+          'login-form-submit-flag':'1'}
+    req, resp = client.post('users/login', data=topost, follow_redirects=True)
     assert resp.status_code == 200, resp.status
     assert 'That user is inactive.' in resp.data
     assert req.url == 'http://localhost/users/login'
