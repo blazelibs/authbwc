@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import datetime
-from pysmvt import redirect, session, ag, appimportauto, settings, modimportauto
-from pysmvt import user as usr
+import logging
+from pysmvt import redirect, session, ag, appimportauto, settings, modimportauto, rg
+from pysmvt import user as usr, session
 from pysmvt.exceptions import ActionError
 from pysmvt.routing import url_for, current_url
 from pysmvt.htmltable import Col, YesNo, Link, Table
@@ -19,6 +20,8 @@ modimportauto('users.utils', ('after_login_url'))
 modimportauto('users.forms', ('ChangePasswordForm', 'NewPasswordForm',
     'LostPasswordForm', 'LoginForm'))
 _modname = 'users'
+
+log = logging.getLogger(__name__)
 
 class UserUpdate(UpdateCommon):
     def prep(self):
@@ -244,6 +247,7 @@ class Login(PublicPageView):
                     usr.add_message('error', 'That user is inactive.')
                 else:
                     load_session_user(user)
+                    log.application('user %s logged in; session id: %s; remote_ip: %s', user.login_id, session.id, rg.request.remote_addr)
                     usr.add_message('notice', 'You logged in successfully!')
                     if user.reset_required:
                         url = url_for('users:ChangePassword')
@@ -251,6 +255,7 @@ class Login(PublicPageView):
                         url = after_login_url()
                     redirect(url)
             else:
+                log.application('user login failed; user login: %s; session id: %s; remote_ip: %s', self.form.login_id.value, session.id, rg.request.remote_addr)
                 usr.add_message('error', 'Login failed!  Please try again.')
         elif self.form.is_submitted():
             # form was submitted, but invalid
