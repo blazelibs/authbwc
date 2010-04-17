@@ -3,7 +3,11 @@ from pysutils import tolist, randchars
 from werkzeug import BaseRequest, Client as WerkzeugClient
 from pysmvt.test import Client
 import paste.fixture
-
+try:
+    from webtest import TestApp
+except ImportError:
+    TestApp = None
+    
 def login_client_with_permissions(client, approved_perms=None, denied_perms=None, super_user=False):
     """
         Creates a user with the given permissions and then logs in with said
@@ -36,10 +40,10 @@ def login_client_as_user(client, username, password):
         assert resp.status_code == 200, resp.status
         assert 'You logged in successfully!' in resp.data, resp.data[0:500]
         assert req.url == 'http://localhost/'
-    elif isinstance(client, paste.fixture.TestApp):
+    elif isinstance(client, (paste.fixture.TestApp, TestApp)):
         res = client.post('/users/login', params=topost)
         res = res.follow()
-        assert res.request.url == '/', res.request.url
+        assert res.request.url == '/' or res.request.url == 'http://localhost/', res.request.url
         res.mustcontain('You logged in successfully!')
     else:
         raise TypeError('client is of an unexpected type: %s' % client.__class__)
