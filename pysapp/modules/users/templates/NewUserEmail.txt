@@ -1,0 +1,14 @@
+You have been added to our system of registered users.
+
+Please log in with the information below using the following link:
+<{ login_url }>
+
+user name: <{ login_id }>
+password: <{ password }>
+
+This password is only temporary and you will be REQUIRED to change it upon
+your first successful login.
+
+-- 
+<{ settings.name.full }>
+<{ index_url }>

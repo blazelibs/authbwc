@@ -1,0 +1,25 @@
+- when a group is deleted, its relationship to a user in [users_user_groups__users_group_users]
+    is not deleted (and other FK relationships need to be maintained)
+
+- need some kind of note on the permission map for super users
+- create a permissions map that shows each permission and where it has been
+    approved/denied (i.e. non user specific)
+
+- in this and the contactform delete view, we need to make sure that if the item is not deleted that the error message is given
+
+- password policy enforcement
+
+== Permissions ==
+
+`users-manage` required to:
+ * add/edit/delete non-super users
+ * reset a non-super user's password
+ * assign users to groups
+ * view permission map
+ 
+super status required to:
+ * assign super status
+ * assign permissions to users or groups
+ * add/edit/delete super users
+ * add/edit/delete groups
+ * add/edit/delete permissions
