@@ -1,0 +1,8 @@
+<% extends settings.template.default %>
+<% block title %>User Login | <{super()}><% endblock %>
+<% block body %>
+    <h2>User Login</h2>
+    <p>Please use the form below to sign in.</p>
+    <{ formHtml }>
+    <p><a href="<{ url_for('users:LostPassword') }>">Recover Password</a></p>
+<% endblock body%>

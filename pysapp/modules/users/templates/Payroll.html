@@ -1,0 +1,28 @@
+<% extends settings.template.default %>
+<% block title %>Payroll Records | <{super()}><% endblock %>
+<% block body %>
+    <h1>Payroll Records</h1>
+    <% for row in records %>
+        <% if loop.first %>
+            <table class="dataTable" cellpadding="0" cellspacing="0">
+                <tr>
+                    <th class="first_col">Employee</th>
+                    <th>Manger</th>
+                    <th>Date</th>
+                    <th>Gross</th>
+                </tr>
+        <% endif %>
+                <tr>
+                    <td class="first_col"><{row['empname']}></td>
+                    <td><{row['manager']}></td>
+                    <td><{row['date']}></td>
+                    <td>$<{row['gross']}></td>
+                </tr>
+        <% if loop.last %>
+            </table>
+        <% endif %>
+    <% else %>
+    <p>You do not have the correct permissions to view payroll!</p>
+    <% endfor %>
+    
+<% endblock body%>
