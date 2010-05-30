@@ -25,7 +25,7 @@ def login_client_with_permissions(client, approved_perms=None, denied_perms=None
 
     return user_id
 
-def login_client_as_user(client, username, password):
+def login_client_as_user(client, username, password, validate_login_response=True):
     topost = {'login_id': username,
           'password': password,
           'login-form-submit-flag':'1'}
@@ -37,14 +37,18 @@ def login_client_as_user(client, username, password):
             # werkzeug Client
             environ, resp = client.post('users/login', data=topost, as_tuple=True, follow_redirects=True)
             req = BaseRequest(environ)
-        assert resp.status_code == 200, resp.status
-        assert 'You logged in successfully!' in resp.data, resp.data[0:500]
-        assert req.url == 'http://localhost/'
+        if validate_login_response:
+            assert resp.status_code == 200, resp.status
+            assert 'You logged in successfully!' in resp.data, resp.data[0:500]
+            assert req.url == 'http://localhost/'
+        return req, resp
     elif isinstance(client, (paste.fixture.TestApp, TestApp)):
         res = client.post('/users/login', params=topost)
         res = res.follow()
-        assert res.request.url == '/' or res.request.url == 'http://localhost/', res.request.url
+        if validate_login_response:
+            assert res.request.url == '/' or res.request.url == 'http://localhost/', res.request.url
         res.mustcontain('You logged in successfully!')
+        return resp
     else:
         raise TypeError('client is of an unexpected type: %s' % client.__class__)
 
