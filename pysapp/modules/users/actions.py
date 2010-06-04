@@ -5,7 +5,8 @@ from model.metadata import user_permission_assignments as tbl_upa
 from hashlib import sha512
 from sqlalchemy import Column, literal
 from sqlalchemy.exc import DatabaseError
-from sqlalchemy.sql import select, and_, text, alias, join, case, or_
+from sqlalchemy.sql import select, and_, text, alias, case, or_
+from sqlalchemy.orm import join
 from pysmvt.exceptions import ActionError
 from pysmvt import user as usr
 from pysmvt import db, modimportauto
@@ -15,28 +16,35 @@ modimportauto('users.utils', ('send_new_user_email', 'send_change_password_email
 modimportauto('users.model.autoloads', ('vuserperms'))
 
 def user_update(id, **kwargs):
-    
+
     if id is None:
         u = User()
+        db.sess.add(u)
         # when creating a new user, if the password is not set, assign it as
         # a random string assuming the email will get sent out to the user
         # and they will change it when they login
         if not kwargs.get('password', None):
             kwargs['password'] = randchars(8)
     else:
-        u = User.get_by(id=id)
+        u = user_get(id)
     
     # automatically turn on reset_password when the password get set manually
     # (i.e. when an admin does it), unless told not to (when a user does it
     # for their own account)
     if kwargs.get('password') and kwargs.get('pass_reset_ok', True):
         kwargs['reset_required'] = True
-        
-    # some values can not be set directly
-    if kwargs.has_key('hash_pass'):
-        del(kwargs['hash_pass'])   
-    try: 
-        u.from_dict(kwargs)
+
+    for k, v in kwargs.iteritems():
+        try:
+            # some values can not be set directly
+            if k in ('hash_pass', 'assigned_groups', 'approved_permissions', 'denied_permissions'):
+                pass
+            else:
+                setattr(u, k, v)
+        except AttributeError:
+            pass
+
+    try:
         u.groups = create_groups(kwargs.get('assigned_groups', []))
         db.sess.flush()
         permission_assignments_user(u, kwargs.get('approved_permissions', []), kwargs.get('denied_permissions', []))
@@ -79,14 +87,14 @@ def hash_pass(password):
     
 def user_update_password(id, **kwargs):
     dbsession = db.sess
-    u = User.get_by(id=id)
+    u = user_get(id)
     u.password = kwargs['password']
     u.reset_required = False
     dbsession.commit()
 
 def user_lost_password(email_address):
     #email_address is validated in LostPasswordForm
-    u = User.get_by(email_address=email_address)
+    u = db.sess.query(User).filter(User.email_address==email_address).first()
     if not u:
         return False
     
@@ -111,32 +119,36 @@ def user_kill_reset_key(user):
         raise
 
 def user_list():
-    return User.query.all()
+    return db.sess.query(User).all()
 
 def user_get(id):
-    return User.get_by(id=id)
+    return db.sess.query(User).get(id)
 
 def user_get_by_email(email_address):
-    return User.get_by(email_address=email_address)
+    return db.sess.query(User).filter(User.email_address==email_address).first()
 
 def user_get_by_login(login_id):
-    return User.get_by(login_id=login_id)
+    return db.sess.query(User).filter(User.login_id==login_id).first()
     
 def user_delete(id):
     dbsession = db.sess
-    user = User.get_by(id=id)
+    user = user_get(id)
     if user is not None:
-        user.delete()
-        dbsession.commit()
+        db.sess.delete(user)
+        try:
+            dbsession.commit()
+        except:
+            dbsession.rollback()
+            raise
         return True
     return False
 
 def user_group_ids(user):
-    groups = Group.query.filter(Group.users.any(id=user.id)).all()
+    groups = db.sess.query(Group).filter(Group.users.any(id=user.id)).all()
     return [g.id for g in groups]
 
 def user_list_options():
-    return [(u.id, u.login_id) for u in User.query.order_by('login_id')]
+    return [(u.id, u.login_id) for u in db.sess.query(User).order_by('login_id')]
 
 def user_assigned_perm_ids(user):
     dbsession = db.sess
@@ -156,7 +168,7 @@ def user_assigned_perm_ids(user):
 
 def user_get_by_permissions_query(permissions):
     q = db.sess.query(User).select_from(
-        User.table.join(vuserperms, User.id == vuserperms.c.user_id)
+        join(User, vuserperms, User.id == vuserperms.c.user_id)
     ).filter(
         or_(
             vuserperms.c.user_approved == 1,
@@ -225,7 +237,7 @@ def user_permission_map_groups(uid):
     return retval
 
 def user_validate(**kwargs):
-    return User.get_by(login_id = kwargs['login_id'], pass_hash=hash_pass(kwargs['password']))
+    return db.sess.query(User).filter_by(login_id=kwargs['login_id'], pass_hash=hash_pass(kwargs['password'])).first()
 
 def load_session_user(user):
     usr.set_attr('id', user.id)
@@ -242,41 +254,39 @@ def load_session_user(user):
 ## Group Actions
 
 def group_update(id, **kwargs):
-    try: 
-        if id is not None:
-           return group_edit(id, **kwargs)
-        else:
-           return group_add(**kwargs)
-            
-    except DatabaseError, e:
-        db.sess.rollback()
-        raise
-    
-def group_add(safe=False, name=None, assigned_users=None, approved_permissions=None,
-            denied_permissions=None, **kwargs):
     dbsession = db.sess
-    try:
+    if id is None:
         g = Group()
-        g.name = name
-        g.users = create_users(assigned_users)
-        dbsession.flush()
-        permission_assignments_group(g, approved_permissions, denied_permissions)
+        db.sess.add(g)
+    else:
+        g = group_get(id)
+
+    for k, v in kwargs.iteritems():
+        try:
+            # some values can not be set directly
+            if k in ('assigned_users', 'approved_permissions', 'denied_permissions'):
+                pass
+            else:
+                setattr(g, k, v)
+        except AttributeError:
+            pass
+
+    try:
+        g.users = create_users(kwargs.get('assigned_users',[]))
+        permission_assignments_group(g, kwargs.get('approved_permissions',[]), kwargs.get('denied_permissions',[]))
         dbsession.commit()
-        return g
-    except Exception, e:
+    except:
         dbsession.rollback()
+        raise
+    return g
+
+def group_add(safe=False, **kwargs):
+    try:
+        return group_update(None, **kwargs)
+    except Exception, e:
         if safe == False or safe not in str(e):
             raise
-        return group_get_by_name(name)
-
-def group_edit(id, **kwargs):
-    dbsession = db.sess
-    g = Group.get_by(id=id)
-    g.from_dict(kwargs)
-    g.users = create_users(kwargs['assigned_users'])
-    permission_assignments_group(g, kwargs['approved_permissions'], kwargs['denied_permissions'])
-    dbsession.commit()
-    return g
+        return group_get_by_name(kwargs['name'])
 
 def create_users(user_ids):
     users = []
@@ -289,25 +299,28 @@ def create_users(user_ids):
     return users
 
 def group_list():
-    return Group.query.order_by('name').all()
+    return db.sess.query(Group).order_by(Group.name).all()
 
 def group_list_options():
-    return [(g.id, g.name) for g in Group.query.order_by('name')]
+    return [(g.id, g.name) for g in db.sess.query(Group).order_by(Group.name)]
 
 def group_get(id):
-    return Group.get_by(id=id)
+    return db.sess.query(Group).get(id)
 
 def group_get_by_name(name):
-    return Group.get_by(name=name)
+    return db.sess.query(Group).filter(Group.name==name).first()
     
 def group_delete(id):
     dbsession = db.sess
-    # @todo: the user/group relationship needs to be deleted too
-    group = Group.get_by(id=id)
+    group = group_get(id)
     
     if group is not None:
-        group.delete()
-        dbsession.commit()
+        db.sess.delete(group)
+        try:
+            dbsession.commit()
+        except:
+            dbsession.rollback()
+            raise
         return True
     return False
 
@@ -318,7 +331,7 @@ def group_delete_by_name(name):
     return False
 
 def group_user_ids(group):
-    users = User.query.filter(User.groups.any(id=group.id)).all()
+    users = db.sess.query(User).filter(User.groups.any(id=group.id)).all()
     return [u.id for u in users]
 
 def group_assigned_perm_ids(group):
@@ -356,51 +369,55 @@ def group_add_permissions_to_existing(gname, approved=[], denied=[]):
 ## Permissions
 
 def permission_update(id, **kwargs):
-    try:
-        if id is not None:
-            permission_edit(id, **kwargs)
-        else:
-            permission_add(**kwargs)
-    except:
-        db.sess.rollback()
-        raise
-    
-def permission_add(safe=False, **kwargs):
-    try:
-        dbsession = db.sess
+    dbsession = db.sess
+    if id is None:
         p = Permission()
-        p.from_dict(kwargs)
+        db.sess.add(p)
+    else:
+        p = permission_get(id)
+
+    for k, v in kwargs.iteritems():
+        try:
+            setattr(p, k, v)
+        except AttributeError:
+            pass
+
+    try:
         dbsession.commit()
         return p
     except Exception, e:
         dbsession.rollback()
+        raise
+        
+def permission_add(safe=False, **kwargs):
+    try:
+        return permission_update(None, **kwargs)
+    except Exception, e:
         if safe == False or safe not in str(e):
             raise
         return permission_get_by_name(kwargs['name'])
 
-def permission_edit(id, **kwargs):
-    dbsession = db.sess
-    p = Permission.get_by(id=id)
-    p.from_dict(kwargs)
-    dbsession.commit()
-
 def permission_list():
-    return Permission.query.order_by('name').all()
+    return db.sess.query(Permission).order_by(Permission.name).all()
 
 def permission_list_options():
-    return [(p.id, p.name) for p in Permission.query.order_by('name')]
+    return [(p.id, p.name) for p in db.sess.query(Permission).order_by(Permission.name)]
 
 def permission_get(id):
-    return Permission.get_by(id=id)
+    return db.sess.query(Permission).get(id)
     
 def permission_get_by_name(name):
-    return Permission.get_by(name=name)
+    return db.sess.query(Permission).filter_by(name=name).first()
 
 def permission_delete(id):
-    permission = Permission.get_by(id=id)
+    permission = permission_get(id)
     if permission is not None:
-        permission.delete()
-        db.sess.commit()
+        db.sess.delete(permission)
+        try:
+            db.sess.commit()
+        except:
+            db.sess.rollback()
+            raise
         return True
     return False
 
