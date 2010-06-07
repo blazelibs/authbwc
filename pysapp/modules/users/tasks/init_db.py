@@ -1,8 +1,4 @@
 from pysmvt.tasks import attributes
-from pysapp.lib.db import run_module_sql
-
-def action_20_custom_sql():
-    run_module_sql('users', 'create_views', use_dialect=True)
 
 @attributes('base-data')
 def action_30_base_data():    
