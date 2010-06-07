@@ -1,19 +1,19 @@
 import datetime
-from model.orm import User, Group, Permission
+from model.orm import User, Group, Permission, user_groups
 from model.metadata import group_permission_assignments as tbl_gpa
 from model.metadata import user_permission_assignments as tbl_upa
 from hashlib import sha512
 from sqlalchemy import Column, literal
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.sql import select, and_, text, alias, case, or_
-from sqlalchemy.orm import join
+from sqlalchemy.sql.functions import sum
+from sqlalchemy.orm import join, outerjoin
 from pysmvt.exceptions import ActionError
 from pysmvt import user as usr
 from pysmvt import db, modimportauto
 from pysmvt.utils import randchars, tolist
 modimportauto('users.utils', ('send_new_user_email', 'send_change_password_email',
     'send_password_reset_email'))
-modimportauto('users.model.autoloads', ('vuserperms'))
 
 def user_update(id, **kwargs):
 
@@ -37,7 +37,7 @@ def user_update(id, **kwargs):
     for k, v in kwargs.iteritems():
         try:
             # some values can not be set directly
-            if k in ('hash_pass', 'assigned_groups', 'approved_permissions', 'denied_permissions'):
+            if k in ('pass_hash', 'assigned_groups', 'approved_permissions', 'denied_permissions'):
                 pass
             else:
                 setattr(u, k, v)
@@ -167,6 +167,7 @@ def user_assigned_perm_ids(user):
     return approved, denied
 
 def user_get_by_permissions_query(permissions):
+    vuserperms = query_users_permissions().alias()
     q = db.sess.query(User).select_from(
         join(User, vuserperms, User.id == vuserperms.c.user_id)
     ).filter(
@@ -191,8 +192,18 @@ def user_get_by_permissions(permissions):
 
 def user_permission_map(uid):
     dbsession = db.sess
-    s = select([text('*')], 'user_id = :x', from_obj='v_users_permissions')
-    results = dbsession.execute(s, {'x':uid})
+    #s = select([text('*')], 'user_id = :x', from_obj='v_users_permissions')
+    #results = dbsession.execute(s, {'x':uid})
+    user_perm = query_users_permissions()
+    s = select([user_perm.c.user_id,
+                 user_perm.c.permission_id,
+                 user_perm.c.permission_name,
+                 user_perm.c.login_id,
+                 user_perm.c.user_approved,
+                 user_perm.c.group_approved,
+                 user_perm.c.group_denied,],
+               from_obj=user_perm).where(user_perm.c.user_id==uid)
+    results = dbsession.execute(s)
     retval = []
     for row in results:
         nrow = {}
@@ -224,8 +235,13 @@ def user_permission_map(uid):
 
 def user_permission_map_groups(uid):
     dbsession = db.sess
-    s = select([text('*')], 'user_id = :x', from_obj='v_users_user_group_permissions')
-    results = dbsession.execute(s, {'x':uid})
+    user_group_perm = query_user_group_permissions()
+    s = select([user_group_perm.c.permission_id,
+                user_group_perm.c.group_name,
+                user_group_perm.c.group_id,
+                user_group_perm.c.group_approved],
+               from_obj=user_group_perm).where(user_group_perm.c.user_id==uid)
+    results = dbsession.execute(s)
     retval = {}
     for row in results:
         if not retval.has_key(row['permission_id']):
@@ -480,4 +496,99 @@ def permission_assignments_user(user, approved_perm_ids, denied_perm_ids):
         dbsession.execute(tbl_upa.insert(), insval)
 
     return
-    
+
+def query_denied_group_permissions():
+    return  select(
+                [Permission.id.label(u'permission_id'),
+                 user_groups.c.users_user_id.label(u'user_id'),
+                 sum(tbl_gpa.c.approved).label(u'group_denied'),],
+                from_obj=
+                    outerjoin(Permission,
+                        tbl_gpa,
+                        and_(
+                            Permission.id==tbl_gpa.c.permission_id,
+                            tbl_gpa.c.approved==-1
+                        )
+                    ).outerjoin(
+                        user_groups, user_groups.c.users_group_id==tbl_gpa.c.group_id
+                    )
+            ).group_by(
+                Permission.id,
+                user_groups.c.users_user_id
+            )
+
+def query_approved_group_permissions():
+    return  select(
+                [Permission.id.label(u'permission_id'),
+                 user_groups.c.users_user_id.label(u'user_id'),
+                 sum(tbl_gpa.c.approved).label(u'group_approved'),],
+                from_obj=
+                    outerjoin(Permission,
+                        tbl_gpa,
+                        and_(
+                            Permission.id==tbl_gpa.c.permission_id,
+                            tbl_gpa.c.approved==1
+                        )
+                    ).outerjoin(
+                        user_groups, user_groups.c.users_group_id==tbl_gpa.c.group_id
+                    )
+            ).group_by(
+                Permission.id,
+                user_groups.c.users_user_id
+            )
+
+def query_user_group_permissions():
+    return  select(
+                [User.id.label(u'user_id'),
+                 Group.id.label(u'group_id'),
+                 Group.name.label(u'group_name'),
+                 tbl_gpa.c.permission_id,
+                 tbl_gpa.c.approved.label(u'group_approved'),],
+                from_obj=
+                    outerjoin(User,
+                        user_groups,
+                        User.id==user_groups.c.users_user_id
+                    ).outerjoin(
+                        Group, Group.id==user_groups.c.users_group_id
+                    ).outerjoin(
+                        tbl_gpa, tbl_gpa.c.group_id==Group.id
+                    )
+            ).where(tbl_gpa.c.permission_id != None)
+
+def query_users_permissions():
+    ga = query_approved_group_permissions().alias('g_approve')
+    gd = query_denied_group_permissions().alias('g_deny')
+    user_perm = select([User.id.label(u'user_id'),
+                        Permission.id.label(u'permission_id'),
+                        Permission.name.label(u'permission_name'),
+                        User.login_id]).correlate(None).alias(u'user_perm')
+    return  select(
+                [user_perm.c.user_id,
+                 user_perm.c.permission_id,
+                 user_perm.c.permission_name,
+                 user_perm.c.login_id,
+                 tbl_upa.c.approved.label(u'user_approved'),
+                 ga.c.group_approved,
+                 gd.c.group_denied,],
+                from_obj=
+                    outerjoin(user_perm,
+                        tbl_upa,
+                        and_(
+                            tbl_upa.c.user_id==user_perm.c.user_id,
+                            tbl_upa.c.permission_id==user_perm.c.permission_id
+                        )
+                    ).outerjoin(
+                        ga,
+                        and_(
+                            ga.c.user_id==user_perm.c.user_id,
+                            ga.c.permission_id==user_perm.c.permission_id
+                        )
+                    ).outerjoin(
+                        gd,
+                        and_(
+                            gd.c.user_id==user_perm.c.user_id,
+                            gd.c.permission_id==user_perm.c.permission_id
+                        )
+                    )
+            ).order_by(user_perm.c.user_id, user_perm.c.permission_id)
+            

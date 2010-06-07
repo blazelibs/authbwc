@@ -7,7 +7,7 @@ modimportauto('users.actions', ['user_get', 'user_get_by_permissions',
     'group_add', 'permission_add', 'user_get_by_permissions_query',
     'user_add', 'user_get_by_login', 'user_get_by_email', 'user_validate',
     'group_get_by_name', 'permission_get_by_name', 'user_update',
-    'group_delete'])
+    'group_delete', 'user_permission_map_groups', 'user_permission_map'])
 group_perm_init = modimport('users.actions', 'permission_assignments_group_by_name')
 
 def test_group_unique():
@@ -35,6 +35,12 @@ def test_user_unique():
     u2 = user_add(safe='unique', login_id='test%s'%u1.login_id, email_address=u1.email_address)
     assert u2 is None
 
+def test_user_update():
+    u = create_user_with_permissions()
+    current_hash = u.pass_hash
+    u = user_update(u.id, pass_hash=u'123456')
+    assert u.pass_hash == current_hash
+    
 def test_user_get_by_login():
     u = create_user_with_permissions()
     obj = user_get_by_login(u.login_id)
@@ -138,4 +144,37 @@ def test_user_get_by_permissions():
     
     # approved by one group denied by another, denial takes precedence
     assert user_get_by_permissions(u'ugp_denied_grp') == []
+
+    # test group perms map
+    perm_map = user_permission_map_groups(user.id)
     
+    perm_approved_grp = permission_get_by_name(u'ugp_approved_grp')
+    perm_denied = permission_get_by_name(u'ugp_denied')
+    perm_denied_grp = permission_get_by_name(u'ugp_denied_grp')
+    
+    assert not perm_map.has_key(permission_get_by_name(u'ugp_approved').id)
+    assert not perm_map.has_key(permission_get_by_name(u'ugp_not_approved').id)
+    
+    assert len(perm_map[perm_approved_grp.id]['approved']) == 1
+    assert perm_map[perm_approved_grp.id]['approved'][0]['id'] == g1.id
+    assert len(perm_map[perm_approved_grp.id]['denied']) == 0
+
+    assert len(perm_map[perm_denied.id]['approved']) == 1
+    assert perm_map[perm_denied.id]['approved'][0]['id'] == g1.id
+    assert len(perm_map[perm_denied.id]['denied']) == 0
+
+    assert len(perm_map[perm_denied_grp.id]['approved']) == 1
+    assert perm_map[perm_denied_grp.id]['approved'][0]['id'] == g1.id
+    assert len(perm_map[perm_denied_grp.id]['denied']) == 1
+    assert perm_map[perm_denied_grp.id]['denied'][0]['id'] == g2.id
+
+    # test user perms map
+    perm_map = user_permission_map(user.id)
+    
+def test_query_actions():
+    from ..actions import query_denied_group_permissions
+    from ..actions import query_approved_group_permissions
+    from ..actions import query_user_group_permissions
+    from ..actions import query_users_permissions
+    
+    print query_users_permissions()
