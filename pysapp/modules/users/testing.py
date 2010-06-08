@@ -1,4 +1,4 @@
-from pysmvt import modimport, db, appimportauto
+from pysmvt import modimport, db
 from pysutils import tolist, randchars
 from werkzeug import BaseRequest, Client as WerkzeugClient
 from pysmvt.test import Client
