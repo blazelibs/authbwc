@@ -61,7 +61,7 @@ class User(Base, DeclarativeMixin):
             return self.name
         return self.login_id
 
-class Group(Base):
+class Group(Base, DeclarativeMixin):
     __tablename__ = 'users_group'
 
     id = Column(Integer, primary_key=True)
