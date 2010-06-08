@@ -1,5 +1,4 @@
-from sqlalchemy import Column, Integer, Unicode, SmallInteger, DateTime, \
-    UniqueConstraint, ForeignKey, Numeric, String, Table
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, String, Table
 from sqlalchemy.sql import text
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
@@ -31,7 +30,10 @@ class User(Base, DeclarativeMixin):
     inactive_date = Column(DateTime)
     pass_reset_ts = Column(DateTime)
     pass_reset_key = Column(String(12))
-    
+
+    createdts = Column(DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP'))
+    lastupdatets = Column(DateTime, onupdate=datetime.now)
+
     groups = relation('Group', secondary=user_groups, backref='users', cascade='delete')
     
     def __repr__(self):
@@ -67,6 +69,9 @@ class Group(Base, DeclarativeMixin):
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(150), nullable=False, index=True, unique=True)
 
+    createdts = Column(DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP'))
+    lastupdatets = Column(DateTime, onupdate=datetime.now)
+
     # 'users' relation defined as backref on the groups relation in User
     
     def __repr__(self):
@@ -78,7 +83,10 @@ class Permission(Base):
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(250), nullable=False, index=True, unique=True)
     description = Column(Unicode(250))
-    
+
+    createdts = Column(DateTime, nullable=False, server_default=text('CURRENT_TIMESTAMP'))
+    lastupdatets = Column(DateTime, onupdate=datetime.now)
+
     def __repr__(self):
         return '<Permission: "%s">' % self.name
 
