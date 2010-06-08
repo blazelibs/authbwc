@@ -229,7 +229,7 @@ def user_permission_map(uid):
             approved = False
             #print 5
         
-        nrow['resulting_approval'] = approved
+        nrow[u'resulting_approval'] = approved
         retval.append(nrow)
     return retval
 

@@ -110,66 +110,77 @@ def test_inactive_property():
     
     assert user.inactive
 
-def test_user_get_by_permissions():
-    permissions = [
-        'ugp_approved_grp', 'ugp_not_approved', 'ugp_denied_grp']
-    
-    for permission in permissions:
-        permission_add(name=unicode(permission))
-        
-    user = create_user_with_permissions(u'ugp_approved', u'ugp_denied')
-    user2 = create_user_with_permissions(u'ugp_approved')
-    g1 = group_add(name=u'ugp_g1')
-    g2 = group_add(name=u'ugp_g2')
-    group_perm_init(u'ugp_g1', (u'ugp_approved_grp', u'ugp_denied', u'ugp_denied_grp'))
-    group_perm_init(u'ugp_g2', None, u'ugp_denied_grp')
-    user.groups.append(g1)
-    user.groups.append(g2)
-    db.sess.commit()
-    
-    # user directly approved
-    users_approved = user_get_by_permissions(u'ugp_approved')
-    assert users_approved[0] is user
-    assert users_approved[1] is user2
-    assert len(users_approved) == 2
-    
-    # user approved by group association
-    assert user_get_by_permissions(u'ugp_approved_grp')[0] is user
-    
-    # user denial and group approval
-    assert user_get_by_permissions(u'ugp_denied') == []
-    
-    # no approval
-    assert user_get_by_permissions(u'ugp_not_approved') == []
-    
-    # approved by one group denied by another, denial takes precedence
-    assert user_get_by_permissions(u'ugp_denied_grp') == []
+class TestPermissions(object):
 
-    # test group perms map
-    perm_map = user_permission_map_groups(user.id)
-    
-    perm_approved_grp = permission_get_by_name(u'ugp_approved_grp')
-    perm_denied = permission_get_by_name(u'ugp_denied')
-    perm_denied_grp = permission_get_by_name(u'ugp_denied_grp')
-    
-    assert not perm_map.has_key(permission_get_by_name(u'ugp_approved').id)
-    assert not perm_map.has_key(permission_get_by_name(u'ugp_not_approved').id)
-    
-    assert len(perm_map[perm_approved_grp.id]['approved']) == 1
-    assert perm_map[perm_approved_grp.id]['approved'][0]['id'] == g1.id
-    assert len(perm_map[perm_approved_grp.id]['denied']) == 0
+    @classmethod
+    def setup_class(cls):
+        permissions = [
+            'ugp_approved_grp', 'ugp_not_approved', 'ugp_denied_grp']
 
-    assert len(perm_map[perm_denied.id]['approved']) == 1
-    assert perm_map[perm_denied.id]['approved'][0]['id'] == g1.id
-    assert len(perm_map[perm_denied.id]['denied']) == 0
+        for permission in permissions:
+            permission_add(name=unicode(permission))
 
-    assert len(perm_map[perm_denied_grp.id]['approved']) == 1
-    assert perm_map[perm_denied_grp.id]['approved'][0]['id'] == g1.id
-    assert len(perm_map[perm_denied_grp.id]['denied']) == 1
-    assert perm_map[perm_denied_grp.id]['denied'][0]['id'] == g2.id
+        cls.user = create_user_with_permissions(u'ugp_approved', u'ugp_denied')
+        cls.user2 = create_user_with_permissions(u'ugp_approved')
+        cls.g1 = group_add(name=u'ugp_g1')
+        cls.g2 = group_add(name=u'ugp_g2')
+        group_perm_init(u'ugp_g1', (u'ugp_approved_grp', u'ugp_denied', u'ugp_denied_grp'))
+        group_perm_init(u'ugp_g2', None, u'ugp_denied_grp')
+        cls.user.groups.append(cls.g1)
+        cls.user.groups.append(cls.g2)
+        db.sess.commit()
 
-    # test user perms map
-    perm_map = user_permission_map(user.id)
+        cls.perm_approved_grp = permission_get_by_name(u'ugp_approved_grp')
+        cls.perm_denied = permission_get_by_name(u'ugp_denied')
+        cls.perm_denied_grp = permission_get_by_name(u'ugp_denied_grp')
+
+    def test_user_get_by_permissions(self):
+
+        # user directly approved
+        users_approved = user_get_by_permissions(u'ugp_approved')
+        assert users_approved[0] is self.user
+        assert users_approved[1] is self.user2
+        assert len(users_approved) == 2
+
+        # user approved by group association
+        assert user_get_by_permissions(u'ugp_approved_grp')[0] is self.user
+
+        # user denial and group approval
+        assert user_get_by_permissions(u'ugp_denied') == []
+
+        # no approval
+        assert user_get_by_permissions(u'ugp_not_approved') == []
+
+        # approved by one group denied by another, denial takes precedence
+        assert user_get_by_permissions(u'ugp_denied_grp') == []
+
+    def test_user_permission_map_groups(self):
+        # test group perms map
+        perm_map = user_permission_map_groups(self.user.id)
+
+        assert not perm_map.has_key(permission_get_by_name(u'ugp_approved').id)
+        assert not perm_map.has_key(permission_get_by_name(u'ugp_not_approved').id)
+
+        assert len(perm_map[self.perm_approved_grp.id]['approved']) == 1
+        assert perm_map[self.perm_approved_grp.id]['approved'][0]['id'] == self.g1.id
+        assert len(perm_map[self.perm_approved_grp.id]['denied']) == 0
+
+        assert len(perm_map[self.perm_denied.id]['approved']) == 1
+        assert perm_map[self.perm_denied.id]['approved'][0]['id'] == self.g1.id
+        assert len(perm_map[self.perm_denied.id]['denied']) == 0
+
+        assert len(perm_map[self.perm_denied_grp.id]['approved']) == 1
+        assert perm_map[self.perm_denied_grp.id]['approved'][0]['id'] == self.g1.id
+        assert len(perm_map[self.perm_denied_grp.id]['denied']) == 1
+        assert perm_map[self.perm_denied_grp.id]['denied'][0]['id'] == self.g2.id
+
+    def test_user_permission_map(self):
+        permissions_approved = [
+            'ugp_approved', 'ugp_approved_grp']
+        # test user perms map
+        perm_map = user_permission_map(self.user.id)
+        for rec in perm_map:
+            assert rec['resulting_approval'] == (rec['permission_name'] in permissions_approved)
     
 def test_query_actions():
     from ..actions import query_denied_group_permissions
@@ -177,4 +188,4 @@ def test_query_actions():
     from ..actions import query_user_group_permissions
     from ..actions import query_users_permissions
     
-    print query_users_permissions()
+    #print query_users_permissions()
