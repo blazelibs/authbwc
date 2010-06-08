@@ -3,12 +3,9 @@ from model.orm import User, Group, Permission, user_groups
 from model.metadata import group_permission_assignments as tbl_gpa
 from model.metadata import user_permission_assignments as tbl_upa
 from hashlib import sha512
-from sqlalchemy import Column, literal
-from sqlalchemy.exc import DatabaseError
 from sqlalchemy.sql import select, and_, text, alias, case, or_
 from sqlalchemy.sql.functions import sum
 from sqlalchemy.orm import join, outerjoin
-from pysmvt.exceptions import ActionError
 from pysmvt import user as usr
 from pysmvt import db, modimportauto
 from pysmvt.utils import randchars, tolist
@@ -94,7 +91,7 @@ def user_update_password(id, **kwargs):
 
 def user_lost_password(email_address):
     #email_address is validated in LostPasswordForm
-    u = db.sess.query(User).filter(User.email_address==email_address).first()
+    u = user_get_by_email(email_address)
     if not u:
         return False
     
@@ -192,8 +189,6 @@ def user_get_by_permissions(permissions):
 
 def user_permission_map(uid):
     dbsession = db.sess
-    #s = select([text('*')], 'user_id = :x', from_obj='v_users_permissions')
-    #results = dbsession.execute(s, {'x':uid})
     user_perm = query_users_permissions()
     s = select([user_perm.c.user_id,
                  user_perm.c.permission_id,
@@ -215,19 +210,14 @@ def user_permission_map(uid):
         
         if nrow['user_approved'] == -1:
             approved = False
-            #print 1
         elif nrow['user_approved'] == 1:
             approved = True
-            #print 2
         elif nrow['group_denied'] <= -1:
             approved = False
-            #print 3
         elif nrow['group_approved'] >= 1:
             approved = True
-            #print 4
         else:
             approved = False
-            #print 5
         
         nrow[u'resulting_approval'] = approved
         retval.append(nrow)
