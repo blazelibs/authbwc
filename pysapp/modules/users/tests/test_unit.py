@@ -9,7 +9,10 @@ from plugstack.users.actions import user_get, user_get_by_permissions, \
     group_get_by_name, permission_get_by_name, user_update, \
     group_delete, user_permission_map_groups, user_permission_map, \
     permission_assignments_group_by_name as group_perm_init
-
+from plugstack.users.lib.db import query_denied_group_permissions, \
+    query_approved_group_permissions, query_user_group_permissions, \
+    query_users_permissions
+    
 def test_group_unique():
     g1 = group_add(safe='unique', name=u'test unique group name')
     g2 = group_add(safe='unique', name=u'test unique group name')
@@ -67,6 +70,31 @@ def test_user_validate():
     assert user_validate(login_id=u.login_id, password=u'bad_password') is None
     assert user_validate(login_id=u'bad_login', password=u'testpass123') is None
     assert user_validate(login_id=u.login_id, password=u'testpass123').id == u.id
+
+def test_user_update_transaction():
+    # generate an exception during sending the email to be sure the
+    #  transaction is rolled back
+    user_login = u'user_%s' % randchars(10)
+    smtp_old = smtplib.SMTP
+    smtplib.SMTP = None
+    topost = {
+        'login_id': user_login,
+        'email_address': u'%s@example.com'%user_login,
+        'approved_permissions': None,
+        'denied_permissions': None,
+        'assigned_groups': None,
+        'super_user': 1,
+        'inactive_flag': False,
+        'name_first': u'test',
+        'name_last': u'user',
+        'email_notify': 1
+    }
+    try:
+        user_update(None, **topost)
+    except TypeError:
+        pass
+    smtplib.SMTP = smtp_old
+    assert user_get_by_login(user_login) is None
 
 def test_user_group_assignment():
     g1 = group_add(safe='unique', name=u'group_for_testing_%s'%randchars(15))
