@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
 import datetime
 import logging
-from pysmvt import redirect, session, ag, appimportauto, settings, modimportauto, rg
+from pysmvt import redirect, session, ag, settings, rg
 from pysmvt import user as usr, session
 from pysmvt.exceptions import ActionError
 from pysmvt.routing import url_for, current_url
 from pysmvt.htmltable import Col, YesNo, Link, Table
+from appstack.base import ProtectedPageView, ProtectedRespondingView, \
+    PublicPageView, PublicTextSnippetView, ManageCommon, UpdateCommon, \
+    DeleteCommon
+from plugstack.users.actions import user_validate,load_session_user, \
+    user_assigned_perm_ids, user_group_ids, user_get, \
+    user_update_password, user_get_by_login, load_session_user, \
+    user_kill_reset_key, user_lost_password, user_permission_map, \
+    user_permission_map_groups, group_user_ids, group_assigned_perm_ids, \
+    user_update
+from plugstack.users.utils import after_login_url
+from plugstack.users.forms import ChangePasswordForm, NewPasswordForm, \
+    LostPasswordForm, LoginForm
 
-appimportauto('base', ('ProtectedPageView', 'ProtectedRespondingView',
-    'PublicPageView', 'PublicTextSnippetView', 'ManageCommon', 'UpdateCommon',
-    'DeleteCommon'))
-modimportauto('users.actions', ('user_validate','load_session_user',
-    'user_assigned_perm_ids', 'user_group_ids', 'user_get',
-    'user_update_password', 'user_get_by_login', 'load_session_user',
-    'user_kill_reset_key', 'user_lost_password', 'user_permission_map',
-    'user_permission_map_groups', 'group_user_ids', 'group_assigned_perm_ids',
-    'user_update'))
-modimportauto('users.utils', ('after_login_url'))
-modimportauto('users.forms', ('ChangePasswordForm', 'NewPasswordForm',
-    'LostPasswordForm', 'LoginForm'))
 _modname = 'users'
 
 log = logging.getLogger(__name__)

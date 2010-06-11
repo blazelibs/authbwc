@@ -7,10 +7,9 @@ from sqlalchemy.sql import select, and_, text, alias, case, or_, func
 from sqlalchemy.sql.functions import sum
 from sqlalchemy.orm import join, outerjoin
 from pysmvt import user as usr
-from pysmvt import db, modimportauto
+from pysmvt import db
 from pysmvt.utils import randchars, tolist
-modimportauto('users.utils', ('send_new_user_email', 'send_change_password_email',
-    'send_password_reset_email'))
+from plugstack.users.utils import send_new_user_email, send_change_password_email, send_password_reset_email
 
 def user_update(id, **kwargs):
 

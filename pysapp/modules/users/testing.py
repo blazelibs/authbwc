@@ -1,4 +1,4 @@
-from pysmvt import modimport, db
+from pysmvt import db
 from pysutils import tolist, randchars
 from werkzeug import BaseRequest, Client as WerkzeugClient
 from pysmvt.test import Client
@@ -53,8 +53,7 @@ def login_client_as_user(client, username, password, validate_login_response=Tru
         raise TypeError('client is of an unexpected type: %s' % client.__class__)
 
 def create_user_with_permissions(approved_perms=None, denied_perms=None, super_user=False):
-    user_update = modimport('users.actions', 'user_update')
-    permission_get_by_name = modimport('users.actions', 'permission_get_by_name')
+    from plugstack.users.actions import user_update, permission_get_by_name
     
     appr_perm_ids = []
     denied_perm_ids = []
