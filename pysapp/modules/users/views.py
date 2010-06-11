@@ -15,7 +15,7 @@ from plugstack.users.actions import user_validate,load_session_user, \
     user_kill_reset_key, user_lost_password, user_permission_map, \
     user_permission_map_groups, group_user_ids, group_assigned_perm_ids, \
     user_update
-from plugstack.users.utils import after_login_url
+from plugstack.users.lib.utils import after_login_url
 from plugstack.users.forms import ChangePasswordForm, NewPasswordForm, \
     LostPasswordForm, LoginForm
 

@@ -8,7 +8,7 @@ from appstack.forms import Form, UniqueValidator
 from plugstack.users.actions import group_list_options,user_list_options, \
     permission_list_options,user_get,hash_pass, \
     user_get_by_email, user_get_by_login, group_get_by_name
-from plugstack.users.utils import validate_password_complexity, note_password_complexity
+from plugstack.users.lib.utils import validate_password_complexity, note_password_complexity
 
 class UserFormBase(Form):
     def add_name_fields(self):
