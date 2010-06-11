@@ -3,7 +3,7 @@ from model.orm import User, Group, Permission, user_groups
 from model.metadata import group_permission_assignments as tbl_gpa
 from model.metadata import user_permission_assignments as tbl_upa
 from hashlib import sha512
-from sqlalchemy.sql import select, and_, text, alias, case, or_
+from sqlalchemy.sql import select, and_, text, alias, case, or_, func
 from sqlalchemy.sql.functions import sum
 from sqlalchemy.orm import join, outerjoin
 from pysmvt import user as usr
@@ -122,7 +122,7 @@ def user_get(id):
     return db.sess.query(User).get(id)
 
 def user_get_by_email(email_address):
-    return db.sess.query(User).filter(User.email_address==email_address).first()
+    return db.sess.query(User).filter(func.lower(User.email_address)==func.lower(email_address)).first()
 
 def user_get_by_login(login_id):
     return db.sess.query(User).filter(User.login_id==login_id).first()
