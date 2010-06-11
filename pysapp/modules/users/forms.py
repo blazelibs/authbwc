@@ -1,15 +1,14 @@
 from pysutils import tolist
-from pysmvt import user, modimportauto, appimportauto
+from pysmvt import user
 from pysmvt.routing import url_for
 from pysmvt.utils import toset
 from formencode.validators import MaxLength, MinLength
 from pysform.exceptions import ValueInvalid
-appimportauto('forms', ('Form', 'UniqueValidator'))
-
-modimportauto('users.actions', ('group_list_options','user_list_options',
-    'permission_list_options','user_get','hash_pass',
-    'user_get_by_email', 'user_get_by_login', 'group_get_by_name'))
-modimportauto('users.utils', ('validate_password_complexity', 'note_password_complexity'))
+from appstack.forms import Form, UniqueValidator
+from plugstack.users.actions import group_list_options,user_list_options, \
+    permission_list_options,user_get,hash_pass, \
+    user_get_by_email, user_get_by_login, group_get_by_name
+from plugstack.users.utils import validate_password_complexity, note_password_complexity
 
 class UserFormBase(Form):
     def add_name_fields(self):

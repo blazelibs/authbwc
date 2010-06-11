@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from pysmvt import settings, getview, modimport
+from pysmvt import settings, getview
 from pysmvt.routing import current_url
 from pysmvt.mail import EmailMessage
 
@@ -41,7 +41,7 @@ def note_password_complexity():
 
 def add_administrative_user(allow_profile_defaults=True):
     from getpass import getpass
-    user_add = modimport('users.actions', 'user_add')
+    from plugstack.users.actions import user_add
     
     defaults = settings.modules.users.admin
     # add a default administrative user
