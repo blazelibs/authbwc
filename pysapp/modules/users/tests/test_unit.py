@@ -51,6 +51,8 @@ def test_user_get_by_email():
     u = create_user_with_permissions()
     obj = user_get_by_email(u.email_address)
     assert u.id == obj.id
+    obj = user_get_by_email((u'%s'%u.email_address).upper())
+    assert u.id == obj.id
 
 def test_user_name_or_login():
     u = create_user_with_permissions()
