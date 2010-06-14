@@ -53,7 +53,7 @@ def login_client_as_user(client, username, password, validate_login_response=Tru
         raise TypeError('client is of an unexpected type: %s' % client.__class__)
 
 def create_user_with_permissions(approved_perms=None, denied_perms=None, super_user=False):
-    from plugstack.users.actions import user_update, permission_get_by_name
+    from plugstack.authbwp.actions import user_update, permission_get_by_name
     
     appr_perm_ids = []
     denied_perm_ids = []

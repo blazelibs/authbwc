@@ -11,38 +11,38 @@ class Settings(QuickSettings):
 
         
         self.routes = [
-            Rule('/users/add', defaults={'id': None}, endpoint='users:UserUpdate'),
-            Rule('/users/edit/<int:id>', endpoint='users:UserUpdate'),
-            Rule('/users/manage', endpoint='users:UserManage'),
-            Rule('/users/delete/<int:id>', endpoint='users:UserDelete'),
-            Rule('/users/permissions/<int:uid>', endpoint='users:PermissionMap'),
-            Rule('/users/login', endpoint='users:Login'),
-            Rule('/users/logout', endpoint='users:Logout'),
-            Rule('/users/change_password', endpoint='users:ChangePassword'),
-            Rule('/users/recover_password', endpoint='users:LostPassword'),
-            Rule('/users/password-reset/<login_id>/<key>', endpoint='users:ResetPassword'),
-            Rule('/groups/add', defaults={'id': None}, endpoint='users:GroupUpdate'),
-            Rule('/groups/edit/<int:id>', endpoint='users:GroupUpdate'),
-            Rule('/groups/manage', endpoint='users:GroupManage'),
-            Rule('/groups/delete/<int:id>', endpoint='users:GroupDelete'),
-            Rule('/permissions/edit/<int:id>', endpoint='users:PermissionUpdate'),
-            Rule('/permissions/manage', endpoint='users:PermissionManage'),
-            Rule('/users/profile', endpoint='users:UserProfile'),
+            Rule('/users/add', defaults={'id': None}, endpoint='authbwp:UserUpdate'),
+            Rule('/users/edit/<int:id>', endpoint='authbwp:UserUpdate'),
+            Rule('/users/manage', endpoint='authbwp:UserManage'),
+            Rule('/users/delete/<int:id>', endpoint='authbwp:UserDelete'),
+            Rule('/users/permissions/<int:uid>', endpoint='authbwp:PermissionMap'),
+            Rule('/users/login', endpoint='authbwp:Login'),
+            Rule('/users/logout', endpoint='authbwp:Logout'),
+            Rule('/users/change_password', endpoint='authbwp:ChangePassword'),
+            Rule('/users/recover_password', endpoint='authbwp:LostPassword'),
+            Rule('/users/password-reset/<login_id>/<key>', endpoint='authbwp:ResetPassword'),
+            Rule('/groups/add', defaults={'id': None}, endpoint='authbwp:GroupUpdate'),
+            Rule('/groups/edit/<int:id>', endpoint='authbwp:GroupUpdate'),
+            Rule('/groups/manage', endpoint='authbwp:GroupManage'),
+            Rule('/groups/delete/<int:id>', endpoint='authbwp:GroupDelete'),
+            Rule('/permissions/edit/<int:id>', endpoint='authbwp:PermissionUpdate'),
+            Rule('/permissions/manage', endpoint='authbwp:PermissionManage'),
+            Rule('/users/profile', endpoint='authbwp:UserProfile'),
         ]
         self.cp_nav.enabled=True
         self.cp_nav.section = ControlPanelSection(
             "Users",
             'users-manage',
             ControlPanelGroup(
-                ControlPanelLink('User Add', 'users:UserUpdate'),
-                ControlPanelLink('Users Manage', 'users:UserManage'),
+                ControlPanelLink('User Add', 'authbwp:UserUpdate'),
+                ControlPanelLink('Users Manage', 'authbwp:UserManage'),
             ),
             ControlPanelGroup(
-                ControlPanelLink('Group Add', 'users:GroupUpdate'),
-                ControlPanelLink('Groups Manage', 'users:GroupManage'),
+                ControlPanelLink('Group Add', 'authbwp:GroupUpdate'),
+                ControlPanelLink('Groups Manage', 'authbwp:GroupManage'),
             ),
             ControlPanelGroup(
-                ControlPanelLink('Permissions Manage', 'users:PermissionManage'),
+                ControlPanelLink('Permissions Manage', 'authbwp:PermissionManage'),
             )
         )
         
