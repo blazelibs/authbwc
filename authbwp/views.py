@@ -7,7 +7,7 @@ from pysmvt.exceptions import ActionError
 from pysmvt.routing import url_for, current_url
 from pysmvt.htmltable import Col, YesNo, Link, Table
 from appstack.base import ProtectedPageView, ProtectedRespondingView, \
-    PublicPageView, PublicTextSnippetView, ManageCommon, UpdateCommon, \
+    PublicPageView, ManageCommon, UpdateCommon, \
     DeleteCommon
 from plugstack.users.actions import user_validate,load_session_user, \
     user_assigned_perm_ids, user_group_ids, user_get, \
@@ -321,23 +321,3 @@ class PermissionManage(ManageCommon):
         t = self.table
         t.name = Col('Permission', width_td="35%")
         t.description = Col('Description')
-
-class NewUserEmail(PublicTextSnippetView):
-    def default(self, user_obj, password):
-        self.assign('user_obj', user_obj)
-        self.assign('password', password)
-        
-        self.assign('login_url', url_for('users:Login', _external=True))
-        self.assign('index_url', current_url(root_only=True))
-        
-class ChangePasswordEmail(PublicTextSnippetView):
-    def default(self, login_id, password):
-        self.assign('login_id', login_id)
-        self.assign('password', password)
-
-        self.assign('login_url', url_for('users:Login', _external=True))
-        self.assign('index_url', current_url(root_only=True))
-
-class PasswordResetEmail(PublicTextSnippetView):
-    def default(self, user):
-        self.assign('user', user)
