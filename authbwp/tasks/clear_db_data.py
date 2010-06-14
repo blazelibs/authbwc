@@ -1,4 +1,4 @@
-from pysmvt import db
+from plugstack.sqlalchemybwp import db
 
 def action_050_user_data():    
     from plugstack.users.model.orm import User, Group, Permission
