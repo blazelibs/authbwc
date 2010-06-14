@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from pysmvt import settings, getview
+from pysmvt import settings
+from pysmvt.content import getcontent
 from pysmvt.routing import current_url
 from pysmvt.mail import EmailMessage
 
@@ -13,19 +14,19 @@ def after_login_url():
 
 def send_new_user_email(user_obj, password):
     subject = '%s - User Login Information' % (settings.name.full)
-    body = getview('users:NewUserEmail', user_obj=user_obj, password=password)
+    body = getcontent('users:new_user_email.txt', user_obj=user_obj, password=password)
     email = EmailMessage(subject, body, None, [user_obj.email_address])
     email.send()
 
 def send_change_password_email(login_id, password, email_address):
     subject = '%s - User Password Reset' % (settings.name.full)
-    body = getview('users:ChangePasswordEmail', login_id=login_id, password=password)
+    body = getcontent('users:change_password_email.txt', login_id=login_id, password=password)
     email = EmailMessage(subject, body, None, [email_address])
     email.send()
 
 def send_password_reset_email(user):
     subject = '%s - User Password Reset' % (settings.name.full)
-    body = getview('users:PasswordResetEmail', user=user)
+    body = getcontent('users:password_reset_email.txt', user=user)
     email = EmailMessage(subject, body, None, [user.email_address])
     email.send()
 
