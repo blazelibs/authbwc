@@ -1,7 +1,7 @@
 import datetime
-from plugstack.users.model.orm import User, Group, Permission
-from plugstack.users.model.metadata import group_permission_assignments as tbl_gpa
-from plugstack.users.model.metadata import user_permission_assignments as tbl_upa
+from plugstack.authbwp.model.orm import User, Group, Permission
+from plugstack.authbwp.model.metadata import group_permission_assignments as tbl_gpa
+from plugstack.authbwp.model.metadata import user_permission_assignments as tbl_upa
 from hashlib import sha512
 from sqlalchemy.sql import select, and_, alias, or_, func
 from sqlalchemy.sql.functions import sum
@@ -9,8 +9,8 @@ from sqlalchemy.orm import join
 from pysmvt import user as usr
 from plugstack.sqlalchemybwp import db
 from pysmvt.utils import randchars, tolist
-from plugstack.users.lib.utils import send_new_user_email, send_change_password_email, send_password_reset_email
-from plugstack.users.lib.db import query_user_group_permissions, query_users_permissions
+from plugstack.authbwp.lib.utils import send_new_user_email, send_change_password_email, send_password_reset_email
+from plugstack.authbwp.lib.db import query_user_group_permissions, query_users_permissions
     
 def user_update(id, **kwargs):
 
