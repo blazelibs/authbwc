@@ -1,4 +1,4 @@
-from plugstack.sqlalchemybwp import db
+from plugstack.sqlalchemy import db
 
 def action_050_user_data():    
     from plugstack.auth.model.orm import User, Group, Permission

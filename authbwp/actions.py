@@ -7,7 +7,7 @@ from sqlalchemy.sql import select, and_, alias, or_, func
 from sqlalchemy.sql.functions import sum
 from sqlalchemy.orm import join
 from pysmvt import user as usr
-from plugstack.sqlalchemybwp import db
+from plugstack.sqlalchemy import db
 from pysmvt.utils import randchars, tolist
 from plugstack.auth.lib.utils import send_new_user_email, send_change_password_email, send_password_reset_email
 from plugstack.auth.lib.db import query_user_group_permissions, query_users_permissions

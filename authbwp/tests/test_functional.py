@@ -3,7 +3,7 @@ import smtplib
 import minimock
 import re
 from pysmvt import modimportauto, ag
-from plugstack.sqlalchemybwp import db
+from plugstack.sqlalchemy import db
 from werkzeug import BaseResponse, BaseRequest
 from pysmvt.test import Client
 from plugstack.users.lib.testing import login_client_with_permissions, \
