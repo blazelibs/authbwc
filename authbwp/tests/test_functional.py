@@ -1,15 +1,16 @@
 import datetime
 import smtplib
 import minimock
-from pysmvt import modimportauto, ag, db
+import re
+from pysmvt import modimportauto, ag
+from plugstack.sqlalchemybwp import db
 from werkzeug import BaseResponse, BaseRequest
 from pysmvt.test import Client
-
-modimportauto('users.testing', ['login_client_with_permissions',
-    'login_client_as_user', 'create_user_with_permissions'])
-modimportauto('users.actions', ['user_get', 'permission_get_by_name',
-    'user_get_by_email', 'group_add', 'user_permission_map',
-    'user_assigned_perm_ids', 'user_group_ids'])
+from plugstack.users.lib.testing import login_client_with_permissions, \
+    login_client_as_user, create_user_with_permissions
+from plugstack.users.actions import user_get, permission_get_by_name, \
+    user_get_by_email, group_add, user_permission_map, \
+    user_assigned_perm_ids, user_group_ids
             
 class TestUserViews(object):
 
@@ -140,13 +141,28 @@ class TestUserViews(object):
             'inactive_flag': False,
             'inactive_date': '10/11/2010',
             'name_first': 'test',
-            'name_last': 'user'
+            'name_last': 'user',
+            'email_notify': 1
         }
+
+        # setup the mock objects so we can test the email getting sent out
+        tt = minimock.TraceTracker()
+        smtplib.SMTP = minimock.Mock('smtplib.SMTP', tracker=None)
+        smtplib.SMTP.mock_returns = minimock.Mock('smtp_connection', tracker=tt)
+
         req, r = self.c.post('users/add', data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
         assert 'user added' in r.data
         assert req.url.endswith('users/manage')
-        
+
+        mmdump = tt.dump()
+        assert 'To: usersaved@example.com' in mmdump
+        assert 'You have been added to our system of registered users.' in mmdump
+        assert 'user name: usersaved' in mmdump
+        assert re.search(r'password: [a-zA-Z0-9]*', mmdump) is not None
+        assert re.search(r'password: None', mmdump) is None
+        minimock.restore()
+
         user = user_get_by_email(u'usersaved@example.com')
         assert user.login_id == 'usersaved'
         assert user.reset_required
@@ -157,7 +173,7 @@ class TestUserViews(object):
         assert user.inactive_date == datetime.datetime(2010, 10, 11), user.inactive_date
         assert user.name_first == 'test'
         assert user.name_last == 'user'
-        
+
         found = 3
         for permrow in user_permission_map(user.id):
             if permrow['permission_name'] == u'users-test1':
@@ -167,7 +183,7 @@ class TestUserViews(object):
                 assert not permrow['resulting_approval']
                 found -= 1
         assert found == 0
-        
+
         # now test an edit
         topost = {
             'login_id': 'usersaved',
@@ -180,22 +196,44 @@ class TestUserViews(object):
             'inactive_flag': False,
             'inactive_date': '10/10/2010',
             'name_first': 'test2',
-            'name_last': 'user2'
+            'name_last': 'user2',
+            'email_notify': 1,
+            'password': 'test_new_password',
+            'password-confirm': 'test_new_password'
         }
+
+        # setup the mock objects so we can test the email getting sent out
+        tt = minimock.TraceTracker()
+        smtplib.SMTP = minimock.Mock('smtplib.SMTP', tracker=None)
+        smtplib.SMTP.mock_returns = minimock.Mock('smtp_connection', tracker=tt)
+
         req, r = self.c.post('users/edit/%s' % user.id, data=topost, follow_redirects=True)
         assert 'user edited successfully' in r.data
         assert req.url.endswith('users/manage')
-        
+
+        assert tt.check('Called smtp_connection.sendmail(...usersaved@example.com...Your password for this site has been reset'
+                        '...first successful login...')
+        # restore the mocked objects
+        minimock.restore()
+
+        mmdump = tt.dump()
+        assert 'To: usersaved@example.com' in mmdump
+        assert 'Your password for this site has been reset by an administrator.' in mmdump
+        assert 'user name: usersaved' in mmdump
+        assert re.search(r'password: [a-zA-Z0-9]*', mmdump) is not None
+        assert re.search(r'password: None', mmdump) is None
+        minimock.restore()
+
         user = user_get_by_email(u'usersaved@example.com')
         assert user.login_id == 'usersaved'
-        assert not user.reset_required
+        assert user.reset_required
         assert not user.super_user
         assert user.pass_hash
         assert len(user.groups) == 0
         assert user.inactive_date == datetime.datetime(2010, 10, 10), user.inactive_date
         assert user.name_first == 'test2'
         assert user.name_last == 'user2'
-        
+
         found = 3
         for permrow in user_permission_map(user.id):
             if permrow['permission_name'] == u'users-test2':
@@ -205,7 +243,7 @@ class TestUserViews(object):
                 assert not permrow['resulting_approval']
                 found -= 1
         assert found == 0
-        
+
         # test edit w/ reset required
         topost = {
             'login_id': 'usersaved',
@@ -224,20 +262,20 @@ class TestUserViews(object):
         req, r = self.c.post('users/edit/%s' % user.id, data=topost, follow_redirects=True)
         assert 'user edited successfully' in r.data
         assert req.url.endswith('users/manage')
-        
+
         user = user_get_by_email(u'usersaved@example.com')
         assert user.login_id == 'usersaved'
         assert user.reset_required
         assert not user.super_user
         assert user.pass_hash
         assert len(user.groups) == 0
-        
+
         # now test a delete
         req, r = self.c.get('users/delete/%s' % user.id, follow_redirects=True)
         assert r.status_code == 200, r.status
         assert 'user deleted' in r.data
         assert req.url.endswith('users/manage')
-    
+        
     def test_password_complexity(self):
         topost = {
             'login_id': 'newuser',
@@ -281,6 +319,34 @@ class TestUserViews(object):
         assert req.url.endswith('/users/manage'), req.url
         assert resp.status_code == 200, r.status
         assert 'user was not found' in resp.data[0:250], resp.data[0:250]
+
+    def test_no_email_notify(self):
+        topost = {
+            'login_id': 'usersaved_noemailnotify',
+            'email_address': 'usersaved_noemailnotify@example.com',
+            'user-form-submit-flag':'submitted',
+            'approved_permissions': None,
+            'denied_permissions': None,
+            'assigned_groups': None,
+            'super_user': 1,
+            'inactive_flag': False,
+            'inactive_date': '10/11/2010',
+            'name_first': 'test',
+            'name_last': 'user'
+        }
+
+        # setup the mock objects so we can test the email getting sent out
+        tt = minimock.TraceTracker()
+        smtplib.SMTP = minimock.Mock('smtplib.SMTP', tracker=None)
+        smtplib.SMTP.mock_returns = minimock.Mock('smtp_connection', tracker=tt)
+
+        req, r = self.c.post('users/add', data=topost, follow_redirects=True)
+        assert r.status_code == 200, r.status
+        assert 'user added' in r.data
+        assert req.url.endswith('users/manage')
+
+        assert len(tt.dump()) == 0
+        minimock.restore()
 
 class TestUserProfileView(object):
 

@@ -1,9 +1,7 @@
 from pysmvt import modimportauto, ag
 from werkzeug import Client, BaseResponse, BaseRequest
-
-modimportauto('users.testing', ('login_client_with_permissions',
-    'create_user_with_permissions'))
-modimportauto('users.actions', ('group_add','permission_list_options'))
+from plugstack.users.lib.testing import login_client_with_permissions, create_user_with_permissions
+from plugstack.users.actions import group_add, permission_list_options
 
 class TestNotAuthenticated(object):
 

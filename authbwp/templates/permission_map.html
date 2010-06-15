@@ -2,7 +2,7 @@
 {% extends settings.template.admin %}
 {% block title %}User Permission Map | {{super()}}{% endblock %}
 {% block body %}
-    <h1>Permissions for: <a href="{{ url_for('authbwp:UserUpdate', id=user.id) }}"
+    <h1>Permissions for: <a href="{{ url_for('auth:UserUpdate', id=user.id) }}"
             title="edit user">{{user.login_id}}</a></h1>
     {% for row in result %}
         {% if loop.first %}
@@ -20,7 +20,7 @@
                     <td class="first_col">{{row['permission_name']}}</td>
                     <td class="denied">
                         {% if row['user_approved'] == -1 %}
-                            <a href="{{ url_for('authbwp:UserUpdate', id=row['user_id'])}}"
+                            <a href="{{ url_for('auth:UserUpdate', id=row['user_id'])}}"
                                 title="edit user">denied</a>
                         {% else %}
                             &nbsp;
@@ -28,7 +28,7 @@
                     </td>
                     <td class="approved">
                         {% if row['user_approved'] == 1 %}
-                            <a href="{{ url_for('authbwp:UserUpdate', id=row['user_id'])}}"
+                            <a href="{{ url_for('auth:UserUpdate', id=row['user_id'])}}"
                                 title="edit user">approved</a>
                         {% else %}
                             &nbsp;
@@ -37,7 +37,7 @@
                     <td class="denied">
                         {% if row['group_denied'] <= -1 %}
                             {% for group in permgroups[row['permission_id']]['denied'] %}
-                                <a href="{{ url_for('authbwp:GroupUpdate', id=group['id'])}}"
+                                <a href="{{ url_for('auth:GroupUpdate', id=group['id'])}}"
                                 title="edit group">{{group['name']}}</a>
                             {% endfor %}
                         {% else %}
@@ -47,7 +47,7 @@
                     <td class="approved">                    
                         {% if row['group_approved'] >= 1 %}
                             {% for group in permgroups[row['permission_id']]['approved'] %}
-                                <a href="{{ url_for('authbwp:GroupUpdate', id=group['id'])}}"
+                                <a href="{{ url_for('auth:GroupUpdate', id=group['id'])}}"
                                 title="edit group">{{group['name']}}</a>
                             {% endfor %}
                         {% else %}
