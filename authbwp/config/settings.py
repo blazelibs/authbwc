@@ -6,7 +6,7 @@ class Settings(PluginSettings):
     def __init__(self):
         PluginSettings.__init__(self)
 
-        self.add_route('/users/add', 'auth:UserUpdate', id=None)
+        self.add_route('/users/add', 'auth:UserUpdate', defaults={'id':None})
         self.add_route('/users/edit/<int:id>', 'auth:UserUpdate')
         self.add_route('/users/manage', 'auth:UserManage')
         self.add_route('/users/delete/<int:id>', 'auth:UserDelete')
@@ -16,7 +16,7 @@ class Settings(PluginSettings):
         self.add_route('/users/change_password', 'auth:ChangePassword')
         self.add_route('/users/recover_password', 'auth:LostPassword')
         self.add_route('/users/password-reset/<login_id>/<key>', 'auth:ResetPassword')
-        self.add_route('/groups/add', 'auth:GroupUpdate', id=None)
+        self.add_route('/groups/add', 'auth:GroupUpdate', defaults={'id':None})
         self.add_route('/groups/edit/<int:id>', 'auth:GroupUpdate')
         self.add_route('/groups/manage', 'auth:GroupManage')
         self.add_route('/groups/delete/<int:id>', 'auth:GroupDelete')
