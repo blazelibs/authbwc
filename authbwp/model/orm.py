@@ -35,7 +35,7 @@ class User(Base, DeclarativeMixin):
     lastupdatets = Column(DateTime, onupdate=datetime.now)
 
     groups = relation('Group', secondary=user_groups, backref='users', cascade='delete')
-    
+
     def __repr__(self):
         return '<User "%s" : %s>' % (self.login_id, self.email_address)
 
@@ -43,7 +43,7 @@ class User(Base, DeclarativeMixin):
         if password:
             self.pass_hash = sha512(password).hexdigest()
     password = property(None,set_password)
-    
+
     @property
     def inactive(self):
         if self.inactive_flag:
@@ -73,7 +73,7 @@ class Group(Base, DeclarativeMixin):
     lastupdatets = Column(DateTime, onupdate=datetime.now)
 
     # 'users' relation defined as backref on the groups relation in User
-    
+
     def __repr__(self):
         return '<Group "%s" : %d>' % (self.name, self.id)
 
@@ -89,4 +89,3 @@ class Permission(Base):
 
     def __repr__(self):
         return '<Permission: "%s">' % self.name
-

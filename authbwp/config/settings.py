@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from pysmvt.config import PluginSettings
 from pysapp.utils import ControlPanelSection, ControlPanelGroup, ControlPanelLink
 
@@ -25,7 +23,7 @@ class Settings(PluginSettings):
         self.add_route('/permissions/edit/<int:id>', 'auth:PermissionUpdate')
         self.add_route('/permissions/manage', 'auth:PermissionManage')
         self.add_route('/users/profile', 'auth:UserProfile')
-        
+
         self.cp_nav.enabled=True
         self.cp_nav.section = ControlPanelSection(
             "Users",
@@ -42,11 +40,11 @@ class Settings(PluginSettings):
                 ControlPanelLink('Permissions Manage', 'auth:PermissionManage'),
             )
         )
-        
+
         # where should we go after a user logins in?  If nothing is set,
         # default to current_url(root_only=True)
         self.after_login_url = None
-        
+
         # default values can be set when doing initmod() to avoid the command
         # prompt
         self.admin.username = None
