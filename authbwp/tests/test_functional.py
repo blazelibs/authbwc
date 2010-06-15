@@ -2,13 +2,13 @@ import datetime
 import smtplib
 import minimock
 import re
-from pysmvt import modimportauto, ag
+from pysmvt import ag
 from plugstack.sqlalchemy import db
 from werkzeug import BaseResponse, BaseRequest
 from pysmvt.test import Client
-from plugstack.users.lib.testing import login_client_with_permissions, \
+from plugstack.auth.lib.testing import login_client_with_permissions, \
     login_client_as_user, create_user_with_permissions
-from plugstack.users.actions import user_get, permission_get_by_name, \
+from plugstack.auth.actions import user_get, permission_get_by_name, \
     user_get_by_email, group_add, user_permission_map, \
     user_assigned_perm_ids, user_group_ids
             
@@ -16,7 +16,7 @@ class TestUserViews(object):
 
     @classmethod
     def setup_class(cls):
-        cls.c = Client(ag._wsgi_test_app, BaseResponse)
+        cls.c = Client(ag.wsgi_test_app, BaseResponse)
         perms = [u'users-manage', u'users-test1', u'users-test2']
         cls.userid = login_client_with_permissions(cls.c, perms)
         
@@ -352,7 +352,7 @@ class TestUserProfileView(object):
 
     @classmethod
     def setup_class(cls):
-        cls.c = Client(ag._wsgi_test_app, BaseResponse)
+        cls.c = Client(ag.wsgi_test_app, BaseResponse)
         cls.userid = login_client_with_permissions(cls.c, u'prof-test-1', u'prof-test-2')
         cls.userid2 = create_user_with_permissions().id
         
@@ -477,7 +477,7 @@ class TestUserViewsSuperUser(object):
 
     @classmethod
     def setup_class(cls):
-        cls.c = Client(ag._wsgi_test_app, BaseResponse)
+        cls.c = Client(ag.wsgi_test_app, BaseResponse)
         perms = [u'users-manage', u'users-test1', u'users-test2']
         cls.userid = login_client_with_permissions(cls.c, perms, super_user=True)
     
@@ -551,7 +551,7 @@ def test_inactive_login():
     db.sess.commit()
     
     # log user in
-    client = Client(ag._wsgi_test_app, BaseResponse)
+    client = Client(ag.wsgi_test_app, BaseResponse)
     topost = {'login_id': user.login_id,
           'password': user.text_password,
           'login-form-submit-flag':'1'}
@@ -564,7 +564,7 @@ class TestRecoverPassword(object):
     
     @classmethod
     def setup_class(cls):
-        cls.c = Client(ag._wsgi_test_app, BaseResponse)
+        cls.c = Client(ag.wsgi_test_app, BaseResponse)
     
     def test_invalid_user(self):
         
@@ -656,7 +656,7 @@ class TestGroupViews(object):
 
     @classmethod
     def setup_class(cls):
-        cls.c = Client(ag._wsgi_test_app, BaseResponse)
+        cls.c = Client(ag.wsgi_test_app, BaseResponse)
         perms = [u'users-manage', u'users-test1', u'users-test2']
         cls.userid = login_client_with_permissions(cls.c, perms)
         

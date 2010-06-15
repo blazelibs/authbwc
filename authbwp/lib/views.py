@@ -3,8 +3,7 @@ from pysmvt.views import SecureView
 from pysmvt.routing import url_for
 from pysmvt.htmltable import Table, Links, A
 from pysmvt.exceptions import ProgrammingError
-from pysmvt.utils import tb_depth_in
-from pysmvt.hierarchy import findobj
+from pysmvt.hierarchy import findobj, HierarchyImportError
 from werkzeug.exceptions import NotFound
 
 class CommonBase(SecureView):
@@ -16,6 +15,10 @@ class CommonBase(SecureView):
         self._cb_action_list = None
         self.id_param = None
 
+    def init_call_methods(self):
+        self.add_call_method('prep', required=True, takes_args=False)
+        SecureView.init_call_methods(self)
+        
     def get_safe_action_prefix(self):
         return self.action_prefix.replace(' ', '_')
     safe_action_prefix = property(get_safe_action_prefix)
@@ -26,11 +29,9 @@ class CommonBase(SecureView):
             return localvalue
         func = '%s_%s' % (self.safe_action_prefix, actname)
         try:
-            return findobj( '%s:%s.actions' % (self.modulename, func))
-        except ImportError, e:
-            if not tb_depth_in(3):
-                raise
-            # we assume the calling object will override action_get
+            return findobj( '%s:actions.%s' % (self.modulename, func))
+        except HierarchyImportError:
+            # we assume the calling object will override action_<type>
             return None
     def test_action(self, actname):
         callable = self.get_action(actname)
@@ -90,12 +91,12 @@ class UpdateCommon(CommonBase):
         self.extend_from = settings.template.admin
         self.action_prefix = action_prefix or objectname
         try:
-            self.formcls = findobj('%s:%s.forms' % (modulename, '%sForm' % classname))
-        except ImportError, e:
-            if '%sForm' % classname not in str(e):
-                raise
+            self.formcls = findobj('%s:forms.%s' % (modulename, '%sForm' % classname))
+        except HierarchyImportError:
+            # assume the calling class will set up its own form
+            pass
 
-    def auth_pre(self, *args, **kwargs):
+    def auth_post(self, *args, **kwargs):
         objid = self.get_id_from_args(args, kwargs)
         self.determine_add_edit(objid)
         self.assign_form()
