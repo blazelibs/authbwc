@@ -251,16 +251,16 @@ def user_validate(**kwargs):
     return db.sess.query(User).filter_by(login_id=kwargs['login_id'], pass_hash=hash_pass(kwargs['password'])).first()
 
 def load_session_user(user):
-    usr.set_attr('id', user.id)
-    usr.set_attr('login_id', user.login_id)
-    usr.set_attr('super_user', user.super_user)
-    usr.set_attr('reset_required', user.reset_required)
-    usr.authenticated()
+    usr.id = user.id
+    usr.login_id = user.login_id
+    usr.is_super_user, bool(user.super_user)
+    usr.reset_required = user.reset_required
+    usr.is_authenticated = True
 
     # now permissions
     for row in user_permission_map(user.id):
         if row['resulting_approval'] or user.super_user:
-            usr.add_perm(row['permission_name'])
+            usr.add_token(row['permission_name'])
 
 ## Group Actions
 

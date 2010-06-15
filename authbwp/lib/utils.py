@@ -5,11 +5,11 @@ from pysmvt.routing import current_url
 from pysmvt.mail import EmailMessage
 
 def after_login_url():
-    if settings.modules.users.after_login_url:
-        if callable(settings.modules.users.after_login_url):
-            return settings.modules.users.after_login_url()
+    if settings.plugins.auth.after_login_url:
+        if callable(settings.plugins.auth.after_login_url):
+            return settings.plugins.auth.after_login_url()
         else:
-            return settings.modules.users.after_login_url
+            return settings.plugins.auth.after_login_url
     return current_url(root_only=True)
 
 def send_new_user_email(user_obj, password):
@@ -43,8 +43,8 @@ def note_password_complexity():
 def add_administrative_user(allow_profile_defaults=True):
     from getpass import getpass
     from plugstack.auth.actions import user_add
-    
-    defaults = settings.modules.users.admin
+
+    defaults = settings.plugins.auth.admin
     # add a default administrative user
     if allow_profile_defaults and defaults.username and defaults.password and defaults.email:
         ulogin = defaults.username

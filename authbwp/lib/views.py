@@ -1,11 +1,11 @@
-from pysmvt import user, redirect, settings
-from pysmvt.views import SecureView
-from pysmvt.routing import url_for
-from pysmvt.htmltable import Table, Links, A
-from pysmvt.exceptions import ProgrammingError
-from pysmvt.utils import tb_depth_in
-from pysmvt.hierarchy import findobj
 from werkzeug.exceptions import NotFound
+
+from pysmvt import user, redirect, settings
+from pysmvt.exceptions import ProgrammingError
+from pysmvt.hierarchy import findobj, HierarchyImportError
+from pysmvt.htmltable import Table, Links, A
+from pysmvt.routing import url_for
+from pysmvt.views import SecureView
 
 class CommonBase(SecureView):
     def __init__(self, urlargs, endpoint):
@@ -27,9 +27,7 @@ class CommonBase(SecureView):
         func = '%s_%s' % (self.safe_action_prefix, actname)
         try:
             return findobj( '%s:%s.actions' % (self.modulename, func))
-        except ImportError, e:
-            if not tb_depth_in(3):
-                raise
+        except HierarchyImportError, e:
             # we assume the calling object will override action_get
             return None
     def test_action(self, actname):
