@@ -1,13 +1,13 @@
-from pysmvt import modimportauto, ag
+from pysmvt import ag
 from werkzeug import Client, BaseResponse, BaseRequest
-from plugstack.users.lib.testing import login_client_with_permissions, create_user_with_permissions
-from plugstack.users.actions import group_add, permission_list_options
+from plugstack.auth.lib.testing import login_client_with_permissions, create_user_with_permissions
+from plugstack.auth.actions import group_add, permission_list_options
 
 class TestNotAuthenticated(object):
 
     @classmethod
     def setup_class(cls):
-        cls.c = Client(ag._wsgi_test_app, BaseResponse)
+        cls.c = Client(ag.wsgi_test_app, BaseResponse)
         
     def test_unauthorized(self):
         routes = (
@@ -53,7 +53,7 @@ class TestNoPerms(object):
 
     @classmethod
     def setup_class(cls):
-        cls.c = Client(ag._wsgi_test_app, BaseResponse)
+        cls.c = Client(ag.wsgi_test_app, BaseResponse)
         login_client_with_permissions(cls.c)
 
     def test_forbidden(self):
@@ -96,7 +96,7 @@ class TestNoPerms(object):
             need new Client b/c using the same client can mess up other tests
             since order of tests is not guaranteed
         """
-        c = Client(ag._wsgi_test_app, BaseResponse)
+        c = Client(ag.wsgi_test_app, BaseResponse)
         login_client_with_permissions(c)
         environ, r = c.get('/users/logout', as_tuple=True, follow_redirects=True)
         assert r.status_code == 200, r.status
@@ -108,7 +108,7 @@ class TestUsersManage(object):
     
     @classmethod
     def setup_class(cls):
-        cls.c = Client(ag._wsgi_test_app, BaseResponse)
+        cls.c = Client(ag.wsgi_test_app, BaseResponse)
         login_client_with_permissions(cls.c, cls.perms)
 
     def test_ok(self):
@@ -154,7 +154,7 @@ class TestUsersManage(object):
             need new Client b/c using the same client can mess up other tests
             since order of tests is not guaranteed
         """
-        c = Client(ag._wsgi_test_app, BaseResponse)
+        c = Client(ag.wsgi_test_app, BaseResponse)
         login_client_with_permissions(c, self.perms)
         environ, r = c.get('/users/logout', as_tuple=True, follow_redirects=True)
         assert r.status_code == 200, r.status

@@ -1,7 +1,6 @@
-from pysutils import tolist
+from pysutils import tolist, toset
 from pysmvt import user
 from pysmvt.routing import url_for
-from pysmvt.utils import toset
 from formencode.validators import MaxLength, MinLength
 from pysform.exceptions import ValueInvalid
 from appstack.forms import Form, UniqueValidator
