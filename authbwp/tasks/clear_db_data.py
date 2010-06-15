@@ -1,7 +1,7 @@
 from plugstack.sqlalchemybwp import db
 
 def action_050_user_data():    
-    from plugstack.authbwp.model.orm import User, Group, Permission
+    from plugstack.auth.model.orm import User, Group, Permission
     db.sess.execute(User.table.delete())
     db.sess.execute(Group.table.delete())
     db.sess.execute(Permission.table.delete())

@@ -5,15 +5,15 @@ from pysmvt import redirect, settings, rg, user as usr
 from pysmvt.routing import url_for, current_url
 from pysmvt.htmltable import Col, YesNo, Link, Table
 from pysmvt.views import View, SecureView
-from plugstack.authbwp.lib.views import ManageCommon, UpdateCommon, DeleteCommon
-from plugstack.authbwp.actions import user_validate,load_session_user, \
+from plugstack.auth.lib.views import ManageCommon, UpdateCommon, DeleteCommon
+from plugstack.auth.actions import user_validate,load_session_user, \
     user_assigned_perm_ids, user_group_ids, user_get, \
     user_update_password, user_get_by_login, load_session_user, \
     user_kill_reset_key, user_lost_password, user_permission_map, \
     user_permission_map_groups, group_user_ids, group_assigned_perm_ids, \
     user_update
-from plugstack.authbwp.lib.utils import after_login_url
-from plugstack.authbwp.forms import ChangePasswordForm, NewPasswordForm, \
+from plugstack.auth.lib.utils import after_login_url
+from plugstack.auth.forms import ChangePasswordForm, NewPasswordForm, \
     LostPasswordForm, LoginForm
 
 _modname = 'authbwp'
@@ -61,7 +61,7 @@ class UserManage(ManageCommon):
         t.inactive = YesNo('Inactive', extractor=determine_inactive)
         t.permission_map = Link( 'Permission Map',
                  validate_url=False,
-                 urlfrom=lambda uobj: url_for('authbwp:PermissionMap', uid=uobj.id),
+                 urlfrom=lambda uobj: url_for('auth:PermissionMap', uid=uobj.id),
                  extractor = lambda row: 'view permission map'
             )
 
@@ -152,7 +152,7 @@ class ResetPassword(View):
 
     def abort(self, msg='invalid reset request'):
         usr.add_message('error', '%s, use the form below to resend reset link' % msg)
-        url = url_for('authbwp:LostPassword')
+        url = url_for('auth:LostPassword')
         redirect(url)
 
 class LostPassword(View):
@@ -239,7 +239,7 @@ class Login(View):
                     log.application('user %s logged in; session id: %s; remote_ip: %s', user.login_id, rg.session.id, rg.request.remote_addr)
                     usr.add_message('notice', 'You logged in successfully!')
                     if user.reset_required:
-                        url = url_for('authbwp:ChangePassword')
+                        url = url_for('auth:ChangePassword')
                     else:
                         url = after_login_url()
                     redirect(url)
@@ -261,7 +261,7 @@ class Logout(View):
     def default(self):
         rg.session.invalidate()
             
-        url = url_for('authbwp:Login')
+        url = url_for('auth:Login')
         redirect(url)
         
 class GroupUpdate(UpdateCommon):
