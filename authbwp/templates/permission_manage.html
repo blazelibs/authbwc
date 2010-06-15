@@ -1,13 +1,13 @@
-<% extends extend_from %>
-<% block title %><{pagetitle|title}> | <{super()}><% endblock %>
-<% block body %>
-    <h2><{pagetitle|title}></h2>
+{% extends extend_from %}
+{% block title %}{{pagetitle|title}} | {{super()}}{% endblock %}
+{% block body %}
+    <h2>{{pagetitle|title}}</h2>
     
-    <% if tablehtml %>
-        <{ tablehtml }>
-    <% else %>
+    {% if tablehtml %}
+        {{ tablehtml }}
+    {% else %}
         <p>
-            Sorry, no <{objectnamepl}> currently in the database.
+            Sorry, no {{objectnamepl}} currently in the database.
         </p>
-    <% endif %>
-<% endblock body%>
+    {% endif %}
+{% endblock body%}

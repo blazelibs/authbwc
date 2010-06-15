@@ -108,13 +108,13 @@ class UserFormBase(Form):
         return hel, sg, sel, cel
     
     def validate_perms(self, value):
-        assigned = toset(self.approved_permissions.value)
-        denied = toset(self.denied_permissions.value)
+        assigned = toset(self.elements.approved_permissions.value)
+        denied = toset(self.elements.denied_permissions.value)
 
         if len(assigned.intersection(denied)) != 0:
             msg = 'you can not approve and deny the same permission'
-            self.denied_permissions.add_error(msg)
-            self.approved_permissions.add_error(msg)
+            self.elements.denied_permissions.add_error(msg)
+            self.elements.approved_permissions.add_error(msg)
             raise ValueInvalid()
 
     def validate_password_complexity(self, value):
@@ -188,8 +188,8 @@ class GroupForm(Form):
         self.add_validator(self.validate_perms)
         
     def validate_perms(self, value):
-        assigned = toset(self.approved_permissions.value)
-        denied = toset(self.denied_permissions.value)
+        assigned = toset(self.elements.approved_permissions.value)
+        denied = toset(self.elements.denied_permissions.value)
         
         if len(assigned.intersection(denied)) != 0:
             raise ValueInvalid('you can not approve and deny the same permission')

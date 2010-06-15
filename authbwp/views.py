@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 import datetime
 import logging
-from pysmvt import redirect, session, ag, settings, rg
-from pysmvt import user as usr, session
-from pysmvt.exceptions import ActionError
+from pysmvt import redirect, settings, rg, user as usr
 from pysmvt.routing import url_for, current_url
 from pysmvt.htmltable import Col, YesNo, Link, Table
-from appstack.base import ProtectedPageView, ProtectedRespondingView, \
-    PublicPageView, ManageCommon, UpdateCommon, \
-    DeleteCommon
+from pysmvt.views import View, SecureView
+from plugstack.authbwp.lib.views import ManageCommon, UpdateCommon, DeleteCommon
 from plugstack.authbwp.actions import user_validate,load_session_user, \
     user_assigned_perm_ids, user_group_ids, user_get, \
     user_update_password, user_get_by_login, load_session_user, \
@@ -27,8 +24,8 @@ class UserUpdate(UpdateCommon):
     def prep(self):
         UpdateCommon.prep(self, _modname, 'user', 'User')
 
-    def auth(self, id):
-        UpdateCommon.auth(self)
+    def auth_pre(self, id):
+        UpdateCommon.auth_pre(self)
         
         # prevent non-super users from editing super users
         if id:
@@ -37,14 +34,11 @@ class UserUpdate(UpdateCommon):
             if edited_user_obj and edited_user_obj.super_user and not sess_user_obj.super_user:
                 self.is_authorized = False
 
-    def post_auth_setup(self, id):
+    def auth_post(self, id):
         self.determine_add_edit(id)
         self.form = self.formcls(self.isAdd)
         if not self.isAdd:
             self.dbobj = self.action_get(id)
-            if self.dbobj is None:
-                usr.add_message('error', self.message_exists_not % {'objectname':self.objectname})
-                self.on_edit_error()
             vals = self.dbobj.to_dict()
             vals['assigned_groups'] = user_group_ids(self.dbobj)
             vals['approved_permissions'], vals['denied_permissions'] = user_assigned_perm_ids(self.dbobj)
@@ -75,27 +69,24 @@ class UserDelete(DeleteCommon):
     def prep(self):
         DeleteCommon.prep(self, _modname, 'user', 'User')
     
-    def auth(self, id):
-        DeleteCommon.auth(self)
-        
-        # prevent non-super users from deleting super users
+    def auth_pre(self, id):
         if id:
+            # prevent self-deletion
+            if id == usr.get_attr('id'):
+                usr.add_message('error', 'You cannot delete your own user account')
+                self.on_complete()
+            # prevent non-super users from deleting super users
             sess_user_obj = user_get(usr.get_attr('id'))
             edited_user_obj = user_get(id)
             if edited_user_obj and edited_user_obj.super_user and not sess_user_obj.super_user:
                 self.is_authorized = False
 
-    def default(self, id):
-        if id == usr.get_attr('id'):
-            usr.add_message('error', 'You cannot delete your own user account')
-            self.on_complete()
-        DeleteCommon.default(self, id)
-
-class ChangePassword(ProtectedPageView):
-    def prep(self):
-        self.authenticated_only = True
+class ChangePassword(SecureView):
+    def auth_pre(self):
+        self.is_authenticated = True
+        self.check_authorization = False
     
-    def post_auth_setup(self):
+    def auth_post(self):
         self.form = ChangePasswordForm()
 
     def post(self):
@@ -111,10 +102,10 @@ class ChangePassword(ProtectedPageView):
         self.default()
 
     def default(self):
-
         self.assign('formHtml', self.form.render())
+        self.render_template()
         
-class ResetPassword(PublicPageView):
+class ResetPassword(View):
     
     def setup(self, login_id, key):
         # this probably should never happen, but doesn't hurt to check
@@ -149,10 +140,12 @@ class ResetPassword(PublicPageView):
             # form was submitted, but invalid
             self.form.assign_user_errors()
         self.assign_form()
+        self.render_template()
         
     def get(self, login_id, key):
         usr.add_message('Notice', "Please choose a new password to complete the reset request.")
         self.assign_form()
+        self.render_template()
 
     def assign_form(self):
         self.assign('form', self.form)
@@ -162,13 +155,14 @@ class ResetPassword(PublicPageView):
         url = url_for('authbwp:LostPassword')
         redirect(url)
 
-class LostPassword(PublicPageView):
-    def setup(self):
+class LostPassword(View):
+    def __init__(self, urlargs, endpoint):
+        View.__init__(self, urlargs, endpoint)
         self.form = LostPasswordForm()
 
     def post(self):
         if self.form.is_valid():
-            em_address = self.form.email_address.value
+            em_address = self.form.elements.email_address.value
             if user_lost_password(em_address):
                 usr.add_message('notice', 'An email with a link to reset your password has been sent.')
                 url = current_url(root_only=True)
@@ -182,27 +176,21 @@ class LostPassword(PublicPageView):
         self.default()
 
     def default(self):
-
         self.assign('formHtml', self.form.render())
+        self.render_template()
 
 class UserProfile(UpdateCommon):
     def prep(self):
         UpdateCommon.prep(self, _modname, 'user', 'UserProfile')
-        self.authenticated_only = True
+        self.check_authorization = False
         self.actionname = 'Update'
         self.objectname = 'Profile'
         
-    def post_auth_setup(self):
+    def auth_post(self):
         self.assign_form()
         self.user_id = usr.get_attr('id')
-        dbobj = user_get(self.user_id)
-
-        if dbobj is None:
-            usr.add_message('error', self.message_exists_not % {'objectname':self.objectname})
-            self.on_edit_error()
-
-        self.form.set_defaults(dbobj.to_dict())        
-        self.dbobj = dbobj
+        self.dbobj = user_get(self.user_id)
+        self.form.set_defaults(self.dbobj.to_dict())
         
     def on_cancel(self):
         usr.add_message('notice', 'no changes made to your profile')
@@ -225,18 +213,19 @@ class UserProfile(UpdateCommon):
     def default(self, id=None):
         UpdateCommon.default(self, self.user_id)
     
-class PermissionMap(ProtectedPageView):
-    def prep(self):
-        self.require = ('users-manage')
+class PermissionMap(SecureView):
+    def auth_pre(self):
+        self.require_all = 'users-manage'
     
     def default(self, uid):
         self.assign('user', user_get(uid))
         self.assign('result', user_permission_map(uid))
         self.assign('permgroups', user_permission_map_groups(uid))
+        self.render_template()
 
-class Login(PublicPageView):
-    
-    def setup(self):
+class Login(View):
+    def __init__(self, urlargs, endpoint):
+        View.__init__(self, urlargs, endpoint)
         self.form = LoginForm()
     
     def post(self):        
@@ -247,7 +236,7 @@ class Login(PublicPageView):
                     usr.add_message('error', 'That user is inactive.')
                 else:
                     load_session_user(user)
-                    log.application('user %s logged in; session id: %s; remote_ip: %s', user.login_id, session.id, rg.request.remote_addr)
+                    log.application('user %s logged in; session id: %s; remote_ip: %s', user.login_id, rg.session.id, rg.request.remote_addr)
                     usr.add_message('notice', 'You logged in successfully!')
                     if user.reset_required:
                         url = url_for('authbwp:ChangePassword')
@@ -255,7 +244,7 @@ class Login(PublicPageView):
                         url = after_login_url()
                     redirect(url)
             else:
-                log.application('user login failed; user login: %s; session id: %s; remote_ip: %s', self.form.login_id.value, session.id, rg.request.remote_addr)
+                log.application('user login failed; user login: %s; session id: %s; remote_ip: %s', self.form.elements.login_id.value, rg.session.id, rg.request.remote_addr)
                 usr.add_message('error', 'Login failed!  Please try again.')
         elif self.form.is_submitted():
             # form was submitted, but invalid
@@ -263,14 +252,14 @@ class Login(PublicPageView):
             
         self.default()
     
-    def default(self):
-        
+    def default(self):        
         self.assign('formHtml', self.form.render())
+        self.render_template()
 
-class Logout(PublicPageView):
+class Logout(View):
         
     def default(self):
-        session.invalidate()
+        rg.session.invalidate()
             
         url = url_for('authbwp:Login')
         redirect(url)
@@ -279,14 +268,11 @@ class GroupUpdate(UpdateCommon):
     def prep(self):
         UpdateCommon.prep(self, _modname, 'group', 'Group')
 
-    def post_auth_setup(self, id):
+    def auth_post(self, id):
         self.determine_add_edit(id)
         self.form = self.formcls()
         if not self.isAdd:
             self.dbobj = self.action_get(id)
-            if self.dbobj is None:
-                usr.add_message('error', self.message_exists_not % {'objectname':self.objectname})
-                self.on_edit_error()
             vals = self.dbobj.to_dict()
             vals['assigned_users'] = group_user_ids(self.dbobj)
             vals['approved_permissions'], vals['denied_permissions'] = group_assigned_perm_ids(self.dbobj)
