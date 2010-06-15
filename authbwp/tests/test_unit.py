@@ -1,5 +1,5 @@
 import datetime
-from plugstack.sqlalchemybwp import db
+from plugstack.sqlalchemy import db
 from pysutils import randchars
 from nose.tools import nottest
 from plugstack.users.lib.testing import create_user_with_permissions

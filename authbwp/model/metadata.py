@@ -1,4 +1,4 @@
-from plugstack.sqlalchemybwp import db
+from plugstack.sqlalchemy import db
 from sqlalchemy import Table, Column, ForeignKey, CheckConstraint, Index, Integer
 
 __all__ = ['group_permission_assignments', 'user_permission_assignments']

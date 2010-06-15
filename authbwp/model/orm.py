@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, String, T
 from sqlalchemy.sql import text
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
-from plugstack.sqlalchemybwp import db
+from plugstack.sqlalchemy import db
 from hashlib import sha512
 from datetime import datetime
 from pysapp.lib.db import SmallIntBool, DeclarativeMixin
