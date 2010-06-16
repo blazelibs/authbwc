@@ -298,10 +298,14 @@ class PermissionManage(ManageCommon):
     def prep(self):
         ManageCommon.prep(self, _modname, 'permission', 'permissions', 'Permission')
         self.delete_link_require = None
-        self.template_name = 'permission_manage'
 
     def create_table(self):
         ManageCommon.create_table(self)
         t = self.table
         t.name = Col('Permission', width_td="35%")
         t.description = Col('Description')
+
+    def default(self):
+        self.assign_vars()
+        self.render_template()
+        

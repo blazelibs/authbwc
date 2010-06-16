@@ -113,7 +113,11 @@ class UpdateCommon(CommonBase):
             self.message_update = self.message_edit % {'objectname':self.objectname}
 
     def assign_form(self):
-        self.form = self.formcls()
+        try:
+            self.form = self.formcls()
+        except AttributeError, e:
+            if 'formcls' in str(e):
+                raise ProgrammingError('%s.formcls must be set before UpdateCommon.auth_post' % type(self).__name__)
 
     def do_if_edit(self, objid):
         if not self.isAdd:
@@ -166,12 +170,15 @@ class UpdateCommon(CommonBase):
     def on_cancel(self):
         redirect(url_for(self.endpoint_manage))
 
-    def default(self, *args, **kwargs):
+    def assign_vars(self):
         self.assign('actionname', self.actionname)
         self.assign('objectname', self.objectname)
         self.assign('pagetitle', self.pagetitle % {'actionname':self.actionname, 'objectname':self.objectname})
         self.assign('formobj', self.form)
         self.assign('extend_from', self.extend_from)
+        
+    def default(self, *args, **kwargs):
+        self.assign_vars()
         self.render_endpoint(self.template_endpoint)
 
 class ManageCommon(CommonBase):
@@ -210,7 +217,7 @@ class ManageCommon(CommonBase):
         data = self.action_list()
         self.assign('tablehtml', self.table.render(data))
 
-    def default(self, **kwargs):
+    def assign_vars(self):
         self.create_table()
         self.render_table()
         self.assign('pagetitle', self.pagetitle % {'objectnamepl':self.objectnamepl} )
@@ -218,6 +225,9 @@ class ManageCommon(CommonBase):
         self.assign('objectname', self.objectname)
         self.assign('objectnamepl', self.objectnamepl)
         self.assign('extend_from', self.extend_from)
+
+    def default(self, **kwargs):
+        self.assign_vars()
         self.render_endpoint(self.template_endpoint)
 
 class DeleteCommon(CommonBase):
