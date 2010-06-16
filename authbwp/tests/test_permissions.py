@@ -104,7 +104,7 @@ class TestNoPerms(object):
 
 class TestUsersManage(object):
     
-    perms = u'users-manage'
+    perms = u'auth-manage'
     
     @classmethod
     def setup_class(cls):
