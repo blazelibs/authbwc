@@ -82,7 +82,7 @@ class UpdateCommon(CommonBase):
     def prep(self, modulename, objectname, classname, action_prefix=None):
         self.modulename = modulename
         self.require_all = '%s-manage' % modulename
-        self.template_name = 'common/Update'
+        self.template_endpoint = 'common/update.html'
         self.objectname = objectname
         self.message_add = '%(objectname)s added successfully'
         self.message_edit = '%(objectname)s edited successfully'
@@ -172,14 +172,14 @@ class UpdateCommon(CommonBase):
         self.assign('pagetitle', self.pagetitle % {'actionname':self.actionname, 'objectname':self.objectname})
         self.assign('formobj', self.form)
         self.assign('extend_from', self.extend_from)
-        self.render_template()
+        self.render_endpoint(self.template_endpoint)
 
 class ManageCommon(CommonBase):
     def prep(self, modulename, objectname, objectnamepl, classname, action_prefix=None):
         self.modulename = modulename
         self.require_all = '%s-manage' % modulename
         self.delete_link_require = '%s-manage' % modulename
-        self.template_name = 'common/Manage'
+        self.template_endpoint = 'common/manage.html'
         self.objectname = objectname
         self.objectnamepl = objectnamepl
         self.endpoint_update = '%s:%sUpdate' % (modulename, classname)
@@ -192,7 +192,7 @@ class ManageCommon(CommonBase):
         self.pagetitle = 'Manage %(objectnamepl)s'
 
     def create_table(self):
-        if user.has_any_perm(self.delete_link_require):
+        if user.has_any_token(self.delete_link_require):
             self.table.actions = \
                 Links( 'Actions',
                     A(self.endpoint_delete, 'id', label='(delete)', class_='delete_link', title='delete %s' % self.objectname),
@@ -218,7 +218,7 @@ class ManageCommon(CommonBase):
         self.assign('objectname', self.objectname)
         self.assign('objectnamepl', self.objectnamepl)
         self.assign('extend_from', self.extend_from)
-        self.render_template()
+        self.render_endpoint(self.template_endpoint)
 
 class DeleteCommon(CommonBase):
     def prep(self, modulename, objectname, classname, action_prefix=None):

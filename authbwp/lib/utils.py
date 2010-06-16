@@ -14,19 +14,19 @@ def after_login_url():
 
 def send_new_user_email(user_obj, password):
     subject = '%s - User Login Information' % (settings.name.full)
-    body = getcontent('auth:new_user_email.txt', user_obj=user_obj, password=password)
+    body = getcontent('auth:new_user_email.txt', user_obj=user_obj, password=password).primary
     email = EmailMessage(subject, body, None, [user_obj.email_address])
     email.send()
 
 def send_change_password_email(login_id, password, email_address):
     subject = '%s - User Password Reset' % (settings.name.full)
-    body = getcontent('auth:change_password_email.txt', login_id=login_id, password=password)
+    body = getcontent('auth:change_password_email.txt', login_id=login_id, password=password).primary
     email = EmailMessage(subject, body, None, [email_address])
     email.send()
 
 def send_password_reset_email(user):
     subject = '%s - User Password Reset' % (settings.name.full)
-    body = getcontent('auth:password_reset_email.txt', user=user)
+    body = getcontent('auth:password_reset_email.txt', user=user).primary
     email = EmailMessage(subject, body, None, [user.email_address])
     email.send()
 
