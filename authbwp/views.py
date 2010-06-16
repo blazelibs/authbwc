@@ -81,7 +81,6 @@ class UserDelete(DeleteCommon):
 
 class ChangePassword(SecureView):
     def auth_pre(self):
-        self.is_authenticated = True
         self.check_authorization = False
 
     def auth_post(self):
@@ -213,7 +212,7 @@ class UserProfile(UpdateCommon):
 
 class PermissionMap(SecureView):
     def auth_pre(self):
-        self.require_all = 'users-manage'
+        self.require_all = 'auth-manage'
 
     def default(self, uid):
         self.assign('user', user_get(uid))

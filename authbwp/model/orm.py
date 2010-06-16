@@ -77,7 +77,7 @@ class Group(Base, DeclarativeMixin):
     def __repr__(self):
         return '<Group "%s" : %d>' % (self.name, self.id)
 
-class Permission(Base):
+class Permission(Base, DeclarativeMixin):
     __tablename__ = 'users_permission'
 
     id = Column(Integer, primary_key=True)

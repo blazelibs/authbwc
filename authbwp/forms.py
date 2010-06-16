@@ -60,7 +60,7 @@ class UserFormBase(Form):
     def add_super_user_field(self):
         # if the current user is not a super user, they can't set the super user
         # field
-        if user.get_attr('super_user'):
+        if user.is_super_user:
             el = self.add_checkbox('super_user', 'Super User')
             el.add_note("super users will have all permissions automatically")
             return el
@@ -238,7 +238,7 @@ class ChangePasswordForm(UserFormBase):
         self.add_validator(self.validate_validnew)
 
     def validate_password(self, value):
-        dbobj = user_get(user.get_attr('id'))
+        dbobj = user_get(user.id)
         if dbobj.pass_hash != hash_pass(value):
             raise ValueInvalid('incorrect password')
 
