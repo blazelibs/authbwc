@@ -42,7 +42,7 @@ def note_password_complexity():
 
 def add_administrative_user(allow_profile_defaults=True):
     from getpass import getpass
-    from plugstack.auth.actions import user_add
+    from plugstack.auth.actions import user_update
 
     defaults = settings.plugins.auth.admin
     # add a default administrative user
@@ -58,6 +58,6 @@ def add_administrative_user(allow_profile_defaults=True):
             p2 = getpass("confirm password:\n> ")
             if p1 == p2:
                 break
-    user_add(login_id = unicode(ulogin), email_address = unicode(uemail), password = p1,
+    user_update(None, login_id = unicode(ulogin), email_address = unicode(uemail), password = p1,
              super_user = True, assigned_groups = None,
-             approved_permissions = None, denied_permissions = None, safe='unique' )
+             approved_permissions = None, denied_permissions = None, _ignore_unique_exception=True )

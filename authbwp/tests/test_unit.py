@@ -5,8 +5,8 @@ from pysutils import randchars
 from nose.tools import nottest
 from plugstack.auth.lib.testing import create_user_with_permissions
 from plugstack.auth.actions import user_get, user_get_by_permissions, \
-    group_add, permission_add, user_get_by_permissions_query, \
-    user_add, user_get_by_login, user_get_by_email, user_validate, \
+    group_update, permission_update, user_get_by_permissions_query, \
+    user_update, user_get_by_login, user_get_by_email, user_validate, \
     group_get_by_name, permission_get_by_name, user_update, \
     group_delete, user_permission_map_groups, user_permission_map, \
     permission_assignments_group_by_name as group_perm_init
@@ -15,28 +15,28 @@ from plugstack.auth.lib.db import query_denied_group_permissions, \
     query_users_permissions
     
 def test_group_unique():
-    g1 = group_add(safe='unique', name=u'test unique group name')
-    g2 = group_add(safe='unique', name=u'test unique group name')
+    g1 = group_update(None, name=u'test unique group name', _ignore_unique_exception=True)
+    g2 = group_update(None, name=u'test unique group name', _ignore_unique_exception=True)
     assert g1.id == g2.id and g1.id is not None
 
 def test_group_get_by_name():
-    g = group_add(safe='unique', name=u'group_for_testing_%s'%randchars(15))
+    g = group_update(None, name=u'group_for_testing_%s'%randchars(15), _ignore_unique_exception=True)
     assert group_get_by_name(g.name).id == g.id
     
 def test_permission_unique():
-    p1 = permission_add(safe='unique', name=u'test unique permission name')
-    p2 = permission_add(safe='unique', name=u'test unique permission name')
+    p1 = permission_update(None, name=u'test unique permission name', _ignore_unique_exception=True)
+    p2 = permission_update(None, name=u'test unique permission name', _ignore_unique_exception=True)
     assert p1.id == p2.id and p1.id is not None
 
 def test_permission_get_by_name():
-    p = permission_add(safe='unique', name=u'permission_for_testing_%s'%randchars(15))
+    p = permission_update(None, name=u'permission_for_testing_%s'%randchars(15), _ignore_unique_exception=True)
     assert permission_get_by_name(p.name).id == p.id
 
 def test_user_unique():
     u1 = create_user_with_permissions()
-    u2 = user_add(safe='unique', login_id=u1.login_id, email_address='test%s@example.com'%u1.login_id)
+    u2 = user_update(None, login_id=u1.login_id, email_address='test%s@example.com'%u1.login_id, _ignore_unique_exception=True)
     assert u2 is None, '%s, %s'%(u1.id, u2.id)
-    u2 = user_add(safe='unique', login_id='test%s'%u1.login_id, email_address=u1.email_address)
+    u2 = user_update(None, login_id='test%s'%u1.login_id, email_address=u1.email_address, _ignore_unique_exception=True)
     assert u2 is None
 
 def test_user_update():
@@ -98,8 +98,8 @@ def test_user_update_transaction():
     assert user_get_by_login(user_login) is None
 
 def test_user_group_assignment():
-    g1 = group_add(safe='unique', name=u'group_for_testing_%s'%randchars(15))
-    g2 = group_add(safe='unique', name=u'group_for_testing_%s'%randchars(15))
+    g1 = group_update(None, name=u'group_for_testing_%s'%randchars(15), _ignore_unique_exception=True)
+    g2 = group_update(None, name=u'group_for_testing_%s'%randchars(15), _ignore_unique_exception=True)
 
     u = create_user_with_permissions()
     assert u.groups == []
@@ -113,8 +113,8 @@ def test_user_group_assignment():
     assert u.groups[0].id == g2.id
 
 def test_group_delete():
-    g1 = group_add(safe='unique', name=u'group_for_testing_%s'%randchars(15))
-    g2 = group_add(safe='unique', name=u'group_for_testing_%s'%randchars(15))
+    g1 = group_update(None, name=u'group_for_testing_%s'%randchars(15), _ignore_unique_exception=True)
+    g2 = group_update(None, name=u'group_for_testing_%s'%randchars(15), _ignore_unique_exception=True)
 
     u = create_user_with_permissions()
     user_update(u.id, assigned_groups=[g1.id,g2.id])
@@ -149,12 +149,12 @@ class TestPermissions(object):
             'ugp_approved_grp', 'ugp_not_approved', 'ugp_denied_grp']
 
         for permission in permissions:
-            permission_add(name=unicode(permission))
+            permission_update(None, name=unicode(permission))
 
         cls.user = create_user_with_permissions(u'ugp_approved', u'ugp_denied')
         cls.user2 = create_user_with_permissions(u'ugp_approved')
-        cls.g1 = group_add(name=u'ugp_g1')
-        cls.g2 = group_add(name=u'ugp_g2')
+        cls.g1 = group_update(None, name=u'ugp_g1')
+        cls.g2 = group_update(None, name=u'ugp_g2')
         group_perm_init(u'ugp_g1', (u'ugp_approved_grp', u'ugp_denied', u'ugp_denied_grp'))
         group_perm_init(u'ugp_g2', None, u'ugp_denied_grp')
         cls.user.groups.append(cls.g1)

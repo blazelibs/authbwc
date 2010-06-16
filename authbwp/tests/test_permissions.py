@@ -1,7 +1,7 @@
 from pysmvt import ag
 from werkzeug import Client, BaseResponse, BaseRequest
 from plugstack.auth.lib.testing import login_client_with_permissions, create_user_with_permissions
-from plugstack.auth.actions import group_add, permission_list_options
+from plugstack.auth.actions import group_update, permission_list_options
 
 class TestNotAuthenticated(object):
 
@@ -116,7 +116,7 @@ class TestAuthManage(object):
         # user the Client is currently logged in as, which would cause a 302
         user_id = create_user_with_permissions().id
         # add a group so we get 200s when working with it instead of 302s
-        group_id = group_add(name=u'TestUsersManage.test_ok-group').id
+        group_id = group_update(None, name=u'TestUsersManage.test_ok-group').id
         # get a list of permissions (there should be at least one) so we have a real id
         permission_id = permission_list_options()[0][0]
         
