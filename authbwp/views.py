@@ -5,6 +5,7 @@ from pysmvt import redirect, settings, rg, user as usr
 from pysmvt.routing import url_for, current_url
 from pysmvt.htmltable import Col, YesNo, Link, Table
 from pysmvt.views import View, SecureView
+from werkzeug.exceptions import NotFound
 from plugstack.auth.lib.views import ManageCommon, UpdateCommon, DeleteCommon
 from plugstack.auth.actions import user_validate,load_session_user, \
     user_assigned_perm_ids, user_group_ids, user_get, \
@@ -21,30 +22,32 @@ _modname = 'auth'
 log = logging.getLogger(__name__)
 
 class UserUpdate(UpdateCommon):
-    def prep(self):
-        UpdateCommon.prep(self, _modname, 'user', 'User')
+    def init(self):
+        UpdateCommon.init(self, _modname, 'user', 'User')
 
-    def auth_pre(self, id):
+    def auth_pre(self, oid):
         # prevent non-super users from editing super users
-        if id and usr.is_authenticated:
+        if oid and usr.is_authenticated:
             sess_user_obj = user_get(usr.id)
-            edited_user_obj = user_get(id)
+            edited_user_obj = user_get(oid)
             if edited_user_obj and edited_user_obj.super_user and not sess_user_obj.super_user:
                 self.is_authorized = False
 
-    def auth_post(self, id):
-        self.determine_add_edit(id)
+    def auth_post(self, oid):
+        self.determine_add_edit(oid)
         self.form = self.formcls(self.isAdd)
         if not self.isAdd:
-            self.dbobj = self.action_get(id)
+            self.dbobj = self.action_get(oid)
+            if not self.dbobj:
+                raise NotFound
             vals = self.dbobj.to_dict()
             vals['assigned_groups'] = user_group_ids(self.dbobj)
             vals['approved_permissions'], vals['denied_permissions'] = user_assigned_perm_ids(self.dbobj)
             self.form.set_defaults(vals)
 
 class UserManage(ManageCommon):
-    def prep(self):
-        ManageCommon.prep(self, _modname, 'user', 'users', 'User')
+    def init(self):
+        ManageCommon.init(self, _modname, 'user', 'users', 'User')
 
     def create_table(self):
         def determine_inactive(user):
@@ -64,18 +67,18 @@ class UserManage(ManageCommon):
             )
 
 class UserDelete(DeleteCommon):
-    def prep(self):
-        DeleteCommon.prep(self, _modname, 'user', 'User')
+    def init(self):
+        DeleteCommon.init(self, _modname, 'user', 'User')
 
-    def auth_pre(self, id):
-        if id and usr.is_authenticated:
+    def auth_pre(self, oid):
+        if oid and usr.is_authenticated:
             # prevent self-deletion
-            if id == usr.id:
+            if oid == usr.id:
                 usr.add_message('error', 'You cannot delete your own user account')
                 self.on_complete()
             # prevent non-super users from deleting super users
             sess_user_obj = user_get(usr.id)
-            edited_user_obj = user_get(id)
+            edited_user_obj = user_get(oid)
             if edited_user_obj and edited_user_obj.super_user and not sess_user_obj.super_user:
                 self.is_authorized = False
 
@@ -153,8 +156,7 @@ class ResetPassword(View):
         redirect(url)
 
 class LostPassword(View):
-    def __init__(self, urlargs, endpoint):
-        View.__init__(self, urlargs, endpoint)
+    def init(self):
         self.form = LostPasswordForm()
 
     def post(self):
@@ -177,8 +179,8 @@ class LostPassword(View):
         self.render_template()
 
 class UserProfile(UpdateCommon):
-    def prep(self):
-        UpdateCommon.prep(self, _modname, 'user', 'UserProfile')
+    def init(self):
+        UpdateCommon.init(self, _modname, 'user', 'UserProfile')
         self.check_authorization = False
         self.actionname = 'Update'
         self.objectname = 'Profile'
@@ -193,22 +195,19 @@ class UserProfile(UpdateCommon):
         usr.add_message('notice', 'no changes made to your profile')
         redirect(current_url(root_only=True))
 
-    def do_update(self, id):
+    def do_update(self, oid):
         formvals = self.form.get_values()
         # assigned groups and permissions stay the same for profile submissions
         formvals['assigned_groups'] = user_group_ids(self.dbobj)
         formvals['approved_permissions'], formvals['denied_permissions'] = \
                 user_assigned_perm_ids(self.dbobj)
         formvals['pass_reset_ok'] = False
-        user_update(id, **formvals)
+        user_update(oid, **formvals)
         usr.add_message('notice', 'profile updated succesfully')
         self.default()
 
     def post(self):
         UpdateCommon.post(self, self.user_id)
-
-    def default(self, id=None):
-        UpdateCommon.default(self, self.user_id)
 
 class PermissionMap(SecureView):
     def auth_pre(self):
@@ -221,8 +220,7 @@ class PermissionMap(SecureView):
         self.render_template()
 
 class Login(View):
-    def __init__(self, urlargs, endpoint):
-        View.__init__(self, urlargs, endpoint)
+    def init(self):
         self.form = LoginForm()
 
     def post(self):
@@ -262,22 +260,24 @@ class Logout(View):
         redirect(url)
 
 class GroupUpdate(UpdateCommon):
-    def prep(self):
-        UpdateCommon.prep(self, _modname, 'group', 'Group')
+    def init(self):
+        UpdateCommon.init(self, _modname, 'group', 'Group')
 
-    def auth_post(self, id):
-        self.determine_add_edit(id)
+    def auth_post(self, oid):
+        self.determine_add_edit(oid)
         self.form = self.formcls()
         if not self.isAdd:
-            self.dbobj = self.action_get(id)
+            self.dbobj = self.action_get(oid)
+            if not self.dbobj:
+                raise NotFound
             vals = self.dbobj.to_dict()
             vals['assigned_users'] = group_user_ids(self.dbobj)
             vals['approved_permissions'], vals['denied_permissions'] = group_assigned_perm_ids(self.dbobj)
             self.form.set_defaults(vals)
 
 class GroupManage(ManageCommon):
-    def prep(self):
-        ManageCommon.prep(self, _modname, 'group', 'groups', 'Group')
+    def init(self):
+        ManageCommon.init(self, _modname, 'group', 'groups', 'Group')
         self.table = Table(class_='dataTable manage', style="width: 60%")
 
     def create_table(self):
@@ -286,16 +286,16 @@ class GroupManage(ManageCommon):
         t.name = Col('Name')
 
 class GroupDelete(DeleteCommon):
-    def prep(self):
-        DeleteCommon.prep(self, _modname, 'group', 'Group')
+    def init(self):
+        DeleteCommon.init(self, _modname, 'group', 'Group')
 
 class PermissionUpdate(UpdateCommon):
-    def prep(self):
-        UpdateCommon.prep(self, _modname, 'permission', 'Permission')
+    def init(self):
+        UpdateCommon.init(self, _modname, 'permission', 'Permission')
 
 class PermissionManage(ManageCommon):
-    def prep(self):
-        ManageCommon.prep(self, _modname, 'permission', 'permissions', 'Permission')
+    def init(self):
+        ManageCommon.init(self, _modname, 'permission', 'permissions', 'Permission')
         self.delete_link_require = None
 
     def create_table(self):
