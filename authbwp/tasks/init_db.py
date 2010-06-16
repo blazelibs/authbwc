@@ -1,19 +1,18 @@
 from pysmvt.tasks import attributes
 
+from plugstack.auth.actions import permission_add
+from plugstack.auth.lib.utils import add_administrative_user
+
 @attributes('base-data')
-def action_30_base_data():    
-    # this module's permissions
-    from plugstack.auth.actions import permission_add
-    permission_add(name=u'users-manage', safe='unique')
+def action_30_base_data():
+    permission_add(name=u'auth-manage', safe='unique')
 
 @attributes('+dev')
 def action_40_admin_user():
-    from plugstack.auth.utils import add_administrative_user
     add_administrative_user()
 
 @attributes('+test')
 def action_40_test_data():
-    from plugstack.auth.actions import permission_add
     permission_add(name=u'ugp_approved')
     permission_add(name=u'ugp_denied')
     permission_add(name=u'users-test1')

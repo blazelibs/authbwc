@@ -41,15 +41,15 @@ class UserUpdate(UpdateCommon):
             vals['assigned_groups'] = user_group_ids(self.dbobj)
             vals['approved_permissions'], vals['denied_permissions'] = user_assigned_perm_ids(self.dbobj)
             self.form.set_defaults(vals)
-        
+
 class UserManage(ManageCommon):
     def prep(self):
         ManageCommon.prep(self, _modname, 'user', 'users', 'User')
-        
+
     def create_table(self):
         def determine_inactive(user):
             return user.inactive
-        
+
         ManageCommon.create_table(self)
         t = self.table
         t.login_id = Col('Login Id')
@@ -66,7 +66,7 @@ class UserManage(ManageCommon):
 class UserDelete(DeleteCommon):
     def prep(self):
         DeleteCommon.prep(self, _modname, 'user', 'User')
-    
+
     def auth_pre(self, id):
         if id and usr.is_authenticated:
             # prevent self-deletion
@@ -83,7 +83,7 @@ class ChangePassword(SecureView):
     def auth_pre(self):
         self.is_authenticated = True
         self.check_authorization = False
-    
+
     def auth_post(self):
         self.form = ChangePasswordForm()
 
@@ -96,16 +96,16 @@ class ChangePassword(SecureView):
         elif self.form.is_submitted():
             # form was submitted, but invalid
             self.form.assign_user_errors()
-            
+
         self.default()
 
     def default(self):
         self.assign('formHtml', self.form.render())
         self.render_template()
-        
+
 class ResetPassword(View):
-    
-    def setup(self, login_id, key):
+
+    def setup_view(self, login_id, key):
         # this probably should never happen, but doesn't hurt to check
         if not key or not login_id:
             self.abort()
@@ -114,10 +114,10 @@ class ResetPassword(View):
             self.abort()
         if key != user.pass_reset_key:
             self.abort()
-        expires_on = user.pass_reset_ts + datetime.timedelta(hours=settings.modules.users.password_rest_expires_after)
+        expires_on = user.pass_reset_ts + datetime.timedelta(hours=settings.plugins.auth.password_rest_expires_after)
         if datetime.datetime.utcnow() > expires_on:
             self.abort('password reset link expired')
-    
+
         self.user = user
         self.form = NewPasswordForm()
 
@@ -125,12 +125,12 @@ class ResetPassword(View):
         if self.form.is_valid():
             user_update_password(self.user.id, **self.form.get_values())
             usr.add_message('notice', 'Your password has been reset successfully.')
-            
+
             # at this point, the user has been verified, and we can setup the user
-            # session and kill the reset 
+            # session and kill the reset
             load_session_user(self.user)
             user_kill_reset_key(self.user)
-            
+
             # redirect as if this was a login
             url = after_login_url()
             redirect(url)
@@ -139,7 +139,7 @@ class ResetPassword(View):
             self.form.assign_user_errors()
         self.assign_form()
         self.render_template()
-        
+
     def get(self, login_id, key):
         usr.add_message('Notice', "Please choose a new password to complete the reset request.")
         self.assign_form()
@@ -183,17 +183,17 @@ class UserProfile(UpdateCommon):
         self.check_authorization = False
         self.actionname = 'Update'
         self.objectname = 'Profile'
-        
+
     def auth_post(self):
         self.assign_form()
         self.user_id = usr.id
         self.dbobj = user_get(self.user_id)
         self.form.set_defaults(self.dbobj.to_dict())
-        
+
     def on_cancel(self):
         usr.add_message('notice', 'no changes made to your profile')
         redirect(current_url(root_only=True))
-        
+
     def do_update(self, id):
         formvals = self.form.get_values()
         # assigned groups and permissions stay the same for profile submissions
@@ -204,17 +204,17 @@ class UserProfile(UpdateCommon):
         user_update(id, **formvals)
         usr.add_message('notice', 'profile updated succesfully')
         self.default()
-    
-    def post(self):        
+
+    def post(self):
         UpdateCommon.post(self, self.user_id)
-    
+
     def default(self, id=None):
         UpdateCommon.default(self, self.user_id)
-    
+
 class PermissionMap(SecureView):
     def auth_pre(self):
         self.require_all = 'users-manage'
-    
+
     def default(self, uid):
         self.assign('user', user_get(uid))
         self.assign('result', user_permission_map(uid))
@@ -225,8 +225,8 @@ class Login(View):
     def __init__(self, urlargs, endpoint):
         View.__init__(self, urlargs, endpoint)
         self.form = LoginForm()
-    
-    def post(self):        
+
+    def post(self):
         if self.form.is_valid():
             user = user_validate(**self.form.get_values())
             if user:
@@ -247,21 +247,21 @@ class Login(View):
         elif self.form.is_submitted():
             # form was submitted, but invalid
             self.form.assign_user_errors()
-            
+
         self.default()
-    
-    def default(self):        
+
+    def default(self):
         self.assign('formHtml', self.form.render())
         self.render_template()
 
 class Logout(View):
-        
+
     def default(self):
         rg.session.invalidate()
-            
+
         url = url_for('auth:Login')
         redirect(url)
-        
+
 class GroupUpdate(UpdateCommon):
     def prep(self):
         UpdateCommon.prep(self, _modname, 'group', 'Group')
@@ -280,12 +280,12 @@ class GroupManage(ManageCommon):
     def prep(self):
         ManageCommon.prep(self, _modname, 'group', 'groups', 'Group')
         self.table = Table(class_='dataTable manage', style="width: 60%")
-        
+
     def create_table(self):
         ManageCommon.create_table(self)
         t = self.table
         t.name = Col('Name')
-        
+
 class GroupDelete(DeleteCommon):
     def prep(self):
         DeleteCommon.prep(self, _modname, 'group', 'Group')
@@ -299,7 +299,7 @@ class PermissionManage(ManageCommon):
         ManageCommon.prep(self, _modname, 'permission', 'permissions', 'Permission')
         self.delete_link_require = None
         self.template_name = 'permission_manage'
-        
+
     def create_table(self):
         ManageCommon.create_table(self)
         t = self.table
