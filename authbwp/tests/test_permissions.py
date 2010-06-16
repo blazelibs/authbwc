@@ -102,7 +102,7 @@ class TestNoPerms(object):
         assert r.status_code == 200, r.status
         assert BaseRequest(environ).url == 'http://localhost/users/login'
 
-class TestUsersManage(object):
+class TestAuthManage(object):
     
     perms = u'auth-manage'
     
