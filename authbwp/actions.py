@@ -253,7 +253,7 @@ def user_validate(**kwargs):
 def load_session_user(user):
     usr.id = user.id
     usr.login_id = user.login_id
-    usr.is_super_user, bool(user.super_user)
+    usr.is_super_user = bool(user.super_user)
     usr.reset_required = user.reset_required
     usr.is_authenticated = True
 
