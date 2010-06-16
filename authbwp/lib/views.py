@@ -7,17 +7,11 @@ from pysmvt.views import SecureView
 from werkzeug.exceptions import NotFound
 
 class CommonBase(SecureView):
-    def __init__(self, urlargs, endpoint):
-        SecureView.__init__(self, urlargs, endpoint)
+    def init(self):
         self._cb_action_get = None
         self._cb_action_update = None
         self._cb_action_delete = None
         self._cb_action_list = None
-        self.id_param = None
-
-    def init_call_methods(self):
-        self.add_call_method('prep', required=True, takes_args=False)
-        SecureView.init_call_methods(self)
 
     def get_safe_action_prefix(self):
         return self.action_prefix.replace(' ', '_')
@@ -65,21 +59,9 @@ class CommonBase(SecureView):
     action_delete = property(get_action_delete, set_action_delete)
     action_list = property(get_action_list, set_action_list)
 
-    def get_id_from_args(self, args, kwargs):
-        try:
-            if self.id_param:
-                return kwargs.pop(self.id_param, None)
-            objid = kwargs.pop('objid', None)
-            if not objid:
-                objid = kwargs.pop('id', None)
-            if not objid:
-                objid = args[0]
-        except IndexError:
-            objid = None
-        return objid
-
 class UpdateCommon(CommonBase):
-    def prep(self, modulename, objectname, classname, action_prefix=None):
+    def init(self, modulename, objectname, classname, action_prefix=None):
+        CommonBase.init(self)
         self.modulename = modulename
         self.require_all = '%s-manage' % modulename
         self.template_endpoint = 'common/update.html'
@@ -96,14 +78,13 @@ class UpdateCommon(CommonBase):
             # assume the calling class will set up its own form
             pass
 
-    def auth_post(self, *args, **kwargs):
-        objid = self.get_id_from_args(args, kwargs)
-        self.determine_add_edit(objid)
+    def auth_post(self, oid):
+        self.determine_add_edit(oid)
         self.assign_form()
-        self.do_if_edit(objid)
+        self.do_if_edit(oid)
 
-    def determine_add_edit(self, objid):
-        if objid is None:
+    def determine_add_edit(self, oid):
+        if oid is None:
             self.isAdd = True
             self.actionname = 'Add'
             self.message_update = self.message_add % {'objectname':self.objectname}
@@ -119,9 +100,9 @@ class UpdateCommon(CommonBase):
             if 'formcls' in str(e):
                 raise ProgrammingError('%s.formcls must be set before UpdateCommon.auth_post' % type(self).__name__)
 
-    def do_if_edit(self, objid):
+    def do_if_edit(self, oid):
         if not self.isAdd:
-            dbobj = self.action_get(objid)
+            dbobj = self.action_get(oid)
 
             if dbobj is None:
                 raise NotFound
@@ -131,17 +112,16 @@ class UpdateCommon(CommonBase):
     def get_form_defaults(self, dbobj):
         return dbobj.to_dict()
 
-    def post(self, *args, **kwargs):
-        objid = self.get_id_from_args(args, kwargs)
-        self.form_submission(objid)
-        self.default(objid)
+    def post(self, oid):
+        self.form_submission(oid)
+        self._call_with_expected_args(self.default)
 
-    def form_submission(self, objid):
+    def form_submission(self, oid):
         if self.form.is_cancel():
             self.on_cancel()
         if self.form.is_valid():
             try:
-                self.do_update(objid)
+                self.do_update(oid)
                 return
             except Exception, e:
                 # if the form can't handle the exception, re-raise it
@@ -155,8 +135,8 @@ class UpdateCommon(CommonBase):
         # messages
         self.form.assign_user_errors()
 
-    def do_update(self, objid):
-        self.update_retval = self.action_update(objid, **self.get_action_params())
+    def do_update(self, oid):
+        self.update_retval = self.action_update(oid, **self.get_action_params())
         user.add_message('notice', self.message_update)
         self.on_complete()
 
@@ -177,12 +157,13 @@ class UpdateCommon(CommonBase):
         self.assign('formobj', self.form)
         self.assign('extend_from', self.extend_from)
         
-    def default(self, *args, **kwargs):
+    def default(self):
         self.assign_vars()
         self.render_endpoint(self.template_endpoint)
 
 class ManageCommon(CommonBase):
-    def prep(self, modulename, objectname, objectnamepl, classname, action_prefix=None):
+    def init(self, modulename, objectname, objectnamepl, classname, action_prefix=None):
+        CommonBase.init(self)
         self.modulename = modulename
         self.require_all = '%s-manage' % modulename
         self.delete_link_require = '%s-manage' % modulename
@@ -202,14 +183,14 @@ class ManageCommon(CommonBase):
         if user.has_any_token(self.delete_link_require):
             self.table.actions = \
                 Links( 'Actions',
-                    A(self.endpoint_delete, 'id', label='(delete)', class_='delete_link', title='delete %s' % self.objectname),
-                    A(self.endpoint_update, 'id', label='(edit)', class_='edit_link', title='edit %s' % self.objectname),
+                    A(self.endpoint_delete, 'oid:id', label='(delete)', class_='delete_link', title='delete %s' % self.objectname),
+                    A(self.endpoint_update, 'oid:id', label='(edit)', class_='edit_link', title='edit %s' % self.objectname),
                     width_th='8%'
                  )
         else:
             self.table.actions = \
                 Links( 'Actions',
-                    A(self.endpoint_update, 'id', label='(edit)', class_='edit_link', title='edit %s' % self.objectname),
+                    A(self.endpoint_update, 'oid:id', label='(edit)', class_='edit_link', title='edit %s' % self.objectname),
                     width_th='8%'
                  )
 
@@ -226,12 +207,13 @@ class ManageCommon(CommonBase):
         self.assign('objectnamepl', self.objectnamepl)
         self.assign('extend_from', self.extend_from)
 
-    def default(self, **kwargs):
+    def default(self):
         self.assign_vars()
         self.render_endpoint(self.template_endpoint)
 
 class DeleteCommon(CommonBase):
-    def prep(self, modulename, objectname, classname, action_prefix=None):
+    def init(self, modulename, objectname, classname, action_prefix=None):
+        CommonBase.init(self)
         self.modulename = modulename
         self.require_all = '%s-manage' % modulename
         self.objectname = objectname
@@ -241,9 +223,8 @@ class DeleteCommon(CommonBase):
         # messages that will normally be ok, but could be overriden
         self.message_ok = '%(objectname)s deleted'
 
-    def default(self, *args, **kwargs):
-        objid = self.get_id_from_args(args, kwargs)
-        if self.action_delete(objid):
+    def default(self, oid):
+        if self.action_delete(oid):
             user.add_message('notice', self.message_ok % {'objectname':self.objectname})
         else:
             raise NotFound

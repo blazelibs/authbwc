@@ -103,7 +103,7 @@ class TestUserViews(object):
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Confirm Password: does not match field "Password"' in r.data
+        assert 'Confirm Password: does not match field &#34;Password&#34;' in r.data
 
     def test_super_user_protection(self):
         r = self.c.get('users/add')
@@ -314,13 +314,11 @@ class TestUserViews(object):
         while user_get(non_existing_id):
             non_existing_id += 1000
         req, resp = self.c.get('users/edit/%s' % non_existing_id, follow_redirects=True)
-        assert req.url.endswith('/users/manage'), req.url
-        assert resp.status_code == 200, r.status
-        assert 'the requested user does not exist' in resp.data[0:250]
+        assert req.url.endswith('/users/edit/%s' % non_existing_id), req.url
+        assert resp.status_code == 404, r.status
         req, resp = self.c.get('users/delete/%s' % non_existing_id, follow_redirects=True)
-        assert req.url.endswith('/users/manage'), req.url
-        assert resp.status_code == 200, r.status
-        assert 'user was not found' in resp.data[0:250], resp.data[0:250]
+        assert req.url.endswith('users/delete/%s' % non_existing_id), req.url
+        assert resp.status_code == 404, r.status
 
     def test_no_email_notify(self):
         topost = {
@@ -405,7 +403,7 @@ class TestUserProfileView(object):
         topost['password-confirm'] = 'nomatch'
         r = self.c.post('users/profile', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Confirm Password: does not match field "Password"' in r.data, r.data
+        assert 'Confirm Password: does not match field &#34;Password&#34;' in r.data, r.data
 
     def test_email_dups(self):
         user2 = user_get(self.userid2)

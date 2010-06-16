@@ -1,7 +1,7 @@
 You have been added to our system of registered users.
 
 Please log in with the information below using the following link:
-{{ url_for('authbwp:Login', _external=True) }}
+{{ url_for('auth:Login', _external=True) }}
 
 user name: {{ user_obj.login_id }}
 password: {{ password }}
