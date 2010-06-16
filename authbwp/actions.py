@@ -1,6 +1,7 @@
 import datetime
 from hashlib import sha512
 
+from pysapp.lib.db import is_unique_exc
 from pysmvt import user as usr
 from pysutils.helpers import tolist
 from pysutils.strings import randchars
@@ -17,7 +18,7 @@ from plugstack.auth.model.metadata import group_permission_assignments as tbl_gp
 from plugstack.auth.model.metadata import user_permission_assignments as tbl_upa
 from plugstack.sqlalchemy import db
 
-def user_update(id, **kwargs):
+def user_update(id, _ignore_unique_exception=False, **kwargs):
 
     if id is None:
         u = User()
@@ -60,19 +61,13 @@ def user_update(id, **kwargs):
                 send_change_password_email(kwargs['login_id'], kwargs['password'], kwargs['email_address'])
 
         db.sess.commit()
-    except:
-        db.sess.rollback()
-        raise
-
-    return u
-
-def user_add(safe=False, **kwargs):
-    u = None
-    try:
-        u = user_update(None, **kwargs)
     except Exception, e:
-        if safe == False or safe.lower() not in str(e).lower():
+        db.sess.rollback()
+        if not (is_unique_exc('login_id','ix_users_user_login_id',e) or \
+            is_unique_exc('email_address','users_user_email_address_key',e)) \
+            or _ignore_unique_exception==False:
             raise
+        return None
 
     return u
 
@@ -264,7 +259,7 @@ def load_session_user(user):
 
 ## Group Actions
 
-def group_update(id, **kwargs):
+def group_update(id, _ignore_unique_exception=False, **kwargs):
     dbsession = db.sess
     if id is None:
         g = Group()
@@ -286,18 +281,12 @@ def group_update(id, **kwargs):
         g.users = create_users(kwargs.get('assigned_users',[]))
         permission_assignments_group(g, kwargs.get('approved_permissions',[]), kwargs.get('denied_permissions',[]))
         dbsession.commit()
-    except:
-        dbsession.rollback()
-        raise
-    return g
-
-def group_add(safe=False, **kwargs):
-    try:
-        return group_update(None, **kwargs)
     except Exception, e:
-        if safe == False or safe not in str(e):
+        dbsession.rollback()
+        if not is_unique_exc('name','ix_users_group_name',e) or _ignore_unique_exception==False:
             raise
-        return group_get_by_name(kwargs['name'])
+        return group_get_by_name(kwargs.get('name',None))
+    return g
 
 def create_users(user_ids):
     users = []
@@ -379,7 +368,7 @@ def group_add_permissions_to_existing(gname, approved=[], denied=[]):
 
 ## Permissions
 
-def permission_update(id, **kwargs):
+def permission_update(id, _ignore_unique_exception=False, **kwargs):
     dbsession = db.sess
     if id is None:
         p = Permission()
@@ -398,15 +387,9 @@ def permission_update(id, **kwargs):
         return p
     except Exception, e:
         dbsession.rollback()
-        raise
-
-def permission_add(safe=False, **kwargs):
-    try:
-        return permission_update(None, **kwargs)
-    except Exception, e:
-        if safe == False or safe not in str(e):
+        if not is_unique_exc('name','ix_users_permission_name',e) or _ignore_unique_exception==False:
             raise
-        return permission_get_by_name(kwargs['name'])
+        return permission_get_by_name(kwargs.get('name',None))
 
 def permission_list():
     return db.sess.query(Permission).order_by(Permission.name).all()

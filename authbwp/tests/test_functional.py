@@ -8,7 +8,7 @@ from pysmvt.testing import Client
 from werkzeug import BaseResponse, BaseRequest
 
 from plugstack.auth.actions import user_get, permission_get_by_name, \
-    user_get_by_email, group_add, user_permission_map, \
+    user_get_by_email, group_update, user_permission_map, \
     user_assigned_perm_ids, user_group_ids
 from plugstack.auth.lib.testing import login_client_with_permissions, \
     login_client_as_user, create_user_with_permissions
@@ -130,8 +130,8 @@ class TestUserViews(object):
     def test_fields_saved(self):
         ap = permission_get_by_name(u'users-test1').id
         dp = permission_get_by_name(u'users-test2').id
-        gp = group_add(name=u'test-group', approved_permissions=[],
-                      denied_permissions=[], assigned_users=[], safe='unique').id
+        gp = group_update(None, name=u'test-group', approved_permissions=[],
+                      denied_permissions=[], assigned_users=[], _ignore_unique_exception=True).id
         topost = {
             'login_id': 'usersaved',
             'email_address': 'usersaved@example.com',
@@ -452,8 +452,8 @@ class TestUserProfileView(object):
 
         # add user to group
         user = user_get(self.userid)
-        gp = group_add(name=u'test-group', approved_permissions=[],
-                      denied_permissions=[], assigned_users=[user.id], safe='unique').id
+        gp = group_update(None, name=u'test-group', approved_permissions=[],
+                      denied_permissions=[], assigned_users=[user.id], _ignore_unique_exception=True).id
 
         r = self.c.post('users/profile', data=self.get_to_post())
         assert r.status_code == 200, r.status
@@ -488,8 +488,8 @@ class TestUserViewsSuperUser(object):
     def test_fields_saved(self):
         ap = permission_get_by_name(u'users-test1').id
         dp = permission_get_by_name(u'users-test2').id
-        gp = group_add(name=u'test-group', approved_permissions=[],
-                      denied_permissions=[], assigned_users=[], safe='unique').id
+        gp = group_update(None, name=u'test-group', approved_permissions=[],
+                      denied_permissions=[], assigned_users=[], _ignore_unique_exception=True).id
         topost = {
             'login_id': 'usersavedsu',
             'password': 'testtest',
