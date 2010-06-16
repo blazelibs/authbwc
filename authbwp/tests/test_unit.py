@@ -1,15 +1,16 @@
 import datetime
+import smtplib
 from plugstack.sqlalchemy import db
 from pysutils import randchars
 from nose.tools import nottest
-from plugstack.users.lib.testing import create_user_with_permissions
-from plugstack.users.actions import user_get, user_get_by_permissions, \
+from plugstack.auth.lib.testing import create_user_with_permissions
+from plugstack.auth.actions import user_get, user_get_by_permissions, \
     group_add, permission_add, user_get_by_permissions_query, \
     user_add, user_get_by_login, user_get_by_email, user_validate, \
     group_get_by_name, permission_get_by_name, user_update, \
     group_delete, user_permission_map_groups, user_permission_map, \
     permission_assignments_group_by_name as group_perm_init
-from plugstack.users.lib.db import query_denied_group_permissions, \
+from plugstack.auth.lib.db import query_denied_group_permissions, \
     query_approved_group_permissions, query_user_group_permissions, \
     query_users_permissions
     

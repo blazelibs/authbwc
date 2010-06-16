@@ -16,7 +16,7 @@ from plugstack.auth.lib.utils import after_login_url
 from plugstack.auth.forms import ChangePasswordForm, NewPasswordForm, \
     LostPasswordForm, LoginForm
 
-_modname = 'authbwp'
+_modname = 'auth'
 
 log = logging.getLogger(__name__)
 
@@ -25,11 +25,9 @@ class UserUpdate(UpdateCommon):
         UpdateCommon.prep(self, _modname, 'user', 'User')
 
     def auth_pre(self, id):
-        UpdateCommon.auth_pre(self)
-        
         # prevent non-super users from editing super users
-        if id:
-            sess_user_obj = user_get(usr.get_attr('id'))
+        if id and usr.is_authenticated:
+            sess_user_obj = user_get(usr.id)
             edited_user_obj = user_get(id)
             if edited_user_obj and edited_user_obj.super_user and not sess_user_obj.super_user:
                 self.is_authorized = False
@@ -43,7 +41,7 @@ class UserUpdate(UpdateCommon):
             vals['assigned_groups'] = user_group_ids(self.dbobj)
             vals['approved_permissions'], vals['denied_permissions'] = user_assigned_perm_ids(self.dbobj)
             self.form.set_defaults(vals)
-
+        
 class UserManage(ManageCommon):
     def prep(self):
         ManageCommon.prep(self, _modname, 'user', 'users', 'User')
@@ -70,13 +68,13 @@ class UserDelete(DeleteCommon):
         DeleteCommon.prep(self, _modname, 'user', 'User')
     
     def auth_pre(self, id):
-        if id:
+        if id and usr.is_authenticated:
             # prevent self-deletion
-            if id == usr.get_attr('id'):
+            if id == usr.id:
                 usr.add_message('error', 'You cannot delete your own user account')
                 self.on_complete()
             # prevent non-super users from deleting super users
-            sess_user_obj = user_get(usr.get_attr('id'))
+            sess_user_obj = user_get(usr.id)
             edited_user_obj = user_get(id)
             if edited_user_obj and edited_user_obj.super_user and not sess_user_obj.super_user:
                 self.is_authorized = False
@@ -91,7 +89,7 @@ class ChangePassword(SecureView):
 
     def post(self):
         if self.form.is_valid():
-            user_update_password(usr.get_attr('id'), **self.form.get_values())
+            user_update_password(usr.id, **self.form.get_values())
             usr.add_message('notice', 'Your password has been changed successfully.')
             url = after_login_url()
             redirect(url)
@@ -188,7 +186,7 @@ class UserProfile(UpdateCommon):
         
     def auth_post(self):
         self.assign_form()
-        self.user_id = usr.get_attr('id')
+        self.user_id = usr.id
         self.dbobj = user_get(self.user_id)
         self.form.set_defaults(self.dbobj.to_dict())
         
