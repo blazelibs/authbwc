@@ -27,7 +27,7 @@ class Settings(PluginSettings):
         self.cp_nav.enabled=True
         self.cp_nav.section = ControlPanelSection(
             "Users",
-            'users-manage',
+            'auth-manage',
             ControlPanelGroup(
                 ControlPanelLink('User Add', 'auth:UserUpdate'),
                 ControlPanelLink('Users Manage', 'auth:UserManage'),
