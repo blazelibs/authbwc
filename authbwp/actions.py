@@ -189,7 +189,7 @@ def user_get_by_permissions(permissions):
 
 def user_permission_map(uid):
     dbsession = db.sess
-    user_perm = query_users_permissions()
+    user_perm = query_users_permissions().alias()
     s = select([user_perm.c.user_id,
                  user_perm.c.permission_id,
                  user_perm.c.permission_name,
@@ -225,7 +225,7 @@ def user_permission_map(uid):
 
 def user_permission_map_groups(uid):
     dbsession = db.sess
-    user_group_perm = query_user_group_permissions()
+    user_group_perm = query_user_group_permissions().alias()
     s = select([user_group_perm.c.permission_id,
                 user_group_perm.c.group_name,
                 user_group_perm.c.group_id,
