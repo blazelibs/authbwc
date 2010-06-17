@@ -63,8 +63,8 @@ def user_update(id, _ignore_unique_exception=False, **kwargs):
         db.sess.commit()
     except Exception, e:
         db.sess.rollback()
-        if not (is_unique_exc('login_id','ix_users_user_login_id',e) or \
-            is_unique_exc('email_address','users_user_email_address_key',e)) \
+        if not (is_unique_exc('login_id','ix_auth_user_login_id',e) or \
+            is_unique_exc('email_address','auth_user_email_address_key',e)) \
             or _ignore_unique_exception==False:
             raise
         return None
@@ -283,7 +283,7 @@ def group_update(id, _ignore_unique_exception=False, **kwargs):
         dbsession.commit()
     except Exception, e:
         dbsession.rollback()
-        if not is_unique_exc('name','ix_users_group_name',e) or _ignore_unique_exception==False:
+        if not is_unique_exc('name','ix_auth_group_name',e) or _ignore_unique_exception==False:
             raise
         return group_get_by_name(kwargs.get('name',None))
     return g
@@ -387,7 +387,7 @@ def permission_update(id, _ignore_unique_exception=False, **kwargs):
         return p
     except Exception, e:
         dbsession.rollback()
-        if not is_unique_exc('name','ix_users_permission_name',e) or _ignore_unique_exception==False:
+        if not is_unique_exc('name','ix_auth_permission_name',e) or _ignore_unique_exception==False:
             raise
         return permission_get_by_name(kwargs.get('name',None))
 
