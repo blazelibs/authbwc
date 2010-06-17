@@ -63,8 +63,8 @@ def user_update(id, _ignore_unique_exception=False, **kwargs):
         db.sess.commit()
     except Exception, e:
         db.sess.rollback()
-        if not (is_unique_exc('login_id','ix_auth_user_login_id',e) or \
-            is_unique_exc('email_address','auth_user_email_address_key',e)) \
+        if not (is_unique_exc('login_id','uc_auth_users_login_id',e) or \
+            is_unique_exc('email_address','uc_auth_users_email_address',e)) \
             or _ignore_unique_exception==False:
             raise
         return None
