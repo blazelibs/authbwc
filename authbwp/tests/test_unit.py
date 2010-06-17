@@ -45,6 +45,13 @@ def test_user_update():
     u = user_update(u.id, pass_hash=u'123456')
     assert u.pass_hash == current_hash
     
+    u.reset_required = False
+    db.sess.commit()
+    u = user_update(u.id, email_notify=True)
+    assert not u.reset_required
+    u = user_update(u.id, password='new_password')
+    assert u.reset_required
+
 def test_user_get_by_login():
     u = create_user_with_permissions()
     obj = user_get_by_login(u.login_id)
