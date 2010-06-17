@@ -226,29 +226,29 @@ def cleanup_query_for_test(query):
     
 def test_query_denied_group_permissions():
     query = cleanup_query_for_test(query_denied_group_permissions())
-    assert query == 'SELECT users_permission.id AS permission_id, users_user_group_map.users_user_id AS user_id, sum(users_permission_assignments_groups.approved) AS group_denied ' \
-    'FROM users_permission LEFT OUTER JOIN users_permission_assignments_groups ON users_permission.id = users_permission_assignments_groups.permission_id ' \
-    'AND users_permission_assignments_groups.approved = :approved_1 LEFT OUTER JOIN users_user_group_map ON users_user_group_map.users_group_id = users_permission_assignments_groups.group_id GROUP BY users_permission.id, users_user_group_map.users_user_id'
+    assert query == 'SELECT auth_permission.id AS permission_id, auth_user_group_map.auth_user_id AS user_id, sum(auth_permission_assignments_groups.approved) AS group_denied ' \
+    'FROM auth_permission LEFT OUTER JOIN auth_permission_assignments_groups ON auth_permission.id = auth_permission_assignments_groups.permission_id ' \
+    'AND auth_permission_assignments_groups.approved = :approved_1 LEFT OUTER JOIN auth_user_group_map ON auth_user_group_map.auth_group_id = auth_permission_assignments_groups.group_id GROUP BY auth_permission.id, auth_user_group_map.auth_user_id'
 
 def test_query_approved_group_permissions():
     query = cleanup_query_for_test(query_approved_group_permissions())
-    assert query == 'SELECT users_permission.id AS permission_id, users_user_group_map.users_user_id AS user_id, sum(users_permission_assignments_groups.approved) AS group_approved ' \
-    'FROM users_permission LEFT OUTER JOIN users_permission_assignments_groups ON users_permission.id = users_permission_assignments_groups.permission_id ' \
-    'AND users_permission_assignments_groups.approved = :approved_1 LEFT OUTER JOIN users_user_group_map ON users_user_group_map.users_group_id = users_permission_assignments_groups.group_id GROUP BY users_permission.id, users_user_group_map.users_user_id'
+    assert query == 'SELECT auth_permission.id AS permission_id, auth_user_group_map.auth_user_id AS user_id, sum(auth_permission_assignments_groups.approved) AS group_approved ' \
+    'FROM auth_permission LEFT OUTER JOIN auth_permission_assignments_groups ON auth_permission.id = auth_permission_assignments_groups.permission_id ' \
+    'AND auth_permission_assignments_groups.approved = :approved_1 LEFT OUTER JOIN auth_user_group_map ON auth_user_group_map.auth_group_id = auth_permission_assignments_groups.group_id GROUP BY auth_permission.id, auth_user_group_map.auth_user_id'
 
 def test_query_user_group_permissions():
     query = cleanup_query_for_test(query_user_group_permissions())
-    assert query == 'SELECT users_user.id AS user_id, users_group.id AS group_id, users_group.name AS group_name, users_permission_assignments_groups.permission_id, users_permission_assignments_groups.approved AS group_approved ' \
-    'FROM users_user LEFT OUTER JOIN users_user_group_map ON users_user.id = users_user_group_map.users_user_id LEFT OUTER JOIN users_group ON users_group.id = users_user_group_map.users_group_id LEFT OUTER JOIN users_permission_assignments_groups ON users_permission_assignments_groups.group_id = users_group.id ' \
-    'WHERE users_permission_assignments_groups.permission_id IS NOT NULL'
+    assert query == 'SELECT auth_user.id AS user_id, auth_group.id AS group_id, auth_group.name AS group_name, auth_permission_assignments_groups.permission_id, auth_permission_assignments_groups.approved AS group_approved ' \
+    'FROM auth_user LEFT OUTER JOIN auth_user_group_map ON auth_user.id = auth_user_group_map.auth_user_id LEFT OUTER JOIN auth_group ON auth_group.id = auth_user_group_map.auth_group_id LEFT OUTER JOIN auth_permission_assignments_groups ON auth_permission_assignments_groups.group_id = auth_group.id ' \
+    'WHERE auth_permission_assignments_groups.permission_id IS NOT NULL'
     
 def test_query_users_permissions():
     query = cleanup_query_for_test(query_users_permissions())
-    assert query == 'SELECT user_perm.user_id, user_perm.permission_id, user_perm.permission_name, user_perm.login_id, users_permission_assignments_users.approved AS user_approved, g_approve.group_approved, g_deny.group_denied ' \
-    'FROM (SELECT users_user.id AS user_id, users_permission.id AS permission_id, users_permission.name AS permission_name, users_user.login_id AS login_id ' \
-    'FROM users_user, users_permission) AS user_perm LEFT OUTER JOIN users_permission_assignments_users ON users_permission_assignments_users.user_id = user_perm.user_id AND users_permission_assignments_users.permission_id = user_perm.permission_id LEFT OUTER JOIN (SELECT users_permission.id AS permission_id, users_user_group_map.users_user_id AS user_id, sum(users_permission_assignments_groups.approved) AS group_approved ' \
-    'FROM users_permission LEFT OUTER JOIN users_permission_assignments_groups ON users_permission.id = users_permission_assignments_groups.permission_id ' \
-    'AND users_permission_assignments_groups.approved = :approved_1 LEFT OUTER JOIN users_user_group_map ON users_user_group_map.users_group_id = users_permission_assignments_groups.group_id GROUP BY users_permission.id, users_user_group_map.users_user_id) AS g_approve ON g_approve.user_id = user_perm.user_id AND g_approve.permission_id = user_perm.permission_id LEFT OUTER JOIN (SELECT users_permission.id AS permission_id, users_user_group_map.users_user_id AS user_id, sum(users_permission_assignments_groups.approved) AS group_denied ' \
-    'FROM users_permission LEFT OUTER JOIN users_permission_assignments_groups ON users_permission.id = users_permission_assignments_groups.permission_id ' \
-    'AND users_permission_assignments_groups.approved = :approved_2 LEFT OUTER JOIN users_user_group_map ON users_user_group_map.users_group_id = users_permission_assignments_groups.group_id GROUP BY users_permission.id, users_user_group_map.users_user_id) AS g_deny ON g_deny.user_id = user_perm.user_id AND g_deny.permission_id = user_perm.permission_id ORDER BY user_perm.user_id, user_perm.permission_id'
+    assert query == 'SELECT user_perm.user_id, user_perm.permission_id, user_perm.permission_name, user_perm.login_id, auth_permission_assignments_users.approved AS user_approved, g_approve.group_approved, g_deny.group_denied ' \
+    'FROM (SELECT auth_user.id AS user_id, auth_permission.id AS permission_id, auth_permission.name AS permission_name, auth_user.login_id AS login_id ' \
+    'FROM auth_user, auth_permission) AS user_perm LEFT OUTER JOIN auth_permission_assignments_users ON auth_permission_assignments_users.user_id = user_perm.user_id AND auth_permission_assignments_users.permission_id = user_perm.permission_id LEFT OUTER JOIN (SELECT auth_permission.id AS permission_id, auth_user_group_map.auth_user_id AS user_id, sum(auth_permission_assignments_groups.approved) AS group_approved ' \
+    'FROM auth_permission LEFT OUTER JOIN auth_permission_assignments_groups ON auth_permission.id = auth_permission_assignments_groups.permission_id ' \
+    'AND auth_permission_assignments_groups.approved = :approved_1 LEFT OUTER JOIN auth_user_group_map ON auth_user_group_map.auth_group_id = auth_permission_assignments_groups.group_id GROUP BY auth_permission.id, auth_user_group_map.auth_user_id) AS g_approve ON g_approve.user_id = user_perm.user_id AND g_approve.permission_id = user_perm.permission_id LEFT OUTER JOIN (SELECT auth_permission.id AS permission_id, auth_user_group_map.auth_user_id AS user_id, sum(auth_permission_assignments_groups.approved) AS group_denied ' \
+    'FROM auth_permission LEFT OUTER JOIN auth_permission_assignments_groups ON auth_permission.id = auth_permission_assignments_groups.permission_id ' \
+    'AND auth_permission_assignments_groups.approved = :approved_2 LEFT OUTER JOIN auth_user_group_map ON auth_user_group_map.auth_group_id = auth_permission_assignments_groups.group_id GROUP BY auth_permission.id, auth_user_group_map.auth_user_id) AS g_deny ON g_deny.user_id = user_perm.user_id AND g_deny.permission_id = user_perm.permission_id ORDER BY user_perm.user_id, user_perm.permission_id'
     

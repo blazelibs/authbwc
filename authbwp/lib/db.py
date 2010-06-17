@@ -8,7 +8,7 @@ from plugstack.auth.model.metadata import user_permission_assignments as tbl_upa
 def query_denied_group_permissions():
     return  select(
                 [Permission.id.label(u'permission_id'),
-                 user_groups.c.users_user_id.label(u'user_id'),
+                 user_groups.c.auth_user_id.label(u'user_id'),
                  sum(tbl_gpa.c.approved).label(u'group_denied'),],
                 from_obj=
                     outerjoin(Permission,
@@ -18,17 +18,17 @@ def query_denied_group_permissions():
                             tbl_gpa.c.approved==-1
                         )
                     ).outerjoin(
-                        user_groups, user_groups.c.users_group_id==tbl_gpa.c.group_id
+                        user_groups, user_groups.c.auth_group_id==tbl_gpa.c.group_id
                     )
             ).group_by(
                 Permission.id,
-                user_groups.c.users_user_id
+                user_groups.c.auth_user_id
             )
 
 def query_approved_group_permissions():
     return  select(
                 [Permission.id.label(u'permission_id'),
-                 user_groups.c.users_user_id.label(u'user_id'),
+                 user_groups.c.auth_user_id.label(u'user_id'),
                  sum(tbl_gpa.c.approved).label(u'group_approved'),],
                 from_obj=
                     outerjoin(Permission,
@@ -38,11 +38,11 @@ def query_approved_group_permissions():
                             tbl_gpa.c.approved==1
                         )
                     ).outerjoin(
-                        user_groups, user_groups.c.users_group_id==tbl_gpa.c.group_id
+                        user_groups, user_groups.c.auth_group_id==tbl_gpa.c.group_id
                     )
             ).group_by(
                 Permission.id,
-                user_groups.c.users_user_id
+                user_groups.c.auth_user_id
             )
 
 def query_user_group_permissions():
@@ -55,9 +55,9 @@ def query_user_group_permissions():
                 from_obj=
                     outerjoin(User,
                         user_groups,
-                        User.id==user_groups.c.users_user_id
+                        User.id==user_groups.c.auth_user_id
                     ).outerjoin(
-                        Group, Group.id==user_groups.c.users_group_id
+                        Group, Group.id==user_groups.c.auth_group_id
                     ).outerjoin(
                         tbl_gpa, tbl_gpa.c.group_id==Group.id
                     )

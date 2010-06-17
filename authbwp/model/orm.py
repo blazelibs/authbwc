@@ -10,13 +10,13 @@ from pysapp.lib.db import SmallIntBool, DeclarativeMixin
 Base = declarative_base(metadata=db.meta)
 
 # user <-> group table
-user_groups = Table('users_user_group_map', db.meta,
-    Column('users_user_id', Integer, ForeignKey('users_user.id')),
-    Column('users_group_id', Integer, ForeignKey('users_group.id'))
+user_groups = Table('auth_user_group_map', db.meta,
+    Column('auth_user_id', Integer, ForeignKey('auth_user.id')),
+    Column('auth_group_id', Integer, ForeignKey('auth_group.id'))
 )
 
 class User(Base, DeclarativeMixin):
-    __tablename__ = 'users_user'
+    __tablename__ = 'auth_user'
 
     id = Column(Integer, primary_key=True)
     login_id = Column(Unicode(150), nullable=False, index=True, unique=True)
@@ -64,7 +64,7 @@ class User(Base, DeclarativeMixin):
         return self.login_id
 
 class Group(Base, DeclarativeMixin):
-    __tablename__ = 'users_group'
+    __tablename__ = 'auth_group'
 
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(150), nullable=False, index=True, unique=True)
@@ -78,7 +78,7 @@ class Group(Base, DeclarativeMixin):
         return '<Group "%s" : %d>' % (self.name, self.id)
 
 class Permission(Base, DeclarativeMixin):
-    __tablename__ = 'users_permission'
+    __tablename__ = 'auth_permission'
 
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(250), nullable=False, index=True, unique=True)
