@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, String, Table
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, String, Table, UniqueConstraint
 from sqlalchemy.sql import text
 from sqlalchemy.orm import relation
 from sqlalchemy.ext.declarative import declarative_base
@@ -17,10 +17,12 @@ user_groups = Table('auth_user_group_map', db.meta,
 
 class User(Base, DeclarativeMixin):
     __tablename__ = 'auth_user'
+    __table_args__ = (UniqueConstraint('login_id', name='uc_auth_users_login_id'),
+                      UniqueConstraint('email_address', name='uc_auth_users_email_address'), {})
 
     id = Column(Integer, primary_key=True)
-    login_id = Column(Unicode(150), nullable=False, index=True, unique=True)
-    email_address = Column(Unicode(150), nullable=False, unique=True)
+    login_id = Column(Unicode(150), nullable=False)
+    email_address = Column(Unicode(150), nullable=False)
     pass_hash = Column(String(128), nullable=False)
     reset_required = Column(SmallIntBool, server_default=text('1'), nullable=False)
     super_user = Column(SmallIntBool, server_default=text('0'), nullable=False)
