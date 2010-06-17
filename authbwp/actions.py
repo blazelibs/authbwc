@@ -57,8 +57,8 @@ def user_update(id, _ignore_unique_exception=False, **kwargs):
         if kwargs.get('email_notify'):
             if id is None:
                 send_new_user_email(u, kwargs['password'])
-            elif kwargs['password']:
-                send_change_password_email(kwargs['login_id'], kwargs['password'], kwargs['email_address'])
+            elif kwargs.get('password',None):
+                send_change_password_email(u.login_id, kwargs['password'], u.email_address)
 
         db.sess.commit()
     except Exception, e:
