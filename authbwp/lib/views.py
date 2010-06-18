@@ -23,7 +23,7 @@ class CommonBase(SecureView):
             return localvalue
         func = '%s_%s' % (self.safe_action_prefix, actname)
         try:
-            return findobj( '%s:actions.%s' % (self.modulename, func))
+            return findobj( '%s:model.actions.%s' % (self.modulename, func))
         except HierarchyImportError:
             # we assume the calling object will override action_<type>
             return None

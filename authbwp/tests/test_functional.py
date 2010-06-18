@@ -5,13 +5,14 @@ import re
 import minimock
 from pysmvt import ag
 from pysmvt.testing import Client
+from pysutils import randchars
 from werkzeug import BaseResponse, BaseRequest
 
-from plugstack.auth.actions import user_get, permission_get_by_name, \
-    user_get_by_email, group_update, user_permission_map, \
-    user_assigned_perm_ids, user_group_ids
 from plugstack.auth.lib.testing import login_client_with_permissions, \
     login_client_as_user, create_user_with_permissions
+from plugstack.auth.model.actions import user_get, permission_get_by_name, \
+    user_get_by_email, group_update, user_permission_map, \
+    user_assigned_perm_ids, user_group_ids
 from plugstack.sqlalchemy import db
 
 class TestUserViews(object):
@@ -277,6 +278,43 @@ class TestUserViews(object):
         assert r.status_code == 200, r.status
         assert 'user deleted' in r.data
         assert req.url.endswith('users/manage')
+
+    def test_email_fail(self):
+        userlogin = randchars(12)
+        topost = {
+            'login_id': userlogin,
+            'email_address': '%s@example.com'%userlogin,
+            'user-form-submit-flag':'submitted',
+            'approved_permissions': [],
+            'denied_permissions': [],
+            'assigned_groups': [],
+            'super_user': 1,
+            'inactive_flag': False,
+            'inactive_date': '10/11/2010',
+            'name_first': 'test',
+            'name_last': 'user',
+            'email_notify': 1
+        }
+
+        # cause an email exception
+        smtp_orig = smtplib.SMTP
+        smtplib.SMTP = None
+
+        req, r = self.c.post('users/add', data=topost, follow_redirects=True)
+        assert 'user added successfully' in r.data
+        assert 'An error occurred while sending the user notification email.' in r.data
+        assert req.url.endswith('users/manage')
+
+        topost['password'] = 'new_password'
+        topost['password-confirm'] = 'new_password'
+        user = user_get_by_email('%s@example.com'%userlogin)
+        
+        req, r = self.c.post('users/edit/%s'%user.id, data=topost, follow_redirects=True)
+        assert 'user edited successfully' in r.data
+        assert 'An error occurred while sending the user notification email.' in r.data
+        assert req.url.endswith('users/manage')
+
+        smtplib.SMTP = smtp_orig
 
     def test_password_complexity(self):
         topost = {

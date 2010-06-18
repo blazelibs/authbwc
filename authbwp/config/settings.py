@@ -1,5 +1,5 @@
 from pysmvt.config import PluginSettings
-from pysapp.utils import ControlPanelSection, ControlPanelGroup, ControlPanelLink
+from pysapp.lib.cpanel import ControlPanelSection, ControlPanelGroup, ControlPanelLink
 
 class Settings(PluginSettings):
 
