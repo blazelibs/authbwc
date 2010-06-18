@@ -6,16 +6,17 @@ from pysmvt.routing import url_for, current_url
 from pysmvt.htmltable import Col, YesNo, Link, Table
 from pysmvt.views import View, SecureView
 from werkzeug.exceptions import NotFound
+from plugstack.auth.forms import ChangePasswordForm, NewPasswordForm, \
+    LostPasswordForm, LoginForm
+from plugstack.auth.helpers import after_login_url, load_session_user, send_new_user_email, \
+    send_change_password_email, send_password_reset_email
 from plugstack.auth.lib.views import ManageCommon, UpdateCommon, DeleteCommon
-from plugstack.auth.actions import user_validate,load_session_user, \
+from plugstack.auth.model.actions import user_validate, \
     user_assigned_perm_ids, user_group_ids, user_get, \
-    user_update_password, user_get_by_login, load_session_user, \
+    user_update_password, user_get_by_login, \
     user_kill_reset_key, user_lost_password, user_permission_map, \
     user_permission_map_groups, group_user_ids, group_assigned_perm_ids, \
     user_update
-from plugstack.auth.lib.utils import after_login_url
-from plugstack.auth.forms import ChangePasswordForm, NewPasswordForm, \
-    LostPasswordForm, LoginForm
 
 _modname = 'auth'
 
@@ -44,6 +45,18 @@ class UserUpdate(UpdateCommon):
             vals['assigned_groups'] = user_group_ids(self.dbobj)
             vals['approved_permissions'], vals['denied_permissions'] = user_assigned_perm_ids(self.dbobj)
             self.form.set_defaults(vals)
+
+    def do_update(self, oid):
+        self.update_retval = self.action_update(oid, **self.get_action_params())
+        usr.add_message('notice', self.message_update)
+        if self.form.elements.email_notify.value:
+            if self.isAdd:
+                email_sent = send_new_user_email(self.update_retval)
+            elif self.form.elements.password.value:
+                email_sent = send_change_password_email(self.update_retval)
+            if not email_sent:
+                usr.add_message('error', 'An error occurred while sending the user notification email.')
+        self.on_complete()
 
 class UserManage(ManageCommon):
     def init(self):
@@ -162,8 +175,12 @@ class LostPassword(View):
     def post(self):
         if self.form.is_valid():
             em_address = self.form.elements.email_address.value
-            if user_lost_password(em_address):
-                usr.add_message('notice', 'An email with a link to reset your password has been sent.')
+            user_obj = user_lost_password(em_address)
+            if user_obj:
+                if send_password_reset_email(user_obj):
+                    usr.add_message('notice', 'An email with a link to reset your password has been sent.')
+                else:
+                    usr.add_message('error', 'An error occurred while sending the notification email. Your password has not been reset.')
                 url = current_url(root_only=True)
                 redirect(url)
             else:

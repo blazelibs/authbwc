@@ -2,20 +2,17 @@ import datetime
 from hashlib import sha512
 
 from pysapp.lib.db import is_unique_exc
-from pysmvt import user as usr
 from pysutils.helpers import tolist
 from pysutils.strings import randchars
 from sqlalchemy.orm import join
 from sqlalchemy.sql import select, and_, alias, or_, func
 from sqlalchemy.sql.functions import sum
 
-from plugstack.auth.lib.db import query_user_group_permissions, \
-    query_users_permissions
-from plugstack.auth.lib.utils import send_new_user_email, \
-    send_change_password_email, send_password_reset_email
-from plugstack.auth.model.orm import User, Group, Permission
 from plugstack.auth.model.metadata import group_permission_assignments as tbl_gpa
 from plugstack.auth.model.metadata import user_permission_assignments as tbl_upa
+from plugstack.auth.model.orm import User, Group, Permission
+from plugstack.auth.model.queries import query_user_group_permissions, \
+    query_users_permissions
 from plugstack.sqlalchemy import db
 
 def user_update(id, _ignore_unique_exception=False, **kwargs):
@@ -51,15 +48,6 @@ def user_update(id, _ignore_unique_exception=False, **kwargs):
         u.groups = create_groups(kwargs.get('assigned_groups', []))
         db.sess.flush()
         permission_assignments_user(u, kwargs.get('approved_permissions', []), kwargs.get('denied_permissions', []))
-
-        # if email fails, db trans will roll back
-        #  initmod call will not have this flag
-        if kwargs.get('email_notify'):
-            if id is None:
-                send_new_user_email(u, kwargs['password'])
-            elif kwargs.get('password',None):
-                send_change_password_email(u.login_id, kwargs['password'], u.email_address)
-
         db.sess.commit()
     except Exception, e:
         db.sess.rollback()
@@ -98,13 +86,11 @@ def user_lost_password(email_address):
     u.pass_reset_key = randchars(12)
     u.pass_reset_ts = datetime.datetime.utcnow()
     try:
-        db.sess.flush()
-        send_password_reset_email(u)
         db.sess.commit()
     except:
         db.sess.rollback()
         raise
-    return True
+    return u
 
 def user_kill_reset_key(user):
     user.pass_reset_key = None
@@ -244,18 +230,6 @@ def user_permission_map_groups(uid):
 
 def user_validate(**kwargs):
     return db.sess.query(User).filter_by(login_id=kwargs['login_id'], pass_hash=hash_pass(kwargs['password'])).first()
-
-def load_session_user(user):
-    usr.id = user.id
-    usr.login_id = user.login_id
-    usr.is_super_user = bool(user.super_user)
-    usr.reset_required = user.reset_required
-    usr.is_authenticated = True
-
-    # now permissions
-    for row in user_permission_map(user.id):
-        if row['resulting_approval'] or user.super_user:
-            usr.add_token(row['permission_name'])
 
 ## Group Actions
 

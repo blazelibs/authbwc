@@ -44,6 +44,7 @@ class User(Base, DeclarativeMixin):
     def set_password(self, password):
         if password:
             self.pass_hash = sha512(password).hexdigest()
+            self.text_password = password
     password = property(None,set_password)
 
     @property

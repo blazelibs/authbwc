@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
-from pysmvt import settings
+import logging
+
+from pysmvt import settings, user
 from pysmvt.content import getcontent
+from pysmvt.mail import EmailMessage, mail_programmers
 from pysmvt.routing import current_url
-from pysmvt.mail import EmailMessage
+from pysmvt.utils import exception_with_context
+
+from plugstack.auth.model.actions import user_permission_map
+
+log = logging.getLogger(__name__)
 
 def after_login_url():
     if settings.plugins.auth.after_login_url:
@@ -12,23 +19,44 @@ def after_login_url():
             return settings.plugins.auth.after_login_url
     return current_url(root_only=True)
 
-def send_new_user_email(user_obj, password):
+def load_session_user(user_obj):
+    user.id = user_obj.id
+    user.login_id = user_obj.login_id
+    user.is_super_user = bool(user_obj.super_user)
+    user.reset_required = user_obj.reset_required
+    user.is_authenticated = True
+
+    # now permissions
+    for row in user_permission_map(user_obj.id):
+        if row['resulting_approval'] or user_obj.super_user:
+            user.add_token(row['permission_name'])
+
+def send_new_user_email(user_obj):
     subject = '%s - User Login Information' % (settings.name.full)
-    body = getcontent('auth:new_user_email.txt', user_obj=user_obj, password=password).primary
+    body = getcontent('auth:new_user_email.txt', user_obj=user_obj).primary
     email = EmailMessage(subject, body, None, [user_obj.email_address])
-    email.send()
+    return send_email_or_log_error(email)
 
-def send_change_password_email(login_id, password, email_address):
+def send_change_password_email(user_obj):
     subject = '%s - User Password Reset' % (settings.name.full)
-    body = getcontent('auth:change_password_email.txt', login_id=login_id, password=password).primary
-    email = EmailMessage(subject, body, None, [email_address])
-    email.send()
+    body = getcontent('auth:change_password_email.txt', user_obj=user_obj).primary
+    email = EmailMessage(subject, body, None, [user_obj.email_address])
+    return send_email_or_log_error(email)
 
-def send_password_reset_email(user):
+def send_password_reset_email(user_obj):
     subject = '%s - User Password Reset' % (settings.name.full)
-    body = getcontent('auth:password_reset_email.txt', user=user).primary
-    email = EmailMessage(subject, body, None, [user.email_address])
-    email.send()
+    body = getcontent('auth:password_reset_email.txt', user_obj=user_obj).primary
+    email = EmailMessage(subject, body, None, [user_obj.email_address])
+    return send_email_or_log_error(email)
+
+def send_email_or_log_error(email):
+    try:
+        email.send()
+    except Exception, e:
+        log.error('Exception while sending email in auth plugin: %s' % str(e))
+        mail_programmers('%s - email send error' % settings.name.short, exception_with_context(), fail_silently=True)
+        return False
+    return True
 
 def validate_password_complexity(password):
     if len(password) < 6:
@@ -42,7 +70,7 @@ def note_password_complexity():
 
 def add_administrative_user(allow_profile_defaults=True):
     from getpass import getpass
-    from plugstack.auth.actions import user_update
+    from plugstack.auth.model.actions import user_update
 
     defaults = settings.plugins.auth.admin
     # add a default administrative user
