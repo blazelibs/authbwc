@@ -1,7 +1,7 @@
 import datetime
 from hashlib import sha512
 
-from blazebwa.lib.db import is_unique_exc
+from basebwa.lib.db import is_unique_exc
 from blazeutils.helpers import tolist
 from blazeutils.strings import randchars
 from sqlalchemy.orm import join

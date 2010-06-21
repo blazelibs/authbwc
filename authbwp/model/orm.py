@@ -1,11 +1,11 @@
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, String, Table, UniqueConstraint
-from sqlalchemy.sql import text
-from sqlalchemy.orm import relation
-from sqlalchemy.ext.declarative import declarative_base
-from plugstack.sqlalchemy import db
-from hashlib import sha512
+from basebwa.lib.db import SmallIntBool, DeclarativeMixin
 from datetime import datetime
-from blazebwa.lib.db import SmallIntBool, DeclarativeMixin
+from hashlib import sha512
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, String, Table, UniqueConstraint
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relation
+from sqlalchemy.sql import text
+from plugstack.sqlalchemy import db
 
 Base = declarative_base(metadata=db.meta)
 
