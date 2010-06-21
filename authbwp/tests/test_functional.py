@@ -3,7 +3,7 @@ import smtplib
 import re
 
 import minimock
-from blazeweb import ag
+from blazeweb.globals import ag
 from blazeweb.testing import Client
 from blazeutils import randchars
 from werkzeug import BaseResponse, BaseRequest

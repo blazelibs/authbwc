@@ -1,5 +1,5 @@
-from blazeweb import user, settings
 from blazeweb.exceptions import ProgrammingError
+from blazeweb.globals import user, settings
 from blazeweb.hierarchy import findobj, HierarchyImportError
 from blazeweb.htmltable import Table, Links, A
 from blazeweb.routing import url_for

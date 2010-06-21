@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from blazeweb import settings, user
 from blazeweb.content import getcontent
+from blazeweb.globals import settings, user
 from blazeweb.mail import EmailMessage, mail_programmers
 from blazeweb.routing import current_url
 from blazeweb.utils import exception_with_context

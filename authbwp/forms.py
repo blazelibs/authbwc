@@ -1,6 +1,6 @@
 from formencode.validators import MaxLength, MinLength
 from blazeform.exceptions import ValueInvalid
-from blazeweb import user
+from blazeweb.globals import user
 from blazeweb.routing import url_for
 from blazeutils.helpers import tolist, toset
 

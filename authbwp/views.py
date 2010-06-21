@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import logging
-from blazeweb import settings, rg, user as usr
+from blazeweb.globals import settings, rg, user as usr
 from blazeweb.htmltable import Col, YesNo, Link, Table
 from blazeweb.routing import url_for, current_url
 from blazeweb.utils import redirect
