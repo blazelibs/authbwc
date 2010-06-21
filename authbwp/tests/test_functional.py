@@ -731,3 +731,30 @@ class TestGroupViews(object):
         resp = self.c.post('groups/add', data=topost)
         assert resp.status_code == 200, resp.status
         assert 'a group with that name already exists' in resp.data
+
+class TestPasswordResetRequired(object):
+
+    @classmethod
+    def setup_class(cls):
+        cls.c = Client(ag.wsgi_test_app, BaseResponse)
+        cls.user = create_user_with_permissions()
+        cls.user.reset_required=True
+        db.sess.commit()
+        cls.userid = login_client_as_user(cls.c, cls.user.login_id, cls.user.text_password, validate_login_response=False)
+
+    def test_reset_required(self):
+        req, resp = self.c.get('/users/profile', follow_redirects=True)
+        assert '/users/profile' in req.url
+        assert '<h2>Change Password</h2>' in resp.data
+        
+        topost = {
+            'change-pass-form-submit-flag': u'submitted',
+            'old_password': self.user.text_password,
+            'password': '%s123'%self.user.text_password,
+            'password-confirm': '%s123'%self.user.text_password,
+            'submit': u'Submit'
+        }
+        req, resp = self.c.post('/users/profile', data=topost, follow_redirects=True)
+        assert '/users/profile' in req.url
+        assert '<h2>Change Password</h2>' not in resp.data
+        
