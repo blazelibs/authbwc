@@ -106,8 +106,9 @@ class ChangePassword(SecureView):
     def post(self):
         if self.form.is_valid():
             user_update_password(usr.id, **self.form.get_values())
+            usr.reset_required = False
             usr.add_message('notice', 'Your password has been changed successfully.')
-            url = after_login_url()
+            url = after_login_url() if rg.request.url == url_for('auth:ChangePassword') else rg.request.url
             redirect(url)
         elif self.form.is_submitted():
             # form was submitted, but invalid
