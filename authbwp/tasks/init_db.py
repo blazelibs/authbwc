@@ -1,4 +1,4 @@
-from pysmvt.tasks import attributes
+from blazeweb.tasks import attributes
 
 from plugstack.auth.helpers import add_administrative_user
 from plugstack.auth.model.actions import permission_update

@@ -1,6 +1,6 @@
 import paste.fixture
-from pysutils import tolist, randchars
-from pysmvt.testing import Client
+from blazeutils import tolist, randchars
+from blazeweb.testing import Client
 from werkzeug import BaseRequest, Client as WerkzeugClient
 
 from plugstack.sqlalchemy import db
@@ -33,7 +33,7 @@ def login_client_as_user(client, username, password, validate_login_response=Tru
           'login-form-submit-flag':'1'}
     if isinstance(client, (Client, WerkzeugClient)):
         if isinstance(client, Client):
-            # pysmvt client handles follow_redirects differently
+            # blazeweb client handles follow_redirects differently
             req, resp = client.post('users/login', data=topost, follow_redirects=True)
         else:
             # werkzeug Client

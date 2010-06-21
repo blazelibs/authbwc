@@ -1,4 +1,4 @@
-from pysmvt import ag
+from blazeweb import ag
 from werkzeug import Client, BaseResponse, BaseRequest
 from plugstack.auth.lib.testing import login_client_with_permissions, create_user_with_permissions
 from plugstack.auth.model.actions import group_update, permission_list_options

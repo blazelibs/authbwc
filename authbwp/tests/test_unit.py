@@ -3,8 +3,8 @@ import minimock
 import re
 import smtplib
 from nose.tools import nottest
-from pysmvt.testing import inrequest
-from pysutils import randchars
+from blazeweb.testing import inrequest
+from blazeutils import randchars
 from plugstack.auth.lib.testing import create_user_with_permissions
 from plugstack.auth.model.actions import user_get, user_get_by_permissions, \
     group_update, permission_update, user_get_by_permissions_query, \

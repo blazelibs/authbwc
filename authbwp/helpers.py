@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from pysmvt import settings, user
-from pysmvt.content import getcontent
-from pysmvt.mail import EmailMessage, mail_programmers
-from pysmvt.routing import current_url
-from pysmvt.utils import exception_with_context
+from blazeweb import settings, user
+from blazeweb.content import getcontent
+from blazeweb.mail import EmailMessage, mail_programmers
+from blazeweb.routing import current_url
+from blazeweb.utils import exception_with_context
 
 from plugstack.auth.model.actions import user_permission_map
 
