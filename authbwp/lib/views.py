@@ -1,9 +1,9 @@
-from pysmvt import user, redirect, settings
-from pysmvt.exceptions import ProgrammingError
-from pysmvt.hierarchy import findobj, HierarchyImportError
-from pysmvt.htmltable import Table, Links, A
-from pysmvt.routing import url_for
-from pysmvt.views import SecureView
+from blazeweb import user, redirect, settings
+from blazeweb.exceptions import ProgrammingError
+from blazeweb.hierarchy import findobj, HierarchyImportError
+from blazeweb.htmltable import Table, Links, A
+from blazeweb.routing import url_for
+from blazeweb.views import SecureView
 from werkzeug.exceptions import NotFound
 
 class CommonBase(SecureView):

@@ -20,6 +20,6 @@ setup(
     zip_safe=False,
     install_requires=[
         'SqlalchemyBWP>=0.1dev',
-        'pysapp>=dev',
+        'basebwa>=dev',
     ],
 )

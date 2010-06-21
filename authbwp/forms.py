@@ -1,8 +1,8 @@
 from formencode.validators import MaxLength, MinLength
-from pysform.exceptions import ValueInvalid
-from pysmvt import user
-from pysmvt.routing import url_for
-from pysutils.helpers import tolist, toset
+from blazeform.exceptions import ValueInvalid
+from blazeweb import user
+from blazeweb.routing import url_for
+from blazeutils.helpers import tolist, toset
 
 from appstack.forms import Form, UniqueValidator
 from plugstack.auth.helpers import validate_password_complexity, note_password_complexity

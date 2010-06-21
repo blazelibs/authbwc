@@ -3,9 +3,9 @@ import smtplib
 import re
 
 import minimock
-from pysmvt import ag
-from pysmvt.testing import Client
-from pysutils import randchars
+from blazeweb import ag
+from blazeweb.testing import Client
+from blazeutils import randchars
 from werkzeug import BaseResponse, BaseRequest
 
 from plugstack.auth.lib.testing import login_client_with_permissions, \

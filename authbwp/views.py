@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import datetime
 import logging
-from pysmvt import redirect, settings, rg, user as usr
-from pysmvt.routing import url_for, current_url
-from pysmvt.htmltable import Col, YesNo, Link, Table
-from pysmvt.views import View, SecureView
+from blazeweb import redirect, settings, rg, user as usr
+from blazeweb.routing import url_for, current_url
+from blazeweb.htmltable import Col, YesNo, Link, Table
+from blazeweb.views import View, SecureView
 from werkzeug.exceptions import NotFound
 from plugstack.auth.forms import ChangePasswordForm, NewPasswordForm, \
     LostPasswordForm, LoginForm

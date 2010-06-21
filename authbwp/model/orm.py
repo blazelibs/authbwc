@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from plugstack.sqlalchemy import db
 from hashlib import sha512
 from datetime import datetime
-from pysapp.lib.db import SmallIntBool, DeclarativeMixin
+from blazebwa.lib.db import SmallIntBool, DeclarativeMixin
 
 Base = declarative_base(metadata=db.meta)
 

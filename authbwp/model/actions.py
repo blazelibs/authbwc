@@ -1,9 +1,9 @@
 import datetime
 from hashlib import sha512
 
-from pysapp.lib.db import is_unique_exc
-from pysutils.helpers import tolist
-from pysutils.strings import randchars
+from blazebwa.lib.db import is_unique_exc
+from blazeutils.helpers import tolist
+from blazeutils.strings import randchars
 from sqlalchemy.orm import join
 from sqlalchemy.sql import select, and_, alias, or_, func
 from sqlalchemy.sql.functions import sum
