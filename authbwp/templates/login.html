@@ -3,6 +3,6 @@
 {% block body %}
     <h2>User Login</h2>
     <p>Please use the form below to sign in.</p>
-    {{ formHtml }}
+    {{ formHtml|safe }}
     <p><a href="{{ url_for('auth:LostPassword') }}">Recover Login Id/Password</a></p>
 {% endblock body%}
