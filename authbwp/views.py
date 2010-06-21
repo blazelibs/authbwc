@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import datetime
 import logging
-from blazeweb import redirect, settings, rg, user as usr
-from blazeweb.routing import url_for, current_url
+from blazeweb import settings, rg, user as usr
 from blazeweb.htmltable import Col, YesNo, Link, Table
+from blazeweb.routing import url_for, current_url
+from blazeweb.utils import redirect
 from blazeweb.views import View, SecureView
 from werkzeug.exceptions import NotFound
 from plugstack.auth.forms import ChangePasswordForm, NewPasswordForm, \
