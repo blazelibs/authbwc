@@ -1,5 +1,5 @@
+from basebwa.lib.cpanel import ControlPanelSection, ControlPanelGroup, ControlPanelLink
 from blazeweb.config import PluginSettings
-from blazebwa.lib.cpanel import ControlPanelSection, ControlPanelGroup, ControlPanelLink
 
 class Settings(PluginSettings):
 
