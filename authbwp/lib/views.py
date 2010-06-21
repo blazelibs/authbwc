@@ -1,8 +1,9 @@
-from blazeweb import user, redirect, settings
+from blazeweb import user, settings
 from blazeweb.exceptions import ProgrammingError
 from blazeweb.hierarchy import findobj, HierarchyImportError
 from blazeweb.htmltable import Table, Links, A
 from blazeweb.routing import url_for
+from blazeweb.utils import redirect
 from blazeweb.views import SecureView
 from werkzeug.exceptions import NotFound
 
