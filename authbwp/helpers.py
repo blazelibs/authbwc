@@ -86,6 +86,11 @@ def add_administrative_user(allow_profile_defaults=True):
             p2 = getpass("confirm password:\n> ")
             if p1 == p2:
                 break
-    user_update(None, login_id = unicode(ulogin), email_address = unicode(uemail), password = p1,
-             super_user = True, assigned_groups = None,
-             approved_permissions = None, denied_permissions = None, _ignore_unique_exception=True )
+    user_update(
+        None,
+        login_id = unicode(ulogin),
+        email_address = unicode(uemail),
+        password = p1,
+        super_user = True,
+        _ignore_unique_exception=True
+        )
