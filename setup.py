@@ -19,7 +19,6 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'SqlalchemyBWP>=0.1dev',
-        'basebwa>=dev',
+        'SQLAlchemyBWP>=0.1dev',
     ],
 )
