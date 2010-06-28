@@ -683,7 +683,7 @@ class TestRecoverPassword(object):
         topost = {
             'password': 'TestPassword2',
             'password-confirm': 'TestPassword2',
-            'new-pass-form-submit-flag': 'submitted',
+            'new-password-form-submit-flag': 'submitted',
         }
         req, r = self.c.post('/users/password-reset/%s/%s' % (user.login_id, user.pass_reset_key), data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
@@ -748,7 +748,7 @@ class TestPasswordResetRequired(object):
         assert '<h2>Change Password</h2>' in resp.data
         
         topost = {
-            'change-pass-form-submit-flag': u'submitted',
+            'change-password-form-submit-flag': u'submitted',
             'old_password': self.user.text_password,
             'password': '%s123'%self.user.text_password,
             'password-confirm': '%s123'%self.user.text_password,
@@ -756,5 +756,5 @@ class TestPasswordResetRequired(object):
         }
         req, resp = self.c.post('/users/profile', data=topost, follow_redirects=True)
         assert '/users/profile' in req.url
-        assert '<h2>Change Password</h2>' not in resp.data
+        assert '<h2>Change Password</h2>' not in resp.data, resp.data
         

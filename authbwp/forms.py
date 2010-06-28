@@ -4,11 +4,12 @@ from blazeweb.globals import user
 from blazeweb.routing import url_for
 from blazeutils.helpers import tolist, toset
 
-from appstack.forms import Form, UniqueValidator
+from appstack.forms import UniqueValidator
 from plugstack.auth.helpers import validate_password_complexity, note_password_complexity
 from plugstack.auth.model.actions import group_list_options,user_list_options, \
     permission_list_options,user_get,hash_pass, \
     user_get_by_email, user_get_by_login, group_get_by_name
+from plugstack.common.lib.forms import Form
 
 class UserFormBase(Form):
     def add_name_fields(self):
@@ -126,13 +127,15 @@ class UserFormBase(Form):
 class UserForm(UserFormBase):
 
     def __init__(self, isAdd):
-        UserFormBase.__init__(self, 'user-form')
-
+        self.isAdd = isAdd
+        UserFormBase.__init__(self)
+        
+    def init(self):
         self.add_name_fields()
         self.add_login_id_field()
         self.add_email_field()
         pasel, confel = self.add_password_fields(False)
-        self.add_password_notes(isAdd, pasel, confel)
+        self.add_password_notes(self.isAdd, pasel, confel)
         pasel.add_note('if set, user will be emailed the new password')
         self.add_password_reset_field()
         self.add_super_user_field()
@@ -148,9 +151,7 @@ class UserForm(UserFormBase):
 
 class UserProfileForm(UserFormBase):
 
-    def __init__(self):
-        UserFormBase.__init__(self, 'user-profile-form')
-
+    def init(self):
         self.add_name_fields()
         self.add_email_field()
         self.add_login_id_field()
@@ -160,9 +161,7 @@ class UserProfileForm(UserFormBase):
 
 class GroupForm(Form):
 
-    def __init__(self):
-        Form.__init__(self, 'group-form')
-
+    def init(self):
         el = self.add_text('name', 'Group Name', required=True)
         el.add_processor(MaxLength(150))
         el.add_processor(UniqueValidator(fn=group_get_by_name),
@@ -196,9 +195,7 @@ class GroupForm(Form):
 
 class PermissionForm(Form):
 
-    def __init__(self):
-        Form.__init__(self, 'permission-form')
-
+    def init(self):
         el = self.add_static('name', 'Permission Name', required=True)
 
         el = self.add_text('description', 'Description')
@@ -212,9 +209,7 @@ class PermissionForm(Form):
 
 class LoginForm(Form):
 
-    def __init__(self):
-        Form.__init__(self, 'login-form')
-
+    def init(self):
         el = self.add_text('login_id', 'Login Id', required=True)
         el.add_processor(MaxLength(150))
 
@@ -225,9 +220,7 @@ class LoginForm(Form):
 
 class ChangePasswordForm(UserFormBase):
 
-    def __init__(self):
-        UserFormBase.__init__(self, 'change-pass-form')
-
+    def init(self):
         el = self.add_password('old_password', 'Current Password', required=True)
         el.add_processor(MaxLength(25))
         el.add_processor(self.validate_password)
@@ -252,18 +245,14 @@ class ChangePasswordForm(UserFormBase):
 
 class NewPasswordForm(UserFormBase):
 
-    def __init__(self):
-        Form.__init__(self, 'new-pass-form')
-
+    def init(self):
         self.add_password_fields(True)
 
         self.add_submit('submit')
 
 class LostPasswordForm(Form):
 
-    def __init__(self):
-        Form.__init__(self, 'lost-password-form')
-
+    def init(self):
         el = self.add_email('email_address', 'Email', required=True)
         el.add_processor(MaxLength(150))
         el.add_processor(self.validate_email)
