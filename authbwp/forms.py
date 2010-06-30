@@ -1,15 +1,32 @@
-from formencode.validators import MaxLength, MinLength
+from formencode.validators import FancyValidator, MaxLength, MinLength
 from blazeform.exceptions import ValueInvalid
 from blazeweb.globals import user
 from blazeweb.routing import url_for
 from blazeutils.helpers import tolist, toset
 
-from appstack.forms import UniqueValidator
 from plugstack.auth.helpers import validate_password_complexity, note_password_complexity
 from plugstack.auth.model.actions import group_list_options,user_list_options, \
     permission_list_options,user_get,hash_pass, \
     user_get_by_email, user_get_by_login, group_get_by_name
 from plugstack.common.lib.forms import Form
+
+class UniqueValidator(FancyValidator):
+    """
+    Calls the given callable with the value of the field.  If the return value
+    does not evaluate to false, Invalid is raised
+    """
+
+    __unpackargs__ = ('fn')
+    messages = {
+        'notunique': "the value for this field must be unique",
+        }
+
+    def validate_python(self, value, state):
+        if value == state.defaultval:
+            return
+        if self.fn(value):
+            raise Invalid(self.message('notunique', state), value, state)
+        return
 
 class UserFormBase(Form):
     def add_name_fields(self):
