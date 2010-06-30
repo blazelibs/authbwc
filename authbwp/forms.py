@@ -1,8 +1,9 @@
-from formencode.validators import FancyValidator, MaxLength, MinLength
 from blazeform.exceptions import ValueInvalid
+from blazeutils.helpers import tolist, toset
 from blazeweb.globals import user
 from blazeweb.routing import url_for
-from blazeutils.helpers import tolist, toset
+from formencode import Invalid
+from formencode.validators import FancyValidator, MaxLength, MinLength
 
 from plugstack.auth.helpers import validate_password_complexity, note_password_complexity
 from plugstack.auth.model.actions import group_list_options,user_list_options, \
