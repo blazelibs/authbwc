@@ -50,7 +50,7 @@ def login_client_as_user(client, username, password, validate_login_response=Tru
         if validate_login_response:
             assert res.request.url == '/' or res.request.url == 'http://localhost/', res.request.url
         res.mustcontain('You logged in successfully!')
-        return resp
+        return res
     else:
         raise TypeError('client is of an unexpected type: %s' % client.__class__)
 
