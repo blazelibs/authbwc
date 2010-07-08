@@ -2,7 +2,6 @@
 import datetime
 import logging
 from blazeweb.globals import settings, rg, user as usr
-from blazeweb.htmltable import Col, YesNo, Link, Table
 from blazeweb.routing import url_for, current_url
 from blazeweb.utils import redirect
 from blazeweb.views import View, SecureView
@@ -18,6 +17,7 @@ from plugstack.auth.model.actions import user_validate, \
     user_kill_reset_key, user_lost_password, user_permission_map, \
     user_permission_map_groups, group_user_ids, group_assigned_perm_ids, \
     user_update
+from plugstack.datagrid.lib.htmltable import Col, YesNo, Link, Table
 
 _modname = 'auth'
 
@@ -326,4 +326,3 @@ class PermissionManage(ManageCommon):
     def default(self):
         self.assign_vars()
         self.render_template()
-        
