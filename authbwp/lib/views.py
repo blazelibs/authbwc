@@ -1,11 +1,12 @@
 from blazeweb.exceptions import ProgrammingError
 from blazeweb.globals import user, settings
 from blazeweb.hierarchy import findobj, HierarchyImportError
-from blazeweb.htmltable import Table, Links, A
 from blazeweb.routing import url_for
 from blazeweb.utils import redirect
 from blazeweb.views import SecureView
 from werkzeug.exceptions import NotFound
+
+from plugstack.datagrid.lib.htmltable import Table, Links, A
 
 class CommonBase(SecureView):
     def init(self):
@@ -157,7 +158,7 @@ class UpdateCommon(CommonBase):
         self.assign('pagetitle', self.pagetitle % {'actionname':self.actionname, 'objectname':self.objectname})
         self.assign('formobj', self.form)
         self.assign('extend_from', self.extend_from)
-        
+
     def default(self):
         self.assign_vars()
         self.render_endpoint(self.template_endpoint)
