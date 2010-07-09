@@ -53,3 +53,8 @@ class Settings(PluginSettings):
 
         # how long should a password reset link be good for? (in hours)
         self.password_rest_expires_after = 24
+
+        # should the User entity be created? Can be useful when trying to use
+        # this module with a DB that is already created and for which the
+        # User entity needs to be tweaked.
+        self.model_create_user = True
