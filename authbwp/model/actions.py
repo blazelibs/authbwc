@@ -130,7 +130,7 @@ def user_group_ids(user):
     return [g.id for g in groups]
 
 def user_list_options():
-    return [(u.id, u.login_id) for u in db.sess.query(User).order_by('login_id')]
+    return [(u.id, u.login_id) for u in db.sess.query(User).order_by(User.login_id)]
 
 def user_assigned_perm_ids(user):
     dbsession = db.sess
