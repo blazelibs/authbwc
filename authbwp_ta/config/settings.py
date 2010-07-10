@@ -36,8 +36,8 @@ class Test(Default):
         Default.init(self)
         self.apply_test_settings()
 
-        self.template.default = 'common:testing.html'
-        self.template.admin = 'common:testing.html'
+        self.template.default = 'common:layout_testing.html'
+        self.template.admin = 'common:layout_testing.html'
         self.emails.from_default = 'admin@example.com'
 
         self.db.url = 'sqlite://'
