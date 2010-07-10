@@ -19,7 +19,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
+        'CommonBWP>=0.1dev',
         'DataGridBWP>=0.1dev',
-        'SQLAlchemyBWP>=0.1dev',
     ],
 )

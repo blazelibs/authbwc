@@ -308,7 +308,7 @@ class TestUserViews(object):
         topost['password'] = 'new_password'
         topost['password-confirm'] = 'new_password'
         user = user_get_by_email('%s@example.com'%userlogin)
-        
+
         req, r = self.c.post('users/edit/%s'%user.id, data=topost, follow_redirects=True)
         assert 'user edited successfully' in r.data
         assert 'An error occurred while sending the user notification email.' in r.data
@@ -645,7 +645,7 @@ class TestRecoverPassword(object):
         }
         req, r = self.c.post('users/recover_password', data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
-        assert 'email with a link to reset your password has been sent' in r.data
+        assert 'email with a link to reset your password has been sent' in r.data, r.data
         assert req.url == 'http://localhost/'
 
         # test the mock strings (i.e. test the email that was sent out)
@@ -746,7 +746,7 @@ class TestPasswordResetRequired(object):
         req, resp = self.c.get('/users/profile', follow_redirects=True)
         assert '/users/profile' in req.url
         assert '<h2>Change Password</h2>' in resp.data
-        
+
         topost = {
             'change-password-form-submit-flag': u'submitted',
             'old_password': self.user.text_password,
@@ -757,4 +757,3 @@ class TestPasswordResetRequired(object):
         req, resp = self.c.post('/users/profile', data=topost, follow_redirects=True)
         assert '/users/profile' in req.url
         assert '<h2>Change Password</h2>' not in resp.data, resp.data
-        
