@@ -66,7 +66,7 @@ class UpdateCommon(CommonBase):
         CommonBase.init(self)
         self.modulename = modulename
         self.require_all = '%s-manage' % modulename
-        self.template_endpoint = 'common/update.html'
+        self.template_endpoint = 'auth:update_common.html'
         self.objectname = objectname
         self.message_add = '%(objectname)s added successfully'
         self.message_edit = '%(objectname)s edited successfully'
@@ -169,7 +169,7 @@ class ManageCommon(CommonBase):
         self.modulename = modulename
         self.require_all = '%s-manage' % modulename
         self.delete_link_require = '%s-manage' % modulename
-        self.template_endpoint = 'common/manage.html'
+        self.template_endpoint = 'auth:manage_common.html'
         self.objectname = objectname
         self.objectnamepl = objectnamepl
         self.endpoint_update = '%s:%sUpdate' % (modulename, classname)
