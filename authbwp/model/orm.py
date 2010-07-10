@@ -8,9 +8,9 @@ from sqlalchemy.sql import text
 
 from plugstack.sqlalchemy import db
 from plugstack.sqlalchemy.lib.columns import SmallIntBool
-from plugstack.sqlalchemy.lib.declarative import declarative_base
+from plugstack.sqlalchemy.lib.declarative import declarative_base, AllMixin
 
-Base = declarative_base(metadata=db.meta)
+Base = declarative_base()
 
 # user <-> group table
 user_groups = Table('auth_user_group_map', db.meta,
@@ -19,7 +19,7 @@ user_groups = Table('auth_user_group_map', db.meta,
 )
 
 if settings.plugins.auth.model_create_user:
-    class User(Base):
+    class User(Base, AllMixin):
         __tablename__ = 'auth_users'
         __table_args__ = (UniqueConstraint('login_id', name='uc_auth_users_login_id'),
                           UniqueConstraint('email_address', name='uc_auth_users_email_address'), {})
@@ -66,7 +66,7 @@ if settings.plugins.auth.model_create_user:
                 return self.name
             return self.login_id
 
-class Group(Base):
+class Group(Base, AllMixin):
     __tablename__ = 'auth_groups'
 
     name = Column(Unicode(150), nullable=False, index=True, unique=True)
@@ -76,7 +76,7 @@ class Group(Base):
     def __repr__(self):
         return '<Group "%s" : %d>' % (self.name, self.id)
 
-class Permission(Base):
+class Permission(Base, AllMixin):
     __tablename__ = 'auth_permissions'
 
     name = Column(Unicode(250), nullable=False, index=True, unique=True)
