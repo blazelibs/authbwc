@@ -201,36 +201,3 @@ class TestPermissions(object):
         for rec in perm_map:
             assert rec['resulting_approval'] == (rec['permission_name'] in permissions_approved)
 
-@nottest
-def cleanup_query_for_test(query):
-    return unicode(query).replace('\r','').replace('\n',' ').replace('  ',' ')
-
-def test_query_denied_group_permissions():
-    query = cleanup_query_for_test(query_denied_group_permissions())
-    assert query == 'SELECT auth_permissions.id AS permission_id, auth_user_group_map.auth_user_id AS user_id, sum(auth_permission_assignments_groups.approved) AS group_denied ' \
-    'FROM auth_permissions LEFT OUTER JOIN auth_permission_assignments_groups ON auth_permissions.id = auth_permission_assignments_groups.permission_id ' \
-    'AND auth_permission_assignments_groups.approved = :approved_1 LEFT OUTER JOIN auth_user_group_map ON auth_user_group_map.auth_group_id = auth_permission_assignments_groups.group_id GROUP BY auth_permissions.id, auth_user_group_map.auth_user_id'
-
-def test_query_approved_group_permissions():
-    query = cleanup_query_for_test(query_approved_group_permissions())
-    assert query == 'SELECT auth_permissions.id AS permission_id, auth_user_group_map.auth_user_id AS user_id, sum(auth_permission_assignments_groups.approved) AS group_approved ' \
-    'FROM auth_permissions LEFT OUTER JOIN auth_permission_assignments_groups ON auth_permissions.id = auth_permission_assignments_groups.permission_id ' \
-    'AND auth_permission_assignments_groups.approved = :approved_1 LEFT OUTER JOIN auth_user_group_map ON auth_user_group_map.auth_group_id = auth_permission_assignments_groups.group_id GROUP BY auth_permissions.id, auth_user_group_map.auth_user_id'
-
-def test_query_user_group_permissions():
-    query = cleanup_query_for_test(query_user_group_permissions())
-    expected = 'SELECT auth_users.id AS user_id, auth_groups.id AS group_id, auth_groups.name AS group_name, auth_permission_assignments_groups.permission_id, auth_permission_assignments_groups.approved AS group_approved ' \
-    'FROM auth_users LEFT OUTER JOIN auth_user_group_map ON auth_users.id = auth_user_group_map.auth_user_id LEFT OUTER JOIN auth_groups ON auth_groups.id = auth_user_group_map.auth_group_id LEFT OUTER JOIN auth_permission_assignments_groups ON auth_permission_assignments_groups.group_id = auth_groups.id ' \
-    'WHERE auth_permission_assignments_groups.permission_id IS NOT NULL'
-    assertEqualSQL(query, expected)
-
-def test_query_users_permissions():
-    query = cleanup_query_for_test(query_users_permissions())
-    expected = 'SELECT user_perm.user_id, user_perm.permission_id, user_perm.permission_name, user_perm.login_id, auth_permission_assignments_users.approved AS user_approved, g_approve.group_approved, g_deny.group_denied ' \
-    'FROM (SELECT auth_users.id AS user_id, auth_permissions.id AS permission_id, auth_permissions.name AS permission_name, auth_users.login_id AS login_id ' \
-    'FROM auth_users, auth_permissions) AS user_perm LEFT OUTER JOIN auth_permission_assignments_users ON auth_permission_assignments_users.user_id = user_perm.user_id AND auth_permission_assignments_users.permission_id = user_perm.permission_id LEFT OUTER JOIN (SELECT auth_permissions.id AS permission_id, auth_user_group_map.auth_user_id AS user_id, sum(auth_permission_assignments_groups.approved) AS group_approved ' \
-    'FROM auth_permissions LEFT OUTER JOIN auth_permission_assignments_groups ON auth_permissions.id = auth_permission_assignments_groups.permission_id ' \
-    'AND auth_permission_assignments_groups.approved = :approved_1 LEFT OUTER JOIN auth_user_group_map ON auth_user_group_map.auth_group_id = auth_permission_assignments_groups.group_id GROUP BY auth_permissions.id, auth_user_group_map.auth_user_id) AS g_approve ON g_approve.user_id = user_perm.user_id AND g_approve.permission_id = user_perm.permission_id LEFT OUTER JOIN (SELECT auth_permissions.id AS permission_id, auth_user_group_map.auth_user_id AS user_id, sum(auth_permission_assignments_groups.approved) AS group_denied ' \
-    'FROM auth_permissions LEFT OUTER JOIN auth_permission_assignments_groups ON auth_permissions.id = auth_permission_assignments_groups.permission_id ' \
-    'AND auth_permission_assignments_groups.approved = :approved_2 LEFT OUTER JOIN auth_user_group_map ON auth_user_group_map.auth_group_id = auth_permission_assignments_groups.group_id GROUP BY auth_permissions.id, auth_user_group_map.auth_user_id) AS g_deny ON g_deny.user_id = user_perm.user_id AND g_deny.permission_id = user_perm.permission_id ORDER BY user_perm.user_id, user_perm.permission_id'
-    assertEqualSQL(query, expected)
