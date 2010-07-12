@@ -1,6 +1,7 @@
 from blazeweb.globals import settings
 from sqlalchemy import Table, Column, ForeignKey, CheckConstraint, Index, Integer
 
+from plugstack.auth.model.orm import User, Group
 from plugstack.sqlalchemy import db
 
 __all__ = ['group_permission_assignments', 'user_permission_assignments']
@@ -30,3 +31,9 @@ Index('ix_auth_permission_assignments_users_1',
     user_permission_assignments.c.user_id,
     user_permission_assignments.c.permission_id,
     unique=True)
+
+# user <-> group table
+user_groups = Table('auth_user_group_map', db.meta,
+    Column('auth_user_id', Integer, ForeignKey(User.id)),
+    Column('auth_group_id', Integer, ForeignKey(Group.id))
+)
