@@ -580,23 +580,39 @@ class TestUserViewsSuperUser(object):
         assert 'user deleted' in r.data
         assert req.url.endswith('users/manage')
 
-def test_inactive_login():
-    # create a user
-    user = create_user_with_permissions()
+class TestUserLogins(object):
 
-    # set the user's inactive flag
-    user.inactive_flag = True
-    db.sess.commit()
+    def setUp(self):
+        # create a user
+        self.user = create_user_with_permissions()
 
-    # log user in
-    client = Client(ag.wsgi_test_app, BaseResponse)
-    topost = {'login_id': user.login_id,
-          'password': user.text_password,
-          'login-form-submit-flag':'1'}
-    req, resp = client.post('users/login', data=topost, follow_redirects=True)
-    assert resp.status_code == 200, resp.status
-    assert 'That user is inactive.' in resp.data
-    assert req.url == 'http://localhost/users/login'
+    def test_failed_login(self):
+        user = self.user
+
+        client = Client(ag.wsgi_test_app, BaseResponse)
+        topost = {'login_id': user.login_id,
+              'password': 'foobar',
+              'login-form-submit-flag':'1'}
+        resp = client.post('users/login', data=topost)
+        assert resp.status_code == 200, resp.status
+        assert 'Login failed!' in resp.data
+
+    def test_inactive_login(self):
+        user = self.user
+        # set the user's inactive flag
+        user.inactive_flag = True
+        db.sess.commit()
+
+        # log user in
+        client = Client(ag.wsgi_test_app, BaseResponse)
+        topost = {'login_id': user.login_id,
+              'password': user.text_password,
+              'login-form-submit-flag':'1'}
+        req, resp = client.post('users/login', data=topost, follow_redirects=True)
+        assert resp.status_code == 200, resp.status
+        assert 'That user is inactive.' in resp.data
+        assert req.url == 'http://localhost/users/login'
+
 
 class TestRecoverPassword(object):
 

@@ -7,7 +7,7 @@ from formencode.validators import FancyValidator, MaxLength, MinLength
 
 from plugstack.auth.helpers import validate_password_complexity, note_password_complexity
 from plugstack.auth.model.actions import group_list_options,user_list_options, \
-    permission_list_options,user_get,hash_pass, \
+    permission_list_options,user_get, \
     user_get_by_email, user_get_by_login, group_get_by_name
 from plugstack.common.lib.forms import Form
 
@@ -147,7 +147,7 @@ class UserForm(UserFormBase):
     def __init__(self, isAdd):
         self.isAdd = isAdd
         UserFormBase.__init__(self)
-        
+
     def init(self):
         self.add_name_fields()
         self.add_login_id_field()
@@ -250,7 +250,7 @@ class ChangePasswordForm(UserFormBase):
 
     def validate_password(self, value):
         dbobj = user_get(user.id)
-        if dbobj.pass_hash != hash_pass(value):
+        if not dbobj.validate_password(value):
             raise ValueInvalid('incorrect password')
 
         return value

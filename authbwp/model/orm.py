@@ -1,6 +1,7 @@
 from datetime import datetime
 from hashlib import sha512
 
+from blazeutils.strings import randchars
 from blazeweb.globals import settings
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, String, Table, UniqueConstraint
 from sqlalchemy.orm import relation
@@ -9,6 +10,7 @@ from sqlalchemy.sql import text
 from plugstack.sqlalchemy import db
 from plugstack.sqlalchemy.lib.columns import SmallIntBool
 from plugstack.sqlalchemy.lib.declarative import declarative_base, DefaultMixin
+from plugstack.sqlalchemy.lib.declarative import one_to_none
 
 Base = declarative_base()
 
@@ -27,6 +29,7 @@ if settings.plugins.auth.model_create_user:
         login_id = Column(Unicode(150), nullable=False)
         email_address = Column(Unicode(150), nullable=False)
         pass_hash = Column(String(128), nullable=False)
+        pass_salt = Column(String(32), nullable=False)
         reset_required = Column(SmallIntBool, server_default=text('1'), nullable=False)
         super_user = Column(SmallIntBool, server_default=text('0'), nullable=False)
         name_first = Column(Unicode(255))
@@ -41,9 +44,11 @@ if settings.plugins.auth.model_create_user:
         def __repr__(self):
             return '<User "%s" : %s>' % (self.login_id, self.email_address)
 
-        def set_password(self, password):
+        def set_password(self, password, record_salt=None):
             if password:
-                self.pass_hash = sha512(password).hexdigest()
+                _, record_salt = self.calc_salt(record_salt)
+                self.pass_salt = record_salt
+                self.pass_hash = self.calc_pass_hash(password, record_salt)
                 self.text_password = password
         password = property(None,set_password)
 
@@ -65,6 +70,33 @@ if settings.plugins.auth.model_create_user:
             if self.name:
                 return self.name
             return self.login_id
+
+        @classmethod
+        def calc_salt(cls, record_salt=None):
+            record_salt = record_salt or randchars(32, 'all')
+            if settings.plugins.auth.password_salt:
+                full_salt = settings.plugins.auth.password_salt + record_salt
+                return full_salt, record_salt
+            return record_salt, record_salt
+
+        @classmethod
+        def calc_pass_hash(cls, password, record_salt=None):
+            full_salt, record_salt = cls.calc_salt(record_salt)
+            return sha512(password+full_salt).hexdigest()
+
+        @classmethod
+        def validate(cls, login_id, password):
+            """
+                Returns the user that matches login_id and password or None
+            """
+            u = cls.get_by(login_id = login_id)
+            if not u:
+                return
+            if u.validate_password(password):
+                return u
+
+        def validate_password(self, password):
+            return self.pass_hash == self.calc_pass_hash(password, self.pass_salt)
 
 class Group(Base, DefaultMixin):
     __tablename__ = 'auth_groups'
