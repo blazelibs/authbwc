@@ -1,5 +1,4 @@
 import datetime
-from hashlib import sha512
 
 from blazeutils.helpers import tolist
 from blazeutils.strings import randchars
@@ -27,7 +26,6 @@ def user_update(id, _ignore_unique_exception=False, **kwargs):
             kwargs['password'] = randchars(8)
     else:
         u = user_get(id)
-
     # automatically turn on reset_password when the password get set manually
     # (i.e. when an admin does it), unless told not to (when a user does it
     # for their own account)
@@ -37,7 +35,7 @@ def user_update(id, _ignore_unique_exception=False, **kwargs):
     for k, v in kwargs.iteritems():
         try:
             # some values can not be set directly
-            if k in ('pass_hash', 'assigned_groups', 'approved_permissions', 'denied_permissions'):
+            if k in ('pass_hash', 'pass_salt', 'assigned_groups', 'approved_permissions', 'denied_permissions'):
                 pass
             else:
                 setattr(u, k, v)
@@ -65,9 +63,6 @@ def create_groups(group_ids):
     for gid in group_ids:
         groups.append(group_get(gid))
     return groups
-
-def hash_pass(password):
-    return sha512(password).hexdigest()
 
 def user_update_password(id, **kwargs):
     dbsession = db.sess
@@ -226,9 +221,6 @@ def user_permission_map_groups(uid):
         elif row['group_approved'] >= 1:
             retval[row['permission_id']]['approved'].append({'name':row['group_name'], 'id':row['group_id']})
     return retval
-
-def user_validate(**kwargs):
-    return db.sess.query(User).filter_by(login_id=kwargs['login_id'], pass_hash=hash_pass(kwargs['password'])).first()
 
 ## Group Actions
 

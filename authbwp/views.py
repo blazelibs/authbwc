@@ -11,12 +11,13 @@ from plugstack.auth.forms import ChangePasswordForm, NewPasswordForm, \
 from plugstack.auth.helpers import after_login_url, load_session_user, send_new_user_email, \
     send_change_password_email, send_password_reset_email
 from plugstack.auth.lib.views import ManageCommon, UpdateCommon, DeleteCommon
-from plugstack.auth.model.actions import user_validate, \
+from plugstack.auth.model.actions import \
     user_assigned_perm_ids, user_group_ids, user_get, \
     user_update_password, user_get_by_login, \
     user_kill_reset_key, user_lost_password, user_permission_map, \
     user_permission_map_groups, group_user_ids, group_assigned_perm_ids, \
     user_update
+from plugstack.auth.model.orm import User
 from plugstack.datagrid.lib.htmltable import Col, YesNo, Link, Table
 
 _modname = 'auth'
@@ -244,7 +245,10 @@ class Login(View):
 
     def post(self):
         if self.form.is_valid():
-            user = user_validate(**self.form.get_values())
+            user = User.validate(
+                self.form.els.login_id.value,
+                self.form.els.password.value
+                )
             if user:
                 if user.inactive:
                     usr.add_message('error', 'That user is inactive.')

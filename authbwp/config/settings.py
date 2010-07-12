@@ -45,7 +45,7 @@ class Settings(PluginSettings):
         # default to current_url(root_only=True)
         self.after_login_url = None
 
-        # default values can be set when doing initmod() to avoid the command
+        # default values can be set when doing init-db to avoid the command
         # prompt
         self.admin.username = None
         self.admin.password = None
@@ -58,3 +58,16 @@ class Settings(PluginSettings):
         # this module with a DB that is already created and for which the
         # User entity needs to be tweaked.
         self.model_create_user = True
+
+        # application level password salt that will get joined with the random
+        # salt of the record when hashing the password.  Use a random string of
+        # at least 16 characters.  You can get one here:
+        #
+        #   https://www.grc.com/passwords.htm
+        #
+        # BE CAREFUL!!, if you use this setting and then lose the salt for value
+        # for some reason, all your users will need to reset their passwords!
+        #
+        #
+        # If left as None, it will not be used
+        self.password_salt = None

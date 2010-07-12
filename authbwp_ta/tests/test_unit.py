@@ -3,6 +3,7 @@ import minimock
 import re
 import smtplib
 
+from blazeweb.globals import settings
 from blazeweb.testing import inrequest
 from blazeutils import randchars
 from datagridbwp_ta.tests._supporting import assertEqualSQL
@@ -11,13 +12,14 @@ from nose.tools import nottest
 from plugstack.auth.lib.testing import create_user_with_permissions
 from plugstack.auth.model.actions import user_get, user_get_by_permissions, \
     group_update, permission_update, user_get_by_permissions_query, \
-    user_update, user_get_by_login, user_get_by_email, user_validate, \
+    user_update, user_get_by_login, user_get_by_email, \
     group_get_by_name, permission_get_by_name, user_update, \
     group_delete, user_permission_map_groups, user_permission_map, \
     permission_assignments_group_by_name as group_perm_init
 from plugstack.auth.model.queries import query_denied_group_permissions, \
     query_approved_group_permissions, query_user_group_permissions, \
     query_users_permissions
+from plugstack.auth.model.orm import User
 from plugstack.sqlalchemy import db
 
 def test_group_unique():
@@ -58,6 +60,45 @@ def test_user_update():
     u = user_update(u.id, password='new_password')
     assert u.reset_required
 
+def test_password_hashing():
+    u = create_user_with_permissions()
+    assert u.pass_hash
+    assert u.pass_salt
+
+    # test a new random salt every time a password is set (by default)
+    oldsalt = u.pass_salt
+    oldhash = u.pass_hash
+    u.password = 'foobar'
+    assert oldsalt != u.pass_salt
+    assert oldhash != u.pass_hash
+
+    # use a custom salt
+    u.set_password('foobar', 'mysalt')
+    assert u.pass_salt == 'mysalt'
+
+    # using the same password and salt should result in the same hash
+    oldsalt = u.pass_salt
+    oldhash = u.pass_hash
+    u.set_password('foobar', 'mysalt')
+    assert oldsalt == u.pass_salt
+    assert oldhash == u.pass_hash
+
+    # now make sure the application salt will be taken into account if set
+    try:
+        settings.plugins.auth.password_salt = '123456'
+        u.set_password('foobar', 'mysalt')
+        assert oldsalt == u.pass_salt, u.pass_salt
+        # hash is different b/c of the application salt
+        assert oldhash != u.pass_hash
+    finally:
+        settings.plugins.auth.password_salt = None
+
+def test_password_validate():
+    u = create_user_with_permissions()
+    password = u.text_password
+    assert u.validate_password(password)
+    assert not u.validate_password('foobar')
+
 def test_user_get_by_login():
     u = create_user_with_permissions()
     obj = user_get_by_login(u.login_id)
@@ -81,9 +122,9 @@ def test_user_validate():
     u = create_user_with_permissions()
     u.password = u'testpass123'
     db.sess.commit()
-    assert user_validate(login_id=u.login_id, password=u'bad_password') is None
-    assert user_validate(login_id=u'bad_login', password=u'testpass123') is None
-    assert user_validate(login_id=u.login_id, password=u'testpass123').id == u.id
+    assert User.validate(u.login_id, u'bad_password') is None
+    assert User.validate(u'bad_login', u'testpass123') is None
+    assert User.validate(u.login_id, u'testpass123').id == u.id
 
 def test_user_group_assignment():
     g1 = group_update(None, name=u'group_for_testing_%s'%randchars(15), _ignore_unique_exception=True)
@@ -200,4 +241,3 @@ class TestPermissions(object):
         perm_map = user_permission_map(self.user.id)
         for rec in perm_map:
             assert rec['resulting_approval'] == (rec['permission_name'] in permissions_approved)
-
