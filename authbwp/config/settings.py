@@ -3,8 +3,7 @@ from blazeweb.config import PluginSettings
 
 class Settings(PluginSettings):
 
-    def __init__(self):
-        PluginSettings.__init__(self)
+    def init(self):
 
         self.add_route('/users/add', 'auth:UserUpdate', defaults={'oid':None})
         self.add_route('/users/edit/<int:oid>', 'auth:UserUpdate')
@@ -24,8 +23,8 @@ class Settings(PluginSettings):
         self.add_route('/permissions/manage', 'auth:PermissionManage')
         self.add_route('/users/profile', 'auth:UserProfile')
 
-        self.cp_nav.enabled=True
-        self.cp_nav.section = ControlPanelSection(
+        self.for_me.cp_nav.enabled=True
+        self.for_me.cp_nav.section = ControlPanelSection(
             "Users",
             'auth-manage',
             ControlPanelGroup(
@@ -43,21 +42,21 @@ class Settings(PluginSettings):
 
         # where should we go after a user logins in?  If nothing is set,
         # default to current_url(root_only=True)
-        self.after_login_url = None
+        self.for_me.after_login_url = None
 
         # default values can be set when doing init-db to avoid the command
         # prompt
-        self.admin.username = None
-        self.admin.password = None
-        self.admin.email = None
+        self.for_me.admin.username = None
+        self.for_me.admin.password = None
+        self.for_me.admin.email = None
 
         # how long should a password reset link be good for? (in hours)
-        self.password_rest_expires_after = 24
+        self.for_me.password_rest_expires_after = 24
 
         # should the User entity be created? Can be useful when trying to use
         # this module with a DB that is already created and for which the
         # User entity needs to be tweaked.
-        self.model_create_user = True
+        self.for_me.model_create_user = True
 
         # application level password salt that will get joined with the random
         # salt of the record when hashing the password.  Use a random string of
@@ -70,4 +69,4 @@ class Settings(PluginSettings):
         #
         #
         # If left as None, it will not be used
-        self.password_salt = None
+        self.for_me.password_salt = None
