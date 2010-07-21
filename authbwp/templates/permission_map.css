@@ -1,0 +1,7 @@
+td.denied{
+    color: red;
+}
+
+td.approved {
+    color: green;
+}

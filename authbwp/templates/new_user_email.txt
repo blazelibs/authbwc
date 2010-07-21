@@ -1,0 +1,14 @@
+You have been added to our system of registered users.
+
+Please log in with the information below using the following link:
+{{ url_for('auth:Login', _external=True) }}
+
+user name: {{ user_obj.login_id }}
+password: {{ user_obj.text_password }}
+
+This password is only temporary and you will be REQUIRED to change it upon
+your first successful login.
+
+-- 
+{{ settings.name.full }}
+{{ current_url(root_only=True) }}
