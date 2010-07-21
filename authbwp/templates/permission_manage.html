@@ -2,9 +2,9 @@
 {% block title %}{{pagetitle|title}} | {{super()}}{% endblock %}
 {% block body %}
     <h2>{{pagetitle|title}}</h2>
-    
+
     {% if tablehtml %}
-        {{ tablehtml }}
+        {{ tablehtml|safe }}
     {% else %}
         <p>
             Sorry, no {{objectnamepl}} currently in the database.
