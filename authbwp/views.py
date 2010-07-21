@@ -234,7 +234,7 @@ class PermissionMap(SecureView):
         self.require_all = 'auth-manage'
 
     def default(self, uid):
-        self.assign('user', user_get(uid))
+        self.assign('dbuser', user_get(uid))
         self.assign('result', user_permission_map(uid))
         self.assign('permgroups', user_permission_map_groups(uid))
         self.render_template()
