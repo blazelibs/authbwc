@@ -626,17 +626,17 @@ class TestRecoverPassword(object):
             'email_address': u'user@notreallythere.com',
             'lost-password-form-submit-flag': 'submitted',
         }
-        r = self.c.post('users/recover_password', data=topost)
+        r = self.c.post('users/recover-password', data=topost)
         assert r.status_code == 200, r.status
         assert 'email address is not associated with a user' in r.data
 
     def test_invalid_reset_link(self):
 
-        req, resp = self.c.get('users/password-reset/nothere/invalidkey', follow_redirects=True)
+        req, resp = self.c.get('users/reset-password/nothere/invalidkey', follow_redirects=True)
         assert resp.status_code == 200, resp.status
         assert 'Recover Password' in resp.data
         assert 'invalid reset request, use the form below to resend reset link' in resp.data
-        assert req.url.endswith('users/recover_password')
+        assert req.url.endswith('users/recover-password')
 
     def test_password_reset(self):
         """ has to be done in the same test function so that order is assured"""
@@ -644,7 +644,7 @@ class TestRecoverPassword(object):
         user = create_user_with_permissions()
         user_id = user.id
 
-        r = self.c.get('users/recover_password')
+        r = self.c.get('users/recover-password')
         assert r.status_code == 200, r.status
         assert 'Recover Password' in r.data
 
@@ -659,7 +659,7 @@ class TestRecoverPassword(object):
             'email_address': user.email_address,
             'lost-password-form-submit-flag': 'submitted',
         }
-        req, r = self.c.post('users/recover_password', data=topost, follow_redirects=True)
+        req, r = self.c.post('users/recover-password', data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
         assert 'email with a link to reset your password has been sent' in r.data, r.data
         assert req.url == 'http://localhost/'
@@ -672,7 +672,7 @@ class TestRecoverPassword(object):
         minimock.restore()
 
         # now test resetting the password
-        r = self.c.get('/users/password-reset/%s/%s' % (user.login_id, user.pass_reset_key))
+        r = self.c.get('/users/reset-password/%s/%s' % (user.login_id, user.pass_reset_key))
         assert r.status_code == 200, r.status_code
         assert 'Reset Password' in r.data
         assert 'Please choose a new password to complete the reset request' in r.data
@@ -684,11 +684,11 @@ class TestRecoverPassword(object):
         db.sess.commit()
 
         # check expired message
-        req, resp = self.c.get('/users/password-reset/%s/%s' % (user.login_id, user.pass_reset_key), follow_redirects=True)
+        req, resp = self.c.get('/users/reset-password/%s/%s' % (user.login_id, user.pass_reset_key), follow_redirects=True)
         assert resp.status_code == 200, resp.status
         assert 'Recover Password' in resp.data
         assert 'password reset link expired, use the form below to resend reset link' in resp.data
-        assert req.url.endswith('users/recover_password')
+        assert req.url.endswith('users/recover-password')
 
         # unexpire the date
         user = user_get(user_id)
@@ -701,7 +701,7 @@ class TestRecoverPassword(object):
             'password-confirm': 'TestPassword2',
             'new-password-form-submit-flag': 'submitted',
         }
-        req, r = self.c.post('/users/password-reset/%s/%s' % (user.login_id, user.pass_reset_key), data=topost, follow_redirects=True)
+        req, r = self.c.post('/users/reset-password/%s/%s' % (user.login_id, user.pass_reset_key), data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
         assert 'Your password has been reset successfully' in r.data
         assert req.url == 'http://localhost/'
