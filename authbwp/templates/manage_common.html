@@ -6,7 +6,7 @@
     <p><a href="{{ url_for(update_endpoint)}}">Add {{objectname|title}}</a></p>
     
     {% if tablehtml %}
-        {{ tablehtml }}
+        {{ tablehtml|safe }}
     {% else %}
         <p>
             Sorry, no {{objectnamepl}} currently in the database.
