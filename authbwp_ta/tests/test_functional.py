@@ -247,7 +247,7 @@ class TestUserViews(object):
                 found -= 1
         assert found == 0
 
-        # test edit w/ reset required
+        # test edit w/ reset required and email notify (no email sent)
         topost = {
             'login_id': 'usersaved',
             'email_address': 'usersaved@example.com',
@@ -260,7 +260,8 @@ class TestUserViews(object):
             'inactive_flag': False,
             'inactive_date': '',
             'name_first': '',
-            'name_last': ''
+            'name_last': '',
+            'email_notify': 1
         }
         req, r = self.c.post('users/edit/%s' % user.id, data=topost, follow_redirects=True)
         assert 'user edited successfully' in r.data
