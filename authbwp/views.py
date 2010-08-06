@@ -56,7 +56,7 @@ class UserUpdate(UpdateCommon):
                 email_sent = send_new_user_email(self.update_retval)
             elif self.form.elements.password.value:
                 email_sent = send_change_password_email(self.update_retval)
-            if not email_sent:
+            if (self.isAdd or self.form.elements.password.value) and not email_sent:
                 usr.add_message('error', 'An error occurred while sending the user notification email.')
         self.on_complete()
 
