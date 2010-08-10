@@ -174,7 +174,7 @@ class ManageCommon(CommonBase):
         self.objectnamepl = objectnamepl
         self.endpoint_update = '%s:%sUpdate' % (modulename, classname)
         self.endpoint_delete = '%s:%sDelete' % (modulename, classname)
-        self.table = Table(class_='dataTable manage')
+        self.table = Table(class_='dataTable manage datagrid')
         self.extend_from = settings.template.admin
         self.action_prefix = action_prefix or objectname
 
