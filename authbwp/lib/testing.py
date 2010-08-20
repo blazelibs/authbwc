@@ -55,18 +55,18 @@ def login_client_as_user(client, username, password, validate_login_response=Tru
         raise TypeError('client is of an unexpected type: %s' % client.__class__)
 
 def create_user_with_permissions(approved_perms=None, denied_perms=None, super_user=False):
-    from plugstack.auth.model.actions import user_update, permission_get_by_name
+    from plugstack.auth.model.orm import User, Permission
 
     appr_perm_ids = []
     denied_perm_ids = []
     # create the permissions
     for perm in tolist(approved_perms):
-        p = permission_get_by_name(perm)
+        p = Permission.get_by(name=perm)
         if p is None:
             raise ValueError('permission %s does not exist' % perm)
         appr_perm_ids.append(p.id)
     for perm in tolist(denied_perms):
-        p = permission_get_by_name(perm)
+        p = Permission.get_by(name=perm)
         if p is None:
             raise ValueError('permission %s does not exist' % perm)
         denied_perm_ids.append(p.id)
@@ -74,7 +74,7 @@ def create_user_with_permissions(approved_perms=None, denied_perms=None, super_u
     # create the user
     username = u'user_for_testing_%s' % randchars(15)
     password = randchars(15)
-    user = user_update(None, login_id=username, email_address=u'%s@example.com' % username,
+    user = User.add(login_id=username, email_address=u'%s@example.com' % username,
          password=password, super_user = super_user, assigned_groups = [],
          approved_permissions = appr_perm_ids, denied_permissions = denied_perm_ids)
 

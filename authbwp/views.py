@@ -3,99 +3,129 @@ import datetime
 import logging
 from blazeweb.globals import settings, rg, user as session_user
 from blazeweb.routing import url_for, current_url
-from blazeweb.utils import redirect
+from blazeweb.utils import redirect, abort
 from blazeweb.views import View, SecureView
 from werkzeug.exceptions import NotFound
 from plugstack.auth.forms import ChangePasswordForm, NewPasswordForm, \
     LostPasswordForm, LoginForm
 from plugstack.auth.helpers import after_login_url, load_session_user, send_new_user_email, \
     send_change_password_email, send_password_reset_email
-from plugstack.auth.lib.views import ManageCommon, UpdateCommon, DeleteCommon
-from plugstack.auth.model.actions import \
-    user_assigned_perm_ids, user_group_ids, user_get, \
-    user_update_password, user_get_by_login, \
-    user_kill_reset_key, user_lost_password, user_permission_map, \
-    user_permission_map_groups, group_user_ids, group_assigned_perm_ids, \
-    user_update
-from plugstack.auth.model.orm import User
+from plugstack.auth.model import orm
+from plugstack.common.lib.views import CrudBase
 from plugstack.datagrid.lib.htmltable import Col, YesNo, Link, Table
 
 _modname = 'auth'
 
 log = logging.getLogger(__name__)
 
-class UserUpdate(UpdateCommon):
+class UserCrud(CrudBase):
     def init(self):
-        UpdateCommon.init(self, _modname, 'user', 'User')
+        CrudBase.init(self, 'User', 'Users', forms.User, orm.User)
+        self.require_all = 'auth-manage'
+        self.form_auto_init = False
 
     def auth_pre(self, oid):
         # prevent non-super users from editing super users
         if oid and session_user.is_authenticated:
-            sess_user_obj = user_get(session_user.id)
-            edited_user_obj = user_get(oid)
+            sess_user_obj = orm.User.get(session_user.id)
+            edited_user_obj = orm.User.get(oid)
             if edited_user_obj and edited_user_obj.super_user and not sess_user_obj.super_user:
                 self.is_authorized = False
 
     def auth_post(self, oid):
-        self.determine_add_edit(oid)
-        self.form = self.formcls(self.isAdd)
-        if not self.isAdd:
-            self.dbobj = self.action_get(oid)
-            if not self.dbobj:
-                raise NotFound
-            vals = self.dbobj.to_dict()
-            vals['assigned_groups'] = user_group_ids(self.dbobj)
-            vals['approved_permissions'], vals['denied_permissions'] = user_assigned_perm_ids(self.dbobj)
-            self.form.set_defaults(vals)
-
-    def do_update(self, oid):
-        self.update_retval = self.action_update(oid, **self.get_action_params())
-        session_user.add_message('notice', self.message_update)
-        if self.form.elements.email_notify.value:
-            if self.isAdd:
-                email_sent = send_new_user_email(self.update_retval)
-            elif self.form.elements.password.value:
-                email_sent = send_change_password_email(self.update_retval)
-            if (self.isAdd or self.form.elements.password.value) and not email_sent:
-                session_user.add_message('error', 'An error occurred while sending the user notification email.')
-        self.on_complete()
-
-class UserManage(ManageCommon):
-    def init(self):
-        ManageCommon.init(self, _modname, 'user', 'users', 'User')
-
-    def create_table(self):
-        def determine_inactive(user):
-            return user.inactive
-
-        ManageCommon.create_table(self)
-        t = self.table
-        t.login_id = Col('Login Id')
-        t.name = Col('Name')
-        t.super_user = YesNo('Super User')
-        t.reset_required = YesNo('Reset Required')
-        t.inactive = YesNo('Inactive', extractor=determine_inactive)
-        t.permission_map = Link( 'Permission Map',
-                 validate_url=False,
-                 urlfrom=lambda uobj: url_for('auth:PermissionMap', uid=uobj.id),
-                 extractor = lambda row: 'view permission map'
-            )
-
-class UserDelete(DeleteCommon):
-    def init(self):
-        DeleteCommon.init(self, _modname, 'user', 'User')
-
-    def auth_pre(self, oid):
-        if oid and session_user.is_authenticated:
+        CrudBase.auth_post(self, oid)
+        if self.action == self.DELETE:
             # prevent self-deletion
             if oid == session_user.id:
                 session_user.add_message('error', 'You cannot delete your own user account')
-                self.on_complete()
-            # prevent non-super users from deleting super users
-            sess_user_obj = user_get(session_user.id)
-            edited_user_obj = user_get(oid)
-            if edited_user_obj and edited_user_obj.super_user and not sess_user_obj.super_user:
-                self.is_authorized = False
+                abort(403)
+
+    def form_assign(self, formcls):
+        CrudBase.form_assign(self, formcls)
+        self.form.is_add = (self.action == self.ADD)
+        self.form.init()
+        self.form_assign_defaults
+
+    def form_assign_defaults(self):
+        if self.action == self.EDIT:
+            vals = self.objinst.to_dict()
+            vals['assigned_groups'] = self.objinst.group_ids
+            vals['approved_permissions'], vals['denied_permissions'] = self.objinst.assigned_permission_ids
+            self.form.set_defaults(vals)
+
+    def form_when_completed(self):
+        if self.form.elements.email_notify.value:
+            if self.action == self.ADD:
+                email_sent = send_new_user_email(self.form_resulting_entity)
+            elif self.form.elements.password.value:
+                email_sent = send_change_password_email(self.form_resulting_entity)
+            if (self.action == self.ADD or self.form.elements.password.value) and not email_sent:
+                session_user.add_message('error', 'An error occurred while sending the user notification email.')
+
+        CrudBase.form_when_completed(self)
+
+    def manage_init_grid(self):
+        def determine_inactive(user):
+            return user.inactive
+
+        dg = DataGrid(
+            db.sess.execute,
+            per_page=30,
+            class_='dataTable manage'
+            )
+        dg.add_col(
+            'id',
+            orm.User.id,
+            inresult=True
+        )
+        dg.add_tablecol(
+            Col('Actions',
+                extractor=self.manage_action_links,
+                width_th='8%'
+            ),
+            orm.User.id,
+            sort=None
+        )
+        dg.add_tablecol(
+            Col('Login Id'),
+            orm.User.login_id,
+            filter_on=True,
+            sort='both'
+        )
+        dg.add_tablecol(
+            Col('Name'),
+            orm.User.name,
+            filter_on=True,
+            sort='both'
+        )
+        dg.add_tablecol(
+            YesNo('Super User'),
+            orm.User.super_user,
+            filter_on=False,
+            sort=False
+        )
+        dg.add_tablecol(
+            YesNo('Reset Required'),
+            orm.User.reset_required,
+            filter_on=False,
+            sort=False
+        )
+        dg.add_tablecol(
+            YesNo('Inactive', extractor=determine_inactive),
+            orm.User.inactive_flag,
+            filter_on=False,
+            sort=False
+        )
+        dg.add_tablecol(
+            Link( 'Permission Map',
+                 validate_url=False,
+                 urlfrom=lambda uobj: url_for('auth:PermissionMap', oid=uobj.id),
+                 extractor = lambda row: 'view permission map'
+            ),
+            orm.User.id,
+            filter_on=False,
+            sort=False
+        )
 
 class ChangePassword(SecureView):
     def auth_pre(self):
@@ -106,7 +136,7 @@ class ChangePassword(SecureView):
 
     def post(self):
         if self.form.is_valid():
-            user_update_password(session_user.id, **self.form.get_values())
+            orm.User.get(session_user.id).update_password(self.form.elements.password)
             session_user.reset_required = False
             session_user.add_message('notice', 'Your password has been changed successfully.')
             url = after_login_url() if rg.request.url == url_for('auth:ChangePassword') else rg.request.url
@@ -118,7 +148,7 @@ class ChangePassword(SecureView):
         self.default()
 
     def default(self):
-        self.assign('formHtml', self.form.render())
+        self.assign('form', self.form)
         self.render_template()
 
 class ResetPassword(View):
@@ -127,7 +157,7 @@ class ResetPassword(View):
         # this probably should never happen, but doesn't hurt to check
         if not key or not login_id:
             self.abort()
-        user = user_get_by_login(login_id)
+        user = orm.User.get_by(login=login_id)
         if not user:
             self.abort()
         if key != user.pass_reset_key:
@@ -141,13 +171,13 @@ class ResetPassword(View):
 
     def post(self, login_id, key):
         if self.form.is_valid():
-            user_update_password(self.user.id, **self.form.get_values())
+            self.user.update_password(self.form.elements.password)
             session_user.add_message('notice', 'Your password has been reset successfully.')
 
             # at this point, the user has been verified, and we can setup the user
             # session and kill the reset
             load_session_user(self.user)
-            user_kill_reset_key(self.user)
+            self.user.kill_reset_key()
 
             # redirect as if this was a login
             url = after_login_url()
@@ -178,7 +208,7 @@ class LostPassword(View):
     def post(self):
         if self.form.is_valid():
             em_address = self.form.elements.email_address.value
-            user_obj = user_lost_password(em_address)
+            user_obj = orm.User.reset_password(em_address)
             if user_obj:
                 if send_password_reset_email(user_obj):
                     session_user.add_message('notice', 'An email with a link to reset your password has been sent.')
@@ -195,48 +225,49 @@ class LostPassword(View):
         self.default()
 
     def default(self):
-        self.assign('formHtml', self.form.render())
+        self.assign('form', self.form)
         self.render_template()
 
-class UserProfile(UpdateCommon):
+class UserProfile(SecureView):
     def init(self):
-        UpdateCommon.init(self, _modname, 'user', 'UserProfile')
         self.check_authorization = False
-        self.actionname = 'Update'
-        self.objectname = 'Profile'
-
-    def auth_post(self):
-        self.assign_form()
-        self.user_id = session_user.id
-        self.dbobj = user_get(self.user_id)
-        self.form.set_defaults(self.dbobj.to_dict())
-
-    def on_cancel(self):
-        session_user.add_message('notice', 'no changes made to your profile')
-        redirect(current_url(root_only=True))
-
-    def do_update(self, oid):
-        formvals = self.form.get_values()
-        # assigned groups and permissions stay the same for profile submissions
-        formvals['assigned_groups'] = user_group_ids(self.dbobj)
-        formvals['approved_permissions'], formvals['denied_permissions'] = \
-                user_assigned_perm_ids(self.dbobj)
-        formvals['pass_reset_ok'] = False
-        user_update(oid, **formvals)
-        session_user.add_message('notice', 'profile updated succesfully')
-        self.default()
+        self.form = UserProfileForm()
+        self.oid = session_user.id
+        self.objinst = orm.User.get(self.oid)
+        self.form.set_defaults(self.objinst.to_dict())
 
     def post(self):
-        UpdateCommon.post(self, self.user_id)
+        if self.form.is_cancel():
+            session_user.add_message('notice', 'no changes made to your profile')
+            redirect(current_url(root_only=True))
+        elif self.form.is_valid():
+            formvals = self.form.get_values()
+            # assigned groups and permissions stay the same for profile submissions
+            formvals['assigned_groups'] = self.objinst.group_ids
+            formvals['approved_permissions'], formvals['denied_permissions'] = \
+                    self.objinst.assigned_permission_ids
+            formvals['pass_reset_ok'] = False
+            orm.User.edit(oid, **formvals)
+            session_user.add_message('notice', 'profile updated succesfully')
+        elif self.form.is_submitted():
+            # form was submitted, but invalid
+            self.form.assign_user_errors()
+
+        self.default()
+
+    def default(self):
+        self.assign('form', self.form)
+        self.render_template()
 
 class PermissionMap(SecureView):
     def auth_pre(self):
         self.require_all = 'auth-manage'
 
-    def default(self, uid):
-        self.assign('dbuser', user_get(uid))
-        self.assign('result', user_permission_map(uid))
-        self.assign('permgroups', user_permission_map_groups(uid))
+    def default(self, oid):
+        dbuser = orm.User.get(oid)
+        self.assign('dbuser', dbuser)
+        self.assign('result', dbuser.permission_map)
+        self.assign('permgroups', dbuser.permission_map_groups)
         self.render_template()
 
 class Login(View):
@@ -245,7 +276,7 @@ class Login(View):
 
     def post(self):
         if self.form.is_valid():
-            user = User.validate(
+            user = orm.User.validate(
                 self.form.els.login_id.value,
                 self.form.els.password.value
                 )
@@ -271,7 +302,7 @@ class Login(View):
         self.default()
 
     def default(self):
-        self.assign('formHtml', self.form.render())
+        self.assign('form', self.form)
         self.render_template()
 
 class Logout(View):
@@ -282,51 +313,83 @@ class Logout(View):
         url = url_for('auth:Login')
         redirect(url)
 
-class GroupUpdate(UpdateCommon):
+class GroupCrud(CrudBase):
     def init(self):
-        UpdateCommon.init(self, _modname, 'group', 'Group')
+        CrudBase.init(self, 'Group', 'Groups', forms.Group, orm.Group)
+        self.require_all = 'auth-manage'
 
-    def auth_post(self, oid):
-        self.determine_add_edit(oid)
-        self.form = self.formcls()
-        if not self.isAdd:
-            self.dbobj = self.action_get(oid)
-            if not self.dbobj:
-                raise NotFound
-            vals = self.dbobj.to_dict()
-            vals['assigned_users'] = group_user_ids(self.dbobj)
-            vals['approved_permissions'], vals['denied_permissions'] = group_assigned_perm_ids(self.dbobj)
+    def form_assign_defaults(self):
+        if self.action == self.EDIT:
+            vals = self.objinst.to_dict()
+            vals['assigned_users'] = self.objinst.user_ids
+            vals['approved_permissions'], vals['denied_permissions'] = self.objinst.assigned_permission_ids
             self.form.set_defaults(vals)
 
-class GroupManage(ManageCommon):
+    def manage_init_grid(self):
+        dg = DataGrid(
+            db.sess.execute,
+            per_page=30,
+            class_='dataTable manage'
+            )
+        dg.add_col(
+            'id',
+            orm.Group.id,
+            inresult=True
+        )
+        dg.add_tablecol(
+            Col('Actions',
+                extractor=self.manage_action_links,
+                width_th='8%'
+            ),
+            orm.Group.id,
+            sort=None
+        )
+        dg.add_tablecol(
+            Col('Name'),
+            orm.Group.name,
+            filter_on=True,
+            sort='both'
+        )
+
+class PermissionCrud(CrudBase):
     def init(self):
-        ManageCommon.init(self, _modname, 'group', 'groups', 'Group')
-        self.table = Table(class_='dataTable manage', style="width: 60%")
+        CrudBase.init(self, 'Permission', 'Permissions', forms.Permission, orm.Permission)
+        self.require_all = 'auth-manage'
+        self.manage_template_endpoint = 'auth:permission_manage.html'
 
-    def create_table(self):
-        ManageCommon.create_table(self)
-        t = self.table
-        t.name = Col('Name')
+    def auth_post(self, oid):
+        CrudBase.auth_post(self, oid)
+        if self.action in [self.ADD, self.DELETE]:
+            abort(400)
 
-class GroupDelete(DeleteCommon):
-    def init(self):
-        DeleteCommon.init(self, _modname, 'group', 'Group')
-
-class PermissionUpdate(UpdateCommon):
-    def init(self):
-        UpdateCommon.init(self, _modname, 'permission', 'Permission')
-
-class PermissionManage(ManageCommon):
-    def init(self):
-        ManageCommon.init(self, _modname, 'permission', 'permissions', 'Permission')
-        self.delete_link_require = None
-
-    def create_table(self):
-        ManageCommon.create_table(self)
-        t = self.table
-        t.name = Col('Permission', width_td="35%")
-        t.description = Col('Description')
-
-    def default(self):
-        self.assign_vars()
-        self.render_template()
+    def manage_init_grid(self):
+        dg = DataGrid(
+            db.sess.execute,
+            per_page=30,
+            class_='dataTable manage'
+            )
+        dg.add_col(
+            'id',
+            orm.Group.id,
+            inresult=True
+        )
+        dg.add_tablecol(
+            Col('Actions',
+                extractor=self.manage_action_links,
+                width_th='8%'
+            ),
+            orm.Group.id,
+            sort=None
+        )
+        dg.add_tablecol(
+            Col('Permission', width_td="35%"),
+            orm.Permission.name,
+            filter_on=True,
+            sort='both'
+        )
+        dg.add_tablecol(
+            Col('Description'),
+            orm.Permission.description,
+            filter_on=False,
+            sort=False
+        )

@@ -1,4 +1,4 @@
-from blazeweb.script import console_broadcast, console_dispatch
+from blazeweb.script import console_dispatch
 
 @console_dispatch
 def action_users_addadmin():

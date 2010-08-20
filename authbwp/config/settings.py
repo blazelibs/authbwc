@@ -5,22 +5,18 @@ class Settings(PluginSettings):
 
     def init(self):
 
-        self.add_route('/users/add', 'auth:UserUpdate', defaults={'oid':None})
-        self.add_route('/users/edit/<int:oid>', 'auth:UserUpdate')
-        self.add_route('/users/manage', 'auth:UserManage')
-        self.add_route('/users/delete/<int:oid>', 'auth:UserDelete')
-        self.add_route('/users/permissions/<int:uid>', 'auth:PermissionMap')
+        self.add_route('/users/<action>', endpoint='UserCrud')
+        self.add_route('/users/<action>/<int:objid>', endpoint='UserCrud')
+        self.add_route('/users/permissions/<int:oid>', 'auth:PermissionMap')
         self.add_route('/users/login', 'auth:Login')
         self.add_route('/users/logout', 'auth:Logout')
         self.add_route('/users/change-password', 'auth:ChangePassword')
         self.add_route('/users/recover-password', 'auth:LostPassword')
         self.add_route('/users/reset-password/<login_id>/<key>', 'auth:ResetPassword')
-        self.add_route('/groups/add', 'auth:GroupUpdate', defaults={'oid':None})
-        self.add_route('/groups/edit/<int:oid>', 'auth:GroupUpdate')
-        self.add_route('/groups/manage', 'auth:GroupManage')
-        self.add_route('/groups/delete/<int:oid>', 'auth:GroupDelete')
-        self.add_route('/permissions/edit/<int:oid>', 'auth:PermissionUpdate')
-        self.add_route('/permissions/manage', 'auth:PermissionManage')
+        self.add_route('/groups/<action>', endpoint='GroupCrud')
+        self.add_route('/groups/<action>/<int:objid>', endpoint='GroupCrud')
+        self.add_route('/permissions/<action>', endpoint='PermissionCrud')
+        self.add_route('/permissions/<action>/<int:objid>', endpoint='PermissionCrud')
         self.add_route('/users/profile', 'auth:UserProfile')
 
         self.for_me.cp_nav.enabled=True
@@ -28,15 +24,15 @@ class Settings(PluginSettings):
             "Users",
             'auth-manage',
             ControlPanelGroup(
-                ControlPanelLink('User Add', 'auth:UserUpdate'),
-                ControlPanelLink('Users Manage', 'auth:UserManage'),
+                ControlPanelLink('User Add', 'auth:UserCrud', action='add'),
+                ControlPanelLink('Users Manage', 'auth:UserCrud', action='manage'),
             ),
             ControlPanelGroup(
-                ControlPanelLink('Group Add', 'auth:GroupUpdate'),
-                ControlPanelLink('Groups Manage', 'auth:GroupManage'),
+                ControlPanelLink('Group Add', 'auth:GroupCrud', action='add'),
+                ControlPanelLink('Groups Manage', 'auth:GroupCrud', action='manage'),
             ),
             ControlPanelGroup(
-                ControlPanelLink('Permissions Manage', 'auth:PermissionManage'),
+                ControlPanelLink('Permissions Manage', 'auth:PermissionCrud', action='manage'),
             )
         )
 

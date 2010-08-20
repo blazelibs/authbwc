@@ -7,7 +7,7 @@ from blazeweb.mail import EmailMessage, mail_programmers
 from blazeweb.routing import current_url
 from blazeweb.utils import exception_with_context
 
-from plugstack.auth.model.actions import user_permission_map
+from plugstack.auth.model.orm import User
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ def load_session_user(user_obj):
     user.is_authenticated = True
 
     # now permissions
-    for row in user_permission_map(user_obj.id):
+    for row in user_obj.permission_map:
         if row['resulting_approval'] or user_obj.super_user:
             user.add_token(row['permission_name'])
 
@@ -71,7 +71,6 @@ def note_password_complexity():
 
 def add_administrative_user(allow_profile_defaults=True):
     from getpass import getpass
-    from plugstack.auth.model.actions import user_update
 
     defaults = settings.plugins.auth.admin
     # add a default administrative user
@@ -87,11 +86,9 @@ def add_administrative_user(allow_profile_defaults=True):
             p2 = getpass("confirm password:\n> ")
             if p1 == p2:
                 break
-    user_update(
-        None,
+    User.add_iu(
         login_id = unicode(ulogin),
         email_address = unicode(uemail),
         password = p1,
-        super_user = True,
-        _ignore_unique_exception=True
+        super_user = True
         )
