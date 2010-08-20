@@ -1,7 +1,7 @@
 {{ include_css() -}}
 {% extends settings.template.admin %}
 {% block title %}User Permission Map | {{super()}}{% endblock %}
-{% block body %}
+{% block primary_content %}
     <h1>Permissions for: <a href="{{ url_for('auth:UserUpdate', id=dbuser.id) }}"
             title="edit user">{{dbuser.login_id}}</a></h1>
     {% for row in result %}
@@ -70,4 +70,4 @@
         {% endif %}
     {% endfor %}
 
-{% endblock body%}
+{% endblock primary_content %}

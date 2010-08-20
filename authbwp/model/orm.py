@@ -1,17 +1,21 @@
 from datetime import datetime
 from hashlib import sha512
 
+from blazeutils.helpers import tolist
 from blazeutils.strings import randchars
 from blazeweb.globals import settings
+from savalidation import validators as val
 from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, String, Table, UniqueConstraint
-from sqlalchemy.orm import relation
-from sqlalchemy.sql import text
+from sqlalchemy.orm import join, relation
+from sqlalchemy.sql import select, and_, alias, or_, func, text
+from sqlalchemy.sql.functions import sum
 from sqlalchemy.util import classproperty
 
 from plugstack.sqlalchemy import db
 from plugstack.sqlalchemy.lib.columns import SmallIntBool
 from plugstack.sqlalchemy.lib.declarative import declarative_base, DefaultMixin
 from plugstack.sqlalchemy.lib.declarative import one_to_none
+from plugstack.sqlalchemy.lib.validators import validates_unique
 
 Base = declarative_base()
 
@@ -93,9 +97,196 @@ class UserMixin(DefaultMixin):
     def validate_password(self, password):
         return self.pass_hash == self.calc_pass_hash(password, self.pass_salt)
 
+    @transaction
+    def add(cls, **kwargs):
+        return cls.update(**kwargs)
+
+    @transaction
+    def edit(cls, oid=None, **kwargs):
+        if oid is None:
+            raise ValueError('the id must be given to edit the record')
+        return cls.update(oid, **kwargs)
+
+    @classmethod
+    def update(cls, oid=None, **kwargs):
+        if oid is None:
+            u = cls()
+            db.sess.add(u)
+            # when creating a new user, if the password is not set, assign it as
+            # a random string assuming the email will get sent out to the user
+            # and they will change it when they login
+            if not kwargs.get('password', None):
+                kwargs['password'] = randchars(8)
+        else:
+            u = cls.get(oid)
+        # automatically turn on reset_password when the password get set manually
+        # (i.e. when an admin does it), unless told not to (when a user does it
+        # for their own account)
+        if kwargs.get('password') and kwargs.get('pass_reset_ok', True):
+            kwargs['reset_required'] = True
+
+        for k, v in kwargs.iteritems():
+            try:
+                # some values can not be set directly
+                if k not in ('pass_hash', 'pass_salt', 'assigned_groups', 'approved_permissions', 'denied_permissions'):
+                    setattr(u, k, v)
+            except AttributeError:
+                pass
+
+        u.groups = [Group.get(gid) for gid in tolist(kwargs.get('assigned_groups', []))]
+        db.sess.flush()
+        u.assign_permissions(kwargs.get('approved_permissions', []), kwargs.get('denied_permissions', []))
+        return u
+
+    @classmethod
+    def assign_permissions(cls, approved_perm_ids, denied_perm_ids):
+        from plugstack.auth.model.metadata import user_permission_assignments as tbl_upa
+        insval = []
+
+        # delete existing permission assignments for this user (i.e. we start over)
+        db.sess.execute(tbl_upa.delete(tbl_upa.c.user_id == cls.id))
+
+        # insert "approved" records
+        if approved_perm_ids is not None and len(approved_perm_ids) != 0:
+            insval.extend([{'user_id' : cls.id, 'permission_id' : pid, 'approved' : 1} for pid in approved_perm_ids])
+
+        # insert "denied" records
+        if denied_perm_ids is not None and len(denied_perm_ids) != 0:
+            insval.extend([{'user_id' : cls.id, 'permission_id' : pid, 'approved' : -1} for pid in denied_perm_ids])
+
+        # do inserts
+        if insval:
+            db.sess.execute(tbl_upa.insert(), insval)
+
+    @transaction_ncm
+    def update_password(self, password):
+        self.password = password
+        self.reset_required = False
+
+    @transaction
+    def reset_password(cls, email_address):
+        u = cls.get_by_email(email_address)
+        if not u:
+            return False
+
+        u.pass_reset_key = randchars(12)
+        u.pass_reset_ts = datetime.utcnow()
+        return u
+
+    @transaction_ncm
+    def kill_reset_key(self):
+        user.pass_reset_key = None
+        user.pass_reset_ts = None
+
+    @classmethod
+    def get_by_email(cls, email_address):
+        # case-insensitive query
+        return db.sess.query(cls).filter(func.lower(cls.email_address)==func.lower(email_address)).first()
+
+    @property
+    def group_ids(self):
+        return [g.id for g in db.sess.query(Group).filter(Group.users.any(id=self.id)).all()]
+
+    @property
+    def assigned_permission_ids(self):
+        s = select(
+            [tbl_upa.c.permission_id],
+            and_(tbl_upa.c.user_id==self.id, tbl_upa.c.approved == 1)
+            )
+        approved = [r[0] for r in db.sess.execute(s)]
+        s = select(
+            [tbl_upa.c.permission_id],
+            and_(tbl_upa.c.user_id==self.id, tbl_upa.c.approved == -1)
+            )
+        denied = [r[0] for r in db.sess.execute(s)]
+
+        return approved, denied
+
+    @classmethod
+    def get_by_permissions(cls, permissions):
+        from plugstack.auth.model.queries import query_users_permissions
+        vuserperms = query_users_permissions().alias()
+        return db.sess.query(cls).select_from(
+            join(cls, vuserperms, cls.id == vuserperms.c.user_id)
+        ).filter(
+            or_(
+                vuserperms.c.user_approved == 1,
+                and_(
+                    vuserperms.c.user_approved == None,
+                    or_(
+                        vuserperms.c.group_denied == None,
+                        vuserperms.c.group_denied >= 0,
+                    ),
+                    vuserperms.c.group_approved >= 1
+                )
+            )
+        ).filter(
+            vuserperms.c.permission_name.in_(tolist(permissions))
+        ).all()
+
+    @property
+    def permission_map(self):
+        from plugstack.auth.model.queries import query_users_permissions
+        user_perm = query_users_permissions().alias()
+        s = select([user_perm.c.user_id,
+                    user_perm.c.permission_id,
+                    user_perm.c.permission_name,
+                    user_perm.c.login_id,
+                    user_perm.c.user_approved,
+                    user_perm.c.group_approved,
+                    user_perm.c.group_denied,],
+                from_obj=user_perm).where(user_perm.c.user_id==self.id)
+        results = db.sess.execute(s)
+        retval = []
+        for row in results:
+            nrow = {}
+            for key, value in row.items():
+                if value is None:
+                    nrow[key] = 0
+                else:
+                    nrow[key] = value
+
+            if nrow['user_approved'] == -1:
+                approved = False
+            elif nrow['user_approved'] == 1:
+                approved = True
+            elif nrow['group_denied'] <= -1:
+                approved = False
+            elif nrow['group_approved'] >= 1:
+                approved = True
+            else:
+                approved = False
+
+            nrow[u'resulting_approval'] = approved
+            retval.append(nrow)
+        return retval
+
+    @property
+    def permission_map_groups(self):
+        from plugstack.auth.model.queries import query_user_group_permissions
+        user_group_perm = query_user_group_permissions().alias()
+        s = select([user_group_perm.c.permission_id,
+                    user_group_perm.c.group_name,
+                    user_group_perm.c.group_id,
+                    user_group_perm.c.group_approved],
+                from_obj=user_group_perm).where(user_group_perm.c.user_id==self.id)
+        results = db.sess.execute(s)
+        retval = {}
+        for row in results:
+            if not retval.has_key(row['permission_id']):
+                retval[row['permission_id']] = {'approved' : [], 'denied' : []}
+            if row['group_approved'] <= -1:
+                retval[row['permission_id']]['denied'].append({'name':row['group_name'], 'id':row['group_id']})
+            elif row['group_approved'] >= 1:
+                retval[row['permission_id']]['approved'].append({'name':row['group_name'], 'id':row['group_id']})
+        return retval
+
 if settings.plugins.auth.model_create_user:
     class User(Base, UserMixin):
         __tablename__ = 'auth_users'
+
+        val.validates_constraints()
+        validates_unique('login_id','email_address')
 
 class Group(Base, DefaultMixin):
     __tablename__ = 'auth_groups'
@@ -104,8 +295,106 @@ class Group(Base, DefaultMixin):
 
     # 'users' relation defined as backref on the groups relation in User
 
+    val.validates_constraints()
+    validates_unique('name')
+
     def __repr__(self):
         return '<Group "%s" : %d>' % (self.name, self.id)
+
+    @transaction
+    def add(cls, **kwargs):
+        return cls.update(**kwargs)
+
+    @transaction
+    def edit(cls, oid=None, **kwargs):
+        if oid is None:
+            raise ValueError('the id must be given to edit the record')
+        return cls.update(oid, **kwargs)
+
+    @classmethod
+    def update(cls, oid=None, **kwargs):
+        if oid is None:
+            g = cls()
+            db.sess.add(g)
+        else:
+            g = cls.get(oid)
+
+        for k, v in kwargs.iteritems():
+            try:
+                # some values can not be set directly
+                if k in ('assigned_users', 'approved_permissions', 'denied_permissions'):
+                    pass
+                else:
+                    setattr(g, k, v)
+            except AttributeError:
+                pass
+
+        g.users = [User.get(uid) for uid in tolist(kwargs.get('assigned_users',[]))]
+        db.sess.flush()
+        g.assign_permissions(kwargs.get('approved_permissions',[]), kwargs.get('denied_permissions',[]))
+        return g
+
+    def assign_permissions(self, approved_perm_ids, denied_perm_ids):
+        from plugstack.auth.model.metadata import group_permission_assignments as tbl_gpa
+        insval = []
+
+        # delete existing permission assignments for this group (i.e. we start over)
+        db.sess.execute(tbl_gpa.delete(tbl_gpa.c.group_id == cls.id))
+
+        # insert "approved" records
+        if approved_perm_ids is not None and len(approved_perm_ids) != 0:
+            insval.extend([{'group_id' : cls.id, 'permission_id' : pid, 'approved' : 1} for pid in approved_perm_ids])
+
+        # insert "denied" records
+        if denied_perm_ids is not None and len(denied_perm_ids) != 0:
+            insval.extend([{'group_id' : cls.id, 'permission_id' : pid, 'approved' : -1} for pid in denied_perm_ids])
+
+        # do inserts
+        if insval:
+            dbsession.execute(tbl_gpa.insert(), insval)
+
+        return
+
+    @transaction
+    def assign_permissions_by_name(cls, group_name, approved_perm_list=[], denied_perm_list=[]):
+        # Note: this function is a wrapper for assign_permissions and will commit db trans
+        group = cls.get_by(name=unicode(group_name))
+        approved_perm_ids = [item.id for item in [Permission.get_by(name=unicode(perm)) for perm in tolist(approved_perm_list)]]
+        denied_perm_ids = [item.id for item in [Permission.get_by(name=unicode(perm)) for perm in tolist(denied_perm_list)]]
+        group.assign_permissions(group, approved_perm_ids, denied_perm_ids)
+
+    @property
+    def user_ids(self):
+        return [u.id for u in db.sess.query(User).filter(User.groups.any(id=self.id)).all()]
+
+    @property
+    def assigned_permission_ids(self):
+        from plugstack.auth.model.metadata import group_permission_assignments as tbl_gpa
+        s = select(
+            [tbl_gpa.c.permission_id],
+            and_(tbl_gpa.c.group_id==self.id, tbl_gpa.c.approved == 1)
+            )
+        approved = [r[0] for r in db.sess.execute(s)]
+        s = select(
+            [tbl_gpa.c.permission_id],
+            and_(tbl_gpa.c.group_id==self.id, tbl_gpa.c.approved == -1)
+            )
+        denied = [r[0] for r in db.sess.execute(s)]
+
+        return approved, denied
+
+    @transaction
+    def group_add_permissions_to_existing(cls, group_name, approved=[], denied=[]):
+        g = cls.get_by(name=group_name)
+        capproved, cdenied = g.assigned_permission_ids
+        for permid in tolist(approved):
+            if permid not in capproved:
+                capproved.append(permid)
+        for permid in tolist(denied):
+            if permid not in cdenied:
+                cdenied.append(permid)
+
+        g.assign_permissions(capproved, cdenied)
 
 class Permission(Base, DefaultMixin):
     __tablename__ = 'auth_permissions'
@@ -113,5 +402,9 @@ class Permission(Base, DefaultMixin):
     name = Column(Unicode(250), nullable=False, index=True, unique=True)
     description = Column(Unicode(250))
 
+    val.validates_constraints()
+    validates_unique('name')
+
     def __repr__(self):
         return '<Permission: "%s">' % self.name
+
