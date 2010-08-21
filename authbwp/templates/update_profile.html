@@ -1,6 +1,0 @@
-{% extends extend_from %}
-{% block title %}{{ pagetitle|title}} | {{super()}}{% endblock %}
-{% block primary_content %}
-    <h2>{{ pagetitle|title }}</h2>
-    {{ form.render()|safe }}
-{% endblock primary_content %}

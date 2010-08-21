@@ -11,6 +11,8 @@ class Default(DefaultSettings):
         self.app_package = app_package
         DefaultSettings.init(self)
 
+        self.supporting_apps.append('basebwa')
+
         self.name.full = 'AuthBWP Test App'
         self.name.short = 'authbwp_ta'
 

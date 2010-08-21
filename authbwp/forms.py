@@ -5,8 +5,8 @@ from blazeweb.routing import url_for
 from formencode import Invalid
 from formencode.validators import FancyValidator, MaxLength, MinLength
 
-from appstack.lib.forms import Form
 from plugstack.auth.helpers import validate_password_complexity, note_password_complexity
+from plugstack.auth.helpers.forms import Form
 from plugstack.auth.model import orm
 
 class UserFormBase(Form):
@@ -115,7 +115,22 @@ class UserFormBase(Form):
             raise ValueInvalid(ret)
         return value
 
-class UserForm(UserFormBase):
+    def add_field_errors(self, errors):
+        for err in errors.get('login_id', []):
+            if 'not unique' in err:
+                self.elements.login_id.add_error('that user already exists')
+                errors['login_id'].remove(err)
+                break
+
+        for err in errors.get('email_address', []):
+            if 'not unique' in err:
+                self.elements.email_address.add_error('a user with that email address already exists')
+                errors['email_address'].remove(err)
+                break
+
+        Form.add_field_errors(self, errors)
+
+class User(UserFormBase):
     def init(self):
         self.add_name_fields()
         self.add_login_id_field()
@@ -144,7 +159,7 @@ class UserProfileForm(UserFormBase):
         pasel.add_note('password will change only if you enter a value above')
         self.add_submit_buttons()
 
-class GroupForm(Form):
+class Group(Form):
 
     def init(self):
         el = self.add_text('name', 'Group Name', required=True)
@@ -175,7 +190,7 @@ class GroupForm(Form):
         if len(assigned.intersection(denied)) != 0:
             raise ValueInvalid('you can not approve and deny the same permission')
 
-class PermissionForm(Form):
+class Permission(Form):
 
     def init(self):
         el = self.add_static('name', 'Permission Name', required=True)

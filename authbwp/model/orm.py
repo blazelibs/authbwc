@@ -5,7 +5,7 @@ from blazeutils.helpers import tolist
 from blazeutils.strings import randchars
 from blazeweb.globals import settings
 from savalidation import validators as val
-from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, String, Table, UniqueConstraint
+from sqlalchemy import Column, Integer, Unicode, DateTime, ForeignKey, String, Table
 from sqlalchemy.orm import join, relation
 from sqlalchemy.sql import select, and_, alias, or_, func, text
 from sqlalchemy.sql.functions import sum
@@ -14,17 +14,14 @@ from sqlalchemy.util import classproperty
 from plugstack.sqlalchemy import db
 from plugstack.sqlalchemy.lib.columns import SmallIntBool
 from plugstack.sqlalchemy.lib.declarative import declarative_base, DefaultMixin
-from plugstack.sqlalchemy.lib.declarative import one_to_none
+from plugstack.sqlalchemy.lib.decorators import one_to_none, transaction, transaction_ncm
 from plugstack.sqlalchemy.lib.validators import validates_unique
 
 Base = declarative_base()
 
 class UserMixin(DefaultMixin):
-    __table_args__ = (UniqueConstraint('login_id', name='uc_auth_users_login_id'),
-                      UniqueConstraint('email_address', name='uc_auth_users_email_address'), {})
-
-    login_id = Column(Unicode(150), nullable=False)
-    email_address = Column(Unicode(150), nullable=False)
+    login_id = Column(Unicode(150), nullable=False, unique=True)
+    email_address = Column(Unicode(150), nullable=False, unique=True)
     pass_hash = Column(String(128), nullable=False)
     pass_salt = Column(String(32), nullable=False)
     reset_required = Column(SmallIntBool, server_default=text('1'), nullable=False)
@@ -138,21 +135,20 @@ class UserMixin(DefaultMixin):
         u.assign_permissions(kwargs.get('approved_permissions', []), kwargs.get('denied_permissions', []))
         return u
 
-    @classmethod
-    def assign_permissions(cls, approved_perm_ids, denied_perm_ids):
+    def assign_permissions(self, approved_perm_ids, denied_perm_ids):
         from plugstack.auth.model.metadata import user_permission_assignments as tbl_upa
         insval = []
 
         # delete existing permission assignments for this user (i.e. we start over)
-        db.sess.execute(tbl_upa.delete(tbl_upa.c.user_id == cls.id))
+        db.sess.execute(tbl_upa.delete(tbl_upa.c.user_id == self.id))
 
         # insert "approved" records
         if approved_perm_ids is not None and len(approved_perm_ids) != 0:
-            insval.extend([{'user_id' : cls.id, 'permission_id' : pid, 'approved' : 1} for pid in approved_perm_ids])
+            insval.extend([{'user_id' : self.id, 'permission_id' : pid, 'approved' : 1} for pid in approved_perm_ids])
 
         # insert "denied" records
         if denied_perm_ids is not None and len(denied_perm_ids) != 0:
-            insval.extend([{'user_id' : cls.id, 'permission_id' : pid, 'approved' : -1} for pid in denied_perm_ids])
+            insval.extend([{'user_id' : self.id, 'permission_id' : pid, 'approved' : -1} for pid in denied_perm_ids])
 
         # do inserts
         if insval:
@@ -175,8 +171,8 @@ class UserMixin(DefaultMixin):
 
     @transaction_ncm
     def kill_reset_key(self):
-        user.pass_reset_key = None
-        user.pass_reset_ts = None
+        self.pass_reset_key = None
+        self.pass_reset_ts = None
 
     @classmethod
     def get_by_email(cls, email_address):
@@ -189,6 +185,7 @@ class UserMixin(DefaultMixin):
 
     @property
     def assigned_permission_ids(self):
+        from plugstack.auth.model.metadata import user_permission_assignments as tbl_upa
         s = select(
             [tbl_upa.c.permission_id],
             and_(tbl_upa.c.user_id==self.id, tbl_upa.c.approved == 1)
@@ -299,7 +296,7 @@ class Group(Base, DefaultMixin):
     validates_unique('name')
 
     def __repr__(self):
-        return '<Group "%s" : %d>' % (self.name, self.id)
+        return '<Group "%s">' % (self.name)
 
     @transaction
     def add(cls, **kwargs):
@@ -339,19 +336,19 @@ class Group(Base, DefaultMixin):
         insval = []
 
         # delete existing permission assignments for this group (i.e. we start over)
-        db.sess.execute(tbl_gpa.delete(tbl_gpa.c.group_id == cls.id))
+        db.sess.execute(tbl_gpa.delete(tbl_gpa.c.group_id == self.id))
 
         # insert "approved" records
         if approved_perm_ids is not None and len(approved_perm_ids) != 0:
-            insval.extend([{'group_id' : cls.id, 'permission_id' : pid, 'approved' : 1} for pid in approved_perm_ids])
+            insval.extend([{'group_id' : self.id, 'permission_id' : pid, 'approved' : 1} for pid in approved_perm_ids])
 
         # insert "denied" records
         if denied_perm_ids is not None and len(denied_perm_ids) != 0:
-            insval.extend([{'group_id' : cls.id, 'permission_id' : pid, 'approved' : -1} for pid in denied_perm_ids])
+            insval.extend([{'group_id' : self.id, 'permission_id' : pid, 'approved' : -1} for pid in denied_perm_ids])
 
         # do inserts
         if insval:
-            dbsession.execute(tbl_gpa.insert(), insval)
+            db.sess.execute(tbl_gpa.insert(), insval)
 
         return
 
@@ -361,7 +358,7 @@ class Group(Base, DefaultMixin):
         group = cls.get_by(name=unicode(group_name))
         approved_perm_ids = [item.id for item in [Permission.get_by(name=unicode(perm)) for perm in tolist(approved_perm_list)]]
         denied_perm_ids = [item.id for item in [Permission.get_by(name=unicode(perm)) for perm in tolist(denied_perm_list)]]
-        group.assign_permissions(group, approved_perm_ids, denied_perm_ids)
+        group.assign_permissions(approved_perm_ids, denied_perm_ids)
 
     @property
     def user_ids(self):
