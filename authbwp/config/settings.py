@@ -5,18 +5,18 @@ class Settings(PluginSettings):
 
     def init(self):
 
-        self.add_route('/users/<action>', endpoint='UserCrud')
-        self.add_route('/users/<action>/<int:objid>', endpoint='UserCrud')
-        self.add_route('/users/permissions/<int:oid>', 'auth:PermissionMap')
+        self.add_route('/users/<action>', endpoint='auth:UserCrud')
+        self.add_route('/users/<action>/<int:objid>', endpoint='auth:UserCrud')
+        self.add_route('/users/permissions/<int:objid>', 'auth:PermissionMap')
         self.add_route('/users/login', 'auth:Login')
         self.add_route('/users/logout', 'auth:Logout')
         self.add_route('/users/change-password', 'auth:ChangePassword')
         self.add_route('/users/recover-password', 'auth:LostPassword')
         self.add_route('/users/reset-password/<login_id>/<key>', 'auth:ResetPassword')
-        self.add_route('/groups/<action>', endpoint='GroupCrud')
-        self.add_route('/groups/<action>/<int:objid>', endpoint='GroupCrud')
-        self.add_route('/permissions/<action>', endpoint='PermissionCrud')
-        self.add_route('/permissions/<action>/<int:objid>', endpoint='PermissionCrud')
+        self.add_route('/groups/<action>', endpoint='auth:GroupCrud')
+        self.add_route('/groups/<action>/<int:objid>', endpoint='auth:GroupCrud')
+        self.add_route('/permissions/<action>', endpoint='auth:PermissionCrud')
+        self.add_route('/permissions/<action>/<int:objid>', endpoint='auth:PermissionCrud')
         self.add_route('/users/profile', 'auth:UserProfile')
 
         self.for_me.cp_nav.enabled=True
