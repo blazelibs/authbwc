@@ -7,7 +7,7 @@ from formencode.validators import FancyValidator, MaxLength, MinLength
 
 from plugstack.auth.helpers import validate_password_complexity, note_password_complexity
 from plugstack.auth.helpers.forms import Form
-from plugstack.auth.model import orm
+from plugstack.auth.model.orm import User as orm_User, Group as orm_Group, Permission as orm_Permission
 
 class UserFormBase(Form):
     def add_name_fields(self):
@@ -74,7 +74,7 @@ class UserFormBase(Form):
         return iflag, idate
 
     def get_group_options(self):
-        return orm.Group.pairs('id:name', orm.Group.name)
+        return orm_Group.pairs('id:name', orm_Group.name)
 
     def add_group_membership_section(self, multi=True, required=False):
         hel = self.add_header('group_membership_header', 'Group Membership')
@@ -87,7 +87,7 @@ class UserFormBase(Form):
 
     def add_user_permissions_section(self):
         hel = self.add_header('user_permissions_header', 'User Permissions')
-        perm_opts = orm.Permission.pairs('id:name', orm.Permission.name)
+        perm_opts = orm_Permission.pairs('id:name', orm_Permission.name)
         gel = self.add_mselect('approved_permissions', perm_opts, 'Approved')
         gel = self.add_mselect('denied_permissions', perm_opts, 'Denied')
         return hel, gel
@@ -166,12 +166,12 @@ class Group(Form):
 
         el = self.add_header('group_membership_header', 'Users In Group')
 
-        user_opts = orm.User.pairs('id:login_id', orm.User.login_id)
+        user_opts = orm_User.pairs('id:login_id', orm_User.login_id)
         el = self.add_mselect('assigned_users', user_opts, 'Assign')
 
         el = self.add_header('group_permissions_header', 'Group Permissions')
 
-        perm_opts = orm.Permission.pairs('id:name', orm.Permission.name)
+        perm_opts = orm_Permission.pairs('id:name', orm_Permission.name)
         el = self.add_mselect('approved_permissions', perm_opts, 'Approved')
 
         el = self.add_mselect('denied_permissions', perm_opts, 'Denied')
@@ -227,7 +227,7 @@ class ChangePasswordForm(UserFormBase):
         self.add_validator(self.validate_validnew)
 
     def validate_password(self, value):
-        dbobj = orm.User.get(user.id)
+        dbobj = orm_User.get(user.id)
         if not dbobj.validate_password(value):
             raise ValueInvalid('incorrect password')
 
@@ -256,7 +256,7 @@ class LostPasswordForm(Form):
         self.add_submit('submit')
 
     def validate_email(self, value):
-        dbobj = orm.User.get_by_email(value)
+        dbobj = orm_User.get_by_email(value)
         if (dbobj is None):
             raise ValueInvalid('email address is not associated with a user')
 

@@ -346,7 +346,7 @@ class TestUserViews(object):
         resp, r = self.c.get('users/delete/%s' % self.userid, follow_redirects=True)
         assert r.status_code == 403, r.status
         assert 'You cannot delete your own user account' in r.data
-        assert resp.url.endswith('users/manage')
+        assert resp.url.endswith('users/delete/%s' % self.userid)
 
     def test_non_existing_id(self):
         non_existing_id = 9999
