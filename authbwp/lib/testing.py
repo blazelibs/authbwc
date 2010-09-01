@@ -15,6 +15,7 @@ def login_client_with_permissions(client, approved_perms=None, denied_perms=None
         Creates a user with the given permissions and then logs in with said
         user.
     """
+    from plugstack.auth.lib.testing import create_user_with_permissions, login_client_as_user
 
     # create user
     user = create_user_with_permissions(approved_perms, denied_perms, super_user)

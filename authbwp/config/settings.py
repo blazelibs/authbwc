@@ -53,6 +53,7 @@ class Settings(PluginSettings):
         # this module with a DB that is already created and for which the
         # User entity needs to be tweaked.
         self.for_me.model_create_user = True
+        self.for_me.model_create_group = True
 
         # application level password salt that will get joined with the random
         # salt of the record when hashing the password.  Use a random string of
