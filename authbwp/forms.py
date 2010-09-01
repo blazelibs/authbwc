@@ -160,15 +160,16 @@ class UserProfileForm(UserFormBase):
         self.add_submit_buttons()
 
 class Group(Form):
+    def add_name_field(self):
+        self.add_text('name', 'Group Name', required=True)
 
-    def init(self):
-        el = self.add_text('name', 'Group Name', required=True)
-
+    def add_user_membership_section(self):
         el = self.add_header('group_membership_header', 'Users In Group')
 
         user_opts = orm_User.pairs('id:login_id', orm_User.login_id)
         el = self.add_mselect('assigned_users', user_opts, 'Assign')
 
+    def add_group_permissions_section(self):
         el = self.add_header('group_permissions_header', 'Group Permissions')
 
         perm_opts = orm_Permission.pairs('id:name', orm_Permission.name)
@@ -176,10 +177,17 @@ class Group(Form):
 
         el = self.add_mselect('denied_permissions', perm_opts, 'Denied')
 
+    def add_submit_buttons(self):
         self.add_header('submit-fields-header', '')
         sg = self.add_elgroup('submit-group', class_='submit-only')
         el = sg.add_submit('submit')
         el = sg.add_cancel('cancel')
+
+    def init(self):
+        self.add_name_field()
+        self.add_user_membership_section()
+        self.add_group_permissions_section()
+        self.add_submit_buttons()
 
         self.add_validator(self.validate_perms)
 

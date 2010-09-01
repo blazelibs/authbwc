@@ -46,7 +46,7 @@ class UserCrud(CrudBase):
         CrudBase.form_assign(self, formcls)
         self.form.is_add = (self.action == self.ADD)
         self.form.init()
-        self.form_assign_defaults
+        self.form_assign_defaults()
 
     def form_assign_defaults(self):
         if self.action == self.EDIT:
