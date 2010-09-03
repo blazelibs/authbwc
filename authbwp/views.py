@@ -79,7 +79,7 @@ class UserCrud(CrudBase):
         dg = DataGrid(
             db.sess.execute,
             per_page=30,
-            class_='dataTable manage'
+            class_='datagrid'
             )
         dg.add_col(
             'id',
@@ -353,7 +353,7 @@ class GroupCrud(CrudBase):
         dg = DataGrid(
             db.sess.execute,
             per_page=30,
-            class_='dataTable manage'
+            class_='datagrid'
             )
         dg.add_col(
             'id',
@@ -391,7 +391,7 @@ class PermissionCrud(CrudBase):
         dg = DataGrid(
             db.sess.execute,
             per_page=30,
-            class_='dataTable manage'
+            class_='datagrid'
             )
         dg.add_col(
             'id',
