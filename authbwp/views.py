@@ -66,15 +66,15 @@ class UserCrud(CrudBase):
 
         CrudBase.form_when_completed(self)
 
+    def _display_name(self, user):
+        retval = '%s %s' % (user[orm_User.__table__.c.name_first] or '', user[orm_User.__table__.c.name_last] or '')
+        return retval.strip()
+
     def manage_init_grid(self):
         def determine_inactive(user):
             if user[orm_User.__table__.c.inactive_flag] or (user[orm_User.__table__.c.inactive_date] and user[orm_User.__table__.c.inactive_date] < datetime.datetime.now()):
                 return True
             return False
-
-        def display_name(user):
-            retval = '%s %s' % (user[orm_User.__table__.c.name_first] or '', user[orm_User.__table__.c.name_last] or '')
-            return retval.strip()
 
         dg = DataGrid(
             db.sess.execute,
@@ -122,7 +122,7 @@ class UserCrud(CrudBase):
         )
         dg.add_tablecol(
             Col('Name',
-                extractor=display_name
+                extractor=self._display_name
             ),
             orm_User.name_first,
             filter_on=True,
