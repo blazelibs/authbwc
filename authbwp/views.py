@@ -26,7 +26,8 @@ class UserCrud(CrudBase):
         self.require_all = 'auth-manage'
         self.form_auto_init = False
 
-    def auth_pre(self, objid=None):
+    def auth_calculate(self, objid=None):
+        CrudBase.auth_calculate(self, objid=objid)
         # prevent non-super users from editing super users
         if objid and session_user.is_authenticated:
             sess_user_obj = orm_User.get(session_user.id)
