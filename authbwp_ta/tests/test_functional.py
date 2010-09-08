@@ -387,6 +387,11 @@ class TestUserViews(object):
         assert len(tt.dump()) == 0
         minimock.restore()
 
+    def test_super_edit_forbidden(self):
+        u = create_user_with_permissions(super_user=True)
+        r = self.c.get('users/edit/%s'%u.id)
+        assert r.status_code == 403, r.status
+
 class TestUserProfileView(object):
 
     @classmethod
