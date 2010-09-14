@@ -1,4 +1,5 @@
 from blazeutils.helpers import tolist
+from blazeutils.strings import randchars
 from blazeweb.globals import settings
 from savalidation import validators as val
 from sqlalchemy import Column, Unicode
@@ -38,3 +39,6 @@ class Permission(Base, DefaultMixin):
     def __repr__(self):
         return '<Permission: "%s">' % self.name
 
+    @classmethod
+    def test_create(cls):
+        return cls.add(name=randchars())

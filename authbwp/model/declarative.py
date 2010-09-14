@@ -276,6 +276,12 @@ class UserMixin(DefaultMixin):
                 retval[row['permission_id']]['approved'].append({'name':row['group_name'], 'id':row['group_id']})
         return retval
 
+    @classmethod
+    def test_create(cls):
+        login_id = randchars()
+        email_address = '%s@example.com' % login_id
+        return cls.add(login_id=login_id, email_address=email_address)
+
 class GroupMixin(DefaultMixin):
     name = Column(Unicode(150), nullable=False, index=True, unique=True)
 
@@ -381,3 +387,7 @@ class GroupMixin(DefaultMixin):
                 cdenied.append(permid)
 
         g.assign_permissions(capproved, cdenied)
+
+    @classmethod
+    def test_create(cls):
+        return cls.add(name=randchars())
