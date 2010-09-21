@@ -15,122 +15,14 @@ from plugstack.sqlalchemy.lib.columns import SmallIntBool
 from plugstack.sqlalchemy.lib.declarative import DefaultMixin
 from plugstack.sqlalchemy.lib.decorators import transaction, transaction_ncm
 
-class UserMixin(DefaultMixin):
-    login_id = Column(Unicode(150), nullable=False, unique=True)
-    email_address = Column(Unicode(150), nullable=False, unique=True)
-    pass_hash = Column(String(128), nullable=False)
-    pass_salt = Column(String(32), nullable=False)
-    reset_required = Column(SmallIntBool, server_default=text('1'), nullable=False)
-    super_user = Column(SmallIntBool, server_default=text('0'), nullable=False)
-    name_first = Column(Unicode(255))
-    name_last = Column(Unicode(255))
-    inactive_flag = Column(SmallIntBool, nullable=False, server_default=text('0'))
-    inactive_date = Column(DateTime)
-    pass_reset_ts = Column(DateTime)
-    pass_reset_key = Column(String(12))
-
+class AuthRelationsMixin(object):
+    """
+        This mixin provides methods and properties for a user-like entity
+        to be related to groups and permissions.
+    """
     @classproperty
     def groups(cls):
         return relation('Group', secondary='auth_user_group_map', backref='users', cascade='delete')
-
-    def __repr__(self):
-        return '<User "%s" : %s>' % (self.login_id, self.email_address)
-
-    def set_password(self, password, record_salt=None):
-        if password:
-            _, record_salt = self.calc_salt(record_salt)
-            self.pass_salt = record_salt
-            self.pass_hash = self.calc_pass_hash(password, record_salt)
-            self.text_password = password
-    password = property(None,set_password)
-
-    @property
-    def inactive(self):
-        if self.inactive_flag:
-            return True
-        if self.inactive_date and self.inactive_date < datetime.now():
-            return True
-        return False
-
-    @property
-    def name(self):
-        retval = '%s %s' % (self.name_first if self.name_first else '', self.name_last if self.name_last else '')
-        return retval.strip()
-
-    @property
-    def name_or_login(self):
-        if self.name:
-            return self.name
-        return self.login_id
-
-    @classmethod
-    def calc_salt(cls, record_salt=None):
-        record_salt = record_salt or randchars(32, 'all')
-        if settings.plugins.auth.password_salt:
-            full_salt = settings.plugins.auth.password_salt + record_salt
-            return full_salt, record_salt
-        return record_salt, record_salt
-
-    @classmethod
-    def calc_pass_hash(cls, password, record_salt=None):
-        full_salt, record_salt = cls.calc_salt(record_salt)
-        return sha512(password+full_salt).hexdigest()
-
-    @classmethod
-    def validate(cls, login_id, password):
-        """
-            Returns the user that matches login_id and password or None
-        """
-        u = cls.get_by(login_id = login_id)
-        if not u:
-            return
-        if u.validate_password(password):
-            return u
-
-    def validate_password(self, password):
-        return self.pass_hash == self.calc_pass_hash(password, self.pass_salt)
-
-    @transaction
-    def add(cls, **kwargs):
-        return cls.update(**kwargs)
-
-    @transaction
-    def edit(cls, oid=None, **kwargs):
-        if oid is None:
-            raise ValueError('the id must be given to edit the record')
-        return cls.update(oid, **kwargs)
-
-    @classmethod
-    def update(cls, oid=None, **kwargs):
-        from plugstack.auth.model.orm import Group
-        if oid is None:
-            u = cls()
-            db.sess.add(u)
-            # when creating a new user, if the password is not set, assign it as
-            # a random string assuming the email will get sent out to the user
-            # and they will change it when they login
-            if not kwargs.get('password', None):
-                kwargs['password'] = randchars(8)
-        else:
-            u = cls.get(oid)
-        # automatically turn on reset_password when the password get set manually
-        # (i.e. when an admin does it), unless told not to (when a user does it
-        # for their own account)
-        if kwargs.get('password') and kwargs.get('pass_reset_ok', True):
-            kwargs['reset_required'] = True
-
-        for k, v in kwargs.iteritems():
-            try:
-                # some values can not be set directly
-                if k not in ('pass_hash', 'pass_salt', 'assigned_groups', 'approved_permissions', 'denied_permissions'):
-                    setattr(u, k, v)
-            except AttributeError:
-                pass
-
-        u.groups = [Group.get(gid) for gid in tolist(kwargs.get('assigned_groups', []))]
-        db.sess.flush()
-        u.assign_permissions(kwargs.get('approved_permissions', []), kwargs.get('denied_permissions', []))
-        return u
 
     def assign_permissions(self, approved_perm_ids, denied_perm_ids):
         from plugstack.auth.model.metadata import user_permission_assignments as tbl_upa
@@ -150,31 +42,6 @@ class UserMixin(DefaultMixin):
         # do inserts
         if insval:
             db.sess.execute(tbl_upa.insert(), insval)
-
-    @transaction_ncm
-    def update_password(self, password):
-        self.password = password
-        self.reset_required = False
-
-    @transaction
-    def reset_password(cls, email_address):
-        u = cls.get_by_email(email_address)
-        if not u:
-            return False
-
-        u.pass_reset_key = randchars(12)
-        u.pass_reset_ts = datetime.utcnow()
-        return u
-
-    @transaction_ncm
-    def kill_reset_key(self):
-        self.pass_reset_key = None
-        self.pass_reset_ts = None
-
-    @classmethod
-    def get_by_email(cls, email_address):
-        # case-insensitive query
-        return db.sess.query(cls).filter(func.lower(cls.email_address)==func.lower(email_address)).first()
 
     @property
     def group_ids(self):
@@ -275,6 +142,147 @@ class UserMixin(DefaultMixin):
             elif row['group_approved'] >= 1:
                 retval[row['permission_id']]['approved'].append({'name':row['group_name'], 'id':row['group_id']})
         return retval
+
+class UserMixin(DefaultMixin, AuthRelationsMixin):
+    """
+        A mixin with common
+    """
+    login_id = Column(Unicode(150), nullable=False, unique=True)
+    email_address = Column(Unicode(150), nullable=False, unique=True)
+    pass_hash = Column(String(128), nullable=False)
+    pass_salt = Column(String(32), nullable=False)
+    reset_required = Column(SmallIntBool, server_default=text('1'), nullable=False)
+    super_user = Column(SmallIntBool, server_default=text('0'), nullable=False)
+    name_first = Column(Unicode(255))
+    name_last = Column(Unicode(255))
+    inactive_flag = Column(SmallIntBool, nullable=False, server_default=text('0'))
+    inactive_date = Column(DateTime)
+    pass_reset_ts = Column(DateTime)
+    pass_reset_key = Column(String(12))
+
+    def __repr__(self):
+        return '<User "%s" : %s>' % (self.login_id, self.email_address)
+
+    def set_password(self, password, record_salt=None):
+        if password:
+            _, record_salt = self.calc_salt(record_salt)
+            self.pass_salt = record_salt
+            self.pass_hash = self.calc_pass_hash(password, record_salt)
+            self.text_password = password
+    password = property(None,set_password)
+
+    @property
+    def inactive(self):
+        if self.inactive_flag:
+            return True
+        if self.inactive_date and self.inactive_date < datetime.now():
+            return True
+        return False
+
+    @property
+    def name(self):
+        retval = '%s %s' % (self.name_first if self.name_first else '', self.name_last if self.name_last else '')
+        return retval.strip()
+
+    @property
+    def name_or_login(self):
+        if self.name:
+            return self.name
+        return self.login_id
+
+    @classmethod
+    def calc_salt(cls, record_salt=None):
+        record_salt = record_salt or randchars(32, 'all')
+        if settings.plugins.auth.password_salt:
+            full_salt = settings.plugins.auth.password_salt + record_salt
+            return full_salt, record_salt
+        return record_salt, record_salt
+
+    @classmethod
+    def calc_pass_hash(cls, password, record_salt=None):
+        full_salt, record_salt = cls.calc_salt(record_salt)
+        return sha512(password+full_salt).hexdigest()
+
+    @classmethod
+    def validate(cls, login_id, password):
+        """
+            Returns the user that matches login_id and password or None
+        """
+        u = cls.get_by(login_id = login_id)
+        if not u:
+            return
+        if u.validate_password(password):
+            return u
+
+    def validate_password(self, password):
+        return self.pass_hash == self.calc_pass_hash(password, self.pass_salt)
+
+    @transaction
+    def add(cls, **kwargs):
+        return cls.update(**kwargs)
+
+    @transaction
+    def edit(cls, oid=None, **kwargs):
+        if oid is None:
+            raise ValueError('the id must be given to edit the record')
+        return cls.update(oid, **kwargs)
+
+    @classmethod
+    def update(cls, oid=None, **kwargs):
+        from plugstack.auth.model.orm import Group
+        if oid is None:
+            u = cls()
+            db.sess.add(u)
+            # when creating a new user, if the password is not set, assign it as
+            # a random string assuming the email will get sent out to the user
+            # and they will change it when they login
+            if not kwargs.get('password', None):
+                kwargs['password'] = randchars(8)
+        else:
+            u = cls.get(oid)
+        # automatically turn on reset_password when the password get set manually
+        # (i.e. when an admin does it), unless told not to (when a user does it
+        # for their own account)
+        if kwargs.get('password') and kwargs.get('pass_reset_ok', True):
+            kwargs['reset_required'] = True
+
+        for k, v in kwargs.iteritems():
+            try:
+                # some values can not be set directly
+                if k not in ('pass_hash', 'pass_salt', 'assigned_groups', 'approved_permissions', 'denied_permissions'):
+                    setattr(u, k, v)
+            except AttributeError:
+                pass
+
+        u.groups = [Group.get(gid) for gid in tolist(kwargs.get('assigned_groups', []))]
+        db.sess.flush()
+        u.assign_permissions(kwargs.get('approved_permissions', []), kwargs.get('denied_permissions', []))
+        return u
+
+    @transaction_ncm
+    def update_password(self, password):
+        self.password = password
+        self.reset_required = False
+
+    @transaction
+    def reset_password(cls, email_address):
+        u = cls.get_by_email(email_address)
+        if not u:
+            return False
+
+        u.pass_reset_key = randchars(12)
+        u.pass_reset_ts = datetime.utcnow()
+        return u
+
+    @transaction_ncm
+    def kill_reset_key(self):
+        self.pass_reset_key = None
+        self.pass_reset_ts = None
+
+    @classmethod
+    def get_by_email(cls, email_address):
+        # case-insensitive query
+        return db.sess.query(cls).filter(func.lower(cls.email_address)==func.lower(email_address)).first()
 
     @classmethod
     def test_create(cls):
