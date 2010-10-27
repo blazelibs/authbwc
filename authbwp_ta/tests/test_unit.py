@@ -156,7 +156,7 @@ def test_inactive_property():
     assert user.inactive
 
     user.inactive_flag = False
-    user.inactive_date = datetime.datetime(2010, 10, 10)
+    user.inactive_date = datetime.datetime(2050, 10, 10)
 
     assert not user.inactive
 
