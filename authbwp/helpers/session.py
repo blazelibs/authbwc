@@ -20,4 +20,4 @@ def load_session_user(user_obj):
     # now permissions
     for row in user_obj.permission_map:
         if row['resulting_approval'] or user_obj.super_user:
-            user.add_token(row['permission_name'])
+            user.add_perm(row['permission_name'])
