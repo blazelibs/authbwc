@@ -3,7 +3,7 @@ from blazeutils import tolist, randchars
 from blazeweb.testing import Client
 from werkzeug import BaseRequest, Client as WerkzeugClient
 
-from plugstack.sqlalchemy import db
+from compstack.sqlalchemy import db
 
 try:
     from webtest import TestApp
@@ -15,7 +15,7 @@ def login_client_with_permissions(client, approved_perms=None, denied_perms=None
         Creates a user with the given permissions and then logs in with said
         user.
     """
-    from plugstack.auth.lib.testing import create_user_with_permissions, login_client_as_user
+    from compstack.auth.lib.testing import create_user_with_permissions, login_client_as_user
 
     # create user
     user = create_user_with_permissions(approved_perms, denied_perms, super_user)
@@ -56,7 +56,7 @@ def login_client_as_user(client, username, password, validate_login_response=Tru
         raise TypeError('client is of an unexpected type: %s' % client.__class__)
 
 def create_user_with_permissions(approved_perms=None, denied_perms=None, super_user=False):
-    from plugstack.auth.model.orm import User, Permission
+    from compstack.auth.model.orm import User, Permission
 
     appr_perm_ids = []
     denied_perm_ids = []

@@ -5,9 +5,9 @@ from blazeweb.routing import url_for
 from formencode import Invalid
 from formencode.validators import FancyValidator, MaxLength, MinLength
 
-from plugstack.auth.helpers import validate_password_complexity, note_password_complexity
-from plugstack.auth.helpers.forms import Form
-from plugstack.auth.model.orm import User as orm_User, Group as orm_Group, Permission as orm_Permission
+from compstack.auth.helpers import validate_password_complexity, note_password_complexity
+from compstack.auth.helpers.forms import Form
+from compstack.auth.model.orm import User as orm_User, Group as orm_Group, Permission as orm_Permission
 
 class UserFormBase(Form):
     def add_name_fields(self):

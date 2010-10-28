@@ -1,7 +1,7 @@
 from blazeweb.tasks import attributes
 
-from plugstack.auth.helpers import add_administrative_user
-from plugstack.auth.model.orm import Permission
+from compstack.auth.helpers import add_administrative_user
+from compstack.auth.model.orm import Permission
 
 @attributes('base-data')
 def action_30_base_data():

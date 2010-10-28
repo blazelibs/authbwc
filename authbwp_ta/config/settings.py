@@ -18,10 +18,10 @@ class Default(DefaultSettings):
 
         self.init_routing()
 
-        self.add_plugin(app_package, 'sqlalchemy', 'sqlalchemybwp')
-        self.add_plugin(app_package, 'datagrid', 'datagridbwp')
-        self.add_plugin(app_package, 'auth', 'authbwp')
-        self.add_plugin(app_package, 'common', 'commonbwp')
+        self.add_component(app_package, 'sqlalchemy', 'sqlalchemybwp')
+        self.add_component(app_package, 'datagrid', 'datagridbwp')
+        self.add_component(app_package, 'auth', 'authbwp')
+        self.add_component(app_package, 'common', 'commonbwp')
 
     def init_routing(self):
         self.add_route('/', 'index.html')

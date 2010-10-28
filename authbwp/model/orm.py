@@ -5,22 +5,22 @@ from savalidation import validators as val
 from sqlalchemy import Column, Unicode
 from sqlalchemy.sql import select, and_
 
-from plugstack.auth.model.declarative import UserMixin, GroupMixin
-from plugstack.sqlalchemy import db
-from plugstack.sqlalchemy.lib.declarative import declarative_base, DefaultMixin
-from plugstack.sqlalchemy.lib.decorators import transaction
-from plugstack.sqlalchemy.lib.validators import validates_unique
+from compstack.auth.model.declarative import UserMixin, GroupMixin
+from compstack.sqlalchemy import db
+from compstack.sqlalchemy.lib.declarative import declarative_base, DefaultMixin
+from compstack.sqlalchemy.lib.decorators import transaction
+from compstack.sqlalchemy.lib.validators import validates_unique
 
 Base = declarative_base()
 
-if settings.plugins.auth.model_create_user:
+if settings.components.auth.model_create_user:
     class User(Base, UserMixin):
         __tablename__ = 'auth_users'
 
         val.validates_constraints()
         validates_unique('login_id','email_address')
 
-if settings.plugins.auth.model_create_group:
+if settings.components.auth.model_create_group:
     class Group(Base, GroupMixin):
         __tablename__ = 'auth_groups'
 

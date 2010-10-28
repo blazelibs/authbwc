@@ -5,7 +5,7 @@ version = '0.1dev'
 setup(
     name='AuthBWP',
     version=version,
-    description="An authentication and authorization plugin for the BlazeWeb framework",
+    description="An authentication and authorization component for the BlazeWeb framework",
     classifiers=[
     'Development Status :: 4 - Beta',
     'Intended Audience :: Developers',

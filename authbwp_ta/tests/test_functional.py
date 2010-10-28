@@ -8,10 +8,10 @@ from blazeweb.testing import Client
 from blazeutils import randchars
 from werkzeug import BaseResponse, BaseRequest
 
-from plugstack.auth.lib.testing import login_client_with_permissions, \
+from compstack.auth.lib.testing import login_client_with_permissions, \
     login_client_as_user, create_user_with_permissions
-from plugstack.auth.model.orm import User, Group, Permission
-from plugstack.sqlalchemy import db
+from compstack.auth.model.orm import User, Group, Permission
+from compstack.sqlalchemy import db
 
 class TestUserViews(object):
 
