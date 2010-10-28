@@ -2,11 +2,11 @@ from blazeweb.globals import settings, user
 from blazeweb.routing import current_url
 
 def after_login_url():
-    if settings.plugins.auth.after_login_url:
-        if callable(settings.plugins.auth.after_login_url):
-            return settings.plugins.auth.after_login_url()
+    if settings.components.auth.after_login_url:
+        if callable(settings.components.auth.after_login_url):
+            return settings.components.auth.after_login_url()
         else:
-            return settings.plugins.auth.after_login_url
+            return settings.components.auth.after_login_url
     return current_url(root_only=True)
 
 def load_session_user(user_obj):

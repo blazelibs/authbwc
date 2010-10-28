@@ -29,7 +29,7 @@ def send_email_or_log_error(email):
     try:
         email.send()
     except Exception, e:
-        log.error('Exception while sending email in auth plugin: %s' % str(e))
+        log.error('Exception while sending email in auth component: %s' % str(e))
         mail_programmers('%s - email send error' % settings.name.short, exception_with_context(), fail_silently=True)
         return False
     return True

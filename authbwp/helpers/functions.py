@@ -1,11 +1,11 @@
 from blazeweb.globals import settings
 
-from plugstack.auth.model.orm import User
+from compstack.auth.model.orm import User
 
 def add_administrative_user(allow_profile_defaults=True):
     from getpass import getpass
 
-    defaults = settings.plugins.auth.admin
+    defaults = settings.components.auth.admin
     # add a default administrative user
     if allow_profile_defaults and defaults.username and defaults.password and defaults.email:
         ulogin = defaults.username

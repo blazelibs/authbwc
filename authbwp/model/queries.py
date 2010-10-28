@@ -1,10 +1,10 @@
 from sqlalchemy.sql import select, and_, alias
 from sqlalchemy.sql.functions import sum
 from sqlalchemy.orm import outerjoin
-from plugstack.auth.model.orm import User, Group, Permission
-from plugstack.auth.model.metadata import group_permission_assignments as tbl_gpa
-from plugstack.auth.model.metadata import user_groups
-from plugstack.auth.model.metadata import user_permission_assignments as tbl_upa
+from compstack.auth.model.orm import User, Group, Permission
+from compstack.auth.model.metadata import group_permission_assignments as tbl_gpa
+from compstack.auth.model.metadata import user_groups
+from compstack.auth.model.metadata import user_permission_assignments as tbl_upa
 
 def query_denied_group_permissions():
     return  select(

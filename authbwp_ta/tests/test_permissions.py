@@ -1,7 +1,7 @@
 from blazeweb.globals import ag
 from werkzeug import Client, BaseResponse, BaseRequest
-from plugstack.auth.lib.testing import login_client_with_permissions, create_user_with_permissions
-from plugstack.auth.model.orm import Group, Permission
+from compstack.auth.lib.testing import login_client_with_permissions, create_user_with_permissions
+from compstack.auth.model.orm import Group, Permission
 
 class TestNotAuthenticated(object):
 

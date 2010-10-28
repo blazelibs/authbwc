@@ -10,10 +10,10 @@ from sqlalchemy.sql import select, and_, alias, or_, func, text
 from sqlalchemy.sql.functions import sum
 from sqlalchemy.util import classproperty
 
-from plugstack.sqlalchemy import db
-from plugstack.sqlalchemy.lib.columns import SmallIntBool
-from plugstack.sqlalchemy.lib.declarative import DefaultMixin
-from plugstack.sqlalchemy.lib.decorators import transaction, transaction_ncm
+from compstack.sqlalchemy import db
+from compstack.sqlalchemy.lib.columns import SmallIntBool
+from compstack.sqlalchemy.lib.declarative import DefaultMixin
+from compstack.sqlalchemy.lib.decorators import transaction, transaction_ncm
 
 class AuthRelationsMixin(object):
     """
@@ -25,7 +25,7 @@ class AuthRelationsMixin(object):
         return relation('Group', secondary='auth_user_group_map', backref='users', cascade='delete')
 
     def assign_permissions(self, approved_perm_ids, denied_perm_ids):
-        from plugstack.auth.model.metadata import user_permission_assignments as tbl_upa
+        from compstack.auth.model.metadata import user_permission_assignments as tbl_upa
         insval = []
 
         # delete existing permission assignments for this user (i.e. we start over)
@@ -45,12 +45,12 @@ class AuthRelationsMixin(object):
 
     @property
     def group_ids(self):
-        from plugstack.auth.model.orm import Group
+        from compstack.auth.model.orm import Group
         return [g.id for g in db.sess.query(Group).filter(Group.users.any(id=self.id)).all()]
 
     @property
     def assigned_permission_ids(self):
-        from plugstack.auth.model.metadata import user_permission_assignments as tbl_upa
+        from compstack.auth.model.metadata import user_permission_assignments as tbl_upa
         s = select(
             [tbl_upa.c.permission_id],
             and_(tbl_upa.c.user_id==self.id, tbl_upa.c.approved == 1)
@@ -66,7 +66,7 @@ class AuthRelationsMixin(object):
 
     @classmethod
     def get_by_permissions(cls, permissions):
-        from plugstack.auth.model.queries import query_users_permissions
+        from compstack.auth.model.queries import query_users_permissions
         vuserperms = query_users_permissions().alias()
         return db.sess.query(cls).select_from(
             join(cls, vuserperms, cls.id == vuserperms.c.user_id)
@@ -88,7 +88,7 @@ class AuthRelationsMixin(object):
 
     @property
     def permission_map(self):
-        from plugstack.auth.model.queries import query_users_permissions
+        from compstack.auth.model.queries import query_users_permissions
         user_perm = query_users_permissions().alias()
         s = select([user_perm.c.user_id,
                     user_perm.c.permission_id,
@@ -125,7 +125,7 @@ class AuthRelationsMixin(object):
 
     @property
     def permission_map_groups(self):
-        from plugstack.auth.model.queries import query_user_group_permissions
+        from compstack.auth.model.queries import query_user_group_permissions
         user_group_perm = query_user_group_permissions().alias()
         s = select([user_group_perm.c.permission_id,
                     user_group_perm.c.group_name,
@@ -193,8 +193,8 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
     @classmethod
     def calc_salt(cls, record_salt=None):
         record_salt = record_salt or randchars(32, 'all')
-        if settings.plugins.auth.password_salt:
-            full_salt = settings.plugins.auth.password_salt + record_salt
+        if settings.components.auth.password_salt:
+            full_salt = settings.components.auth.password_salt + record_salt
             return full_salt, record_salt
         return record_salt, record_salt
 
@@ -229,7 +229,7 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
 
     @classmethod
     def update(cls, oid=None, **kwargs):
-        from plugstack.auth.model.orm import Group
+        from compstack.auth.model.orm import Group
         if oid is None:
             u = cls()
             db.sess.add(u)
@@ -310,7 +310,7 @@ class GroupMixin(DefaultMixin):
 
     @classmethod
     def update(cls, oid=None, **kwargs):
-        from plugstack.auth.model.orm import User
+        from compstack.auth.model.orm import User
         if oid is None:
             g = cls()
             db.sess.add(g)
@@ -333,7 +333,7 @@ class GroupMixin(DefaultMixin):
         return g
 
     def assign_permissions(self, approved_perm_ids, denied_perm_ids):
-        from plugstack.auth.model.metadata import group_permission_assignments as tbl_gpa
+        from compstack.auth.model.metadata import group_permission_assignments as tbl_gpa
         insval = []
 
         # delete existing permission assignments for this group (i.e. we start over)
@@ -356,7 +356,7 @@ class GroupMixin(DefaultMixin):
     @transaction
     def assign_permissions_by_name(cls, group_name, approved_perm_list=[], denied_perm_list=[]):
         # Note: this function is a wrapper for assign_permissions and will commit db trans
-        from plugstack.auth.model.orm import Permission
+        from compstack.auth.model.orm import Permission
         group = cls.get_by(name=unicode(group_name))
         approved_perm_ids = [item.id for item in [Permission.get_by(name=unicode(perm)) for perm in tolist(approved_perm_list)]]
         denied_perm_ids = [item.id for item in [Permission.get_by(name=unicode(perm)) for perm in tolist(denied_perm_list)]]
@@ -364,12 +364,12 @@ class GroupMixin(DefaultMixin):
 
     @property
     def user_ids(self):
-        from plugstack.auth.model.orm import User
+        from compstack.auth.model.orm import User
         return [u.id for u in db.sess.query(User).filter(User.groups.any(id=self.id)).all()]
 
     @property
     def assigned_permission_ids(self):
-        from plugstack.auth.model.metadata import group_permission_assignments as tbl_gpa
+        from compstack.auth.model.metadata import group_permission_assignments as tbl_gpa
         s = select(
             [tbl_gpa.c.permission_id],
             and_(tbl_gpa.c.group_id==self.id, tbl_gpa.c.approved == 1)

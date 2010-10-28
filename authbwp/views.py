@@ -6,15 +6,15 @@ from blazeweb.routing import url_for, current_url
 from blazeweb.utils import redirect, abort
 from blazeweb.views import View, SecureView
 from werkzeug.exceptions import NotFound
-from plugstack.auth.forms import ChangePasswordForm, NewPasswordForm, \
+from compstack.auth.forms import ChangePasswordForm, NewPasswordForm, \
     LostPasswordForm, LoginForm, UserProfileForm, User as UserForm, Group as GroupForm, \
     Permission as PermissionForm
-from plugstack.auth.helpers import after_login_url, load_session_user, send_new_user_email, \
+from compstack.auth.helpers import after_login_url, load_session_user, send_new_user_email, \
     send_change_password_email, send_reset_password_email
-from plugstack.auth.model.orm import User as orm_User, Group as orm_Group, Permission as orm_Permission
-from plugstack.common.lib.views import CrudBase, FormMixin
-from plugstack.datagrid.lib import DataGrid, Col, YesNo, Link
-from plugstack.sqlalchemy import db
+from compstack.auth.model.orm import User as orm_User, Group as orm_Group, Permission as orm_Permission
+from compstack.common.lib.views import CrudBase, FormMixin
+from compstack.datagrid.lib import DataGrid, Col, YesNo, Link
+from compstack.sqlalchemy import db
 
 _modname = 'auth'
 
@@ -194,7 +194,7 @@ class ResetPassword(View):
             self.abort()
         if key != user.pass_reset_key:
             self.abort()
-        expires_on = user.pass_reset_ts + datetime.timedelta(hours=settings.plugins.auth.password_rest_expires_after)
+        expires_on = user.pass_reset_ts + datetime.timedelta(hours=settings.components.auth.password_rest_expires_after)
         if datetime.datetime.utcnow() > expires_on:
             self.abort('password reset link expired')
 

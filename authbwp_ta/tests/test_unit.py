@@ -9,12 +9,12 @@ from blazeutils import randchars
 from datagridbwp_ta.tests._supporting import assertEqualSQL
 from nose.tools import nottest
 
-from plugstack.auth.lib.testing import create_user_with_permissions
-from plugstack.auth.model.queries import query_denied_group_permissions, \
+from compstack.auth.lib.testing import create_user_with_permissions
+from compstack.auth.model.queries import query_denied_group_permissions, \
     query_approved_group_permissions, query_user_group_permissions, \
     query_users_permissions
-from plugstack.auth.model.orm import User, Group, Permission
-from plugstack.sqlalchemy import db
+from compstack.auth.model.orm import User, Group, Permission
+from compstack.sqlalchemy import db
 
 def test_group_unique():
     g1 = Group.add_iu(name=u'test unique group name')
@@ -79,13 +79,13 @@ def test_password_hashing():
 
     # now make sure the application salt will be taken into account if set
     try:
-        settings.plugins.auth.password_salt = '123456'
+        settings.components.auth.password_salt = '123456'
         u.set_password('foobar', 'mysalt')
         assert oldsalt == u.pass_salt, u.pass_salt
         # hash is different b/c of the application salt
         assert oldhash != u.pass_hash
     finally:
-        settings.plugins.auth.password_salt = None
+        settings.components.auth.password_salt = None
 
 def test_password_validate():
     u = create_user_with_permissions()

@@ -1,6 +1,6 @@
 from savalidation import ValidationError
 
-from plugstack.common.lib.forms import Form as CommonForm
+from compstack.common.lib.forms import Form as CommonForm
 
 class Form(CommonForm):
     def __init__(self, name=None, **kwargs):

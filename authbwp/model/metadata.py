@@ -1,8 +1,8 @@
 from blazeweb.globals import settings
 from sqlalchemy import Table, Column, ForeignKey, CheckConstraint, Index, Integer
 
-from plugstack.auth.model.orm import User, Group
-from plugstack.sqlalchemy import db
+from compstack.auth.model.orm import User, Group
+from compstack.sqlalchemy import db
 
 __all__ = ['group_permission_assignments', 'user_permission_assignments']
 
