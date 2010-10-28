@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 version = '0.1dev'
 
 setup(
-    name='AuthBWP',
+    name='AuthBWC',
     version=version,
     description="An authentication and authorization component for the BlazeWeb framework",
     classifiers=[
@@ -19,7 +19,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'CommonBWP>=0.1dev',
-        'DataGridBWP>=0.1dev',
+        'CommonBWC>=0.1dev',
+        'DataGridBWC>=0.1dev',
     ],
 )

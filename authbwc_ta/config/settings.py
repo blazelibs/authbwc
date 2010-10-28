@@ -13,15 +13,15 @@ class Default(DefaultSettings):
 
         self.supporting_apps.append('basebwa')
 
-        self.name.full = 'AuthBWP Test App'
-        self.name.short = 'authbwp_ta'
+        self.name.full = 'authbwc Test App'
+        self.name.short = 'authbwc_ta'
 
         self.init_routing()
 
-        self.add_component(app_package, 'sqlalchemy', 'sqlalchemybwp')
-        self.add_component(app_package, 'datagrid', 'datagridbwp')
-        self.add_component(app_package, 'auth', 'authbwp')
-        self.add_component(app_package, 'common', 'commonbwp')
+        self.add_component(app_package, 'sqlalchemy', 'sqlalchemybwc')
+        self.add_component(app_package, 'datagrid', 'datagridbwc')
+        self.add_component(app_package, 'auth', 'authbwc')
+        self.add_component(app_package, 'common', 'commonbwc')
 
     def init_routing(self):
         self.add_route('/', 'index.html')

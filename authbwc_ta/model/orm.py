@@ -1,8 +1,8 @@
 #import sqlalchemy as sa
 #
-#from sqlalchemybwp import db
-#from sqlalchemybwp.lib.declarative import declarative_base
-#from sqlalchemybwp.lib.decorators import ignore_unique, transaction
+#from sqlalchemybwc import db
+#from sqlalchemybwc.lib.declarative import declarative_base
+#from sqlalchemybwc.lib.decorators import ignore_unique, transaction
 #
 #Base = declarative_base(metadata=db.meta)
 #
