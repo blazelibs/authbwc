@@ -1,8 +1,10 @@
 import paste.fixture
 from blazeutils import tolist, randchars
+from blazeweb.globals import settings
 from blazeweb.testing import Client
 from werkzeug import BaseRequest, Client as WerkzeugClient
 
+from compstack.auth.helpers import after_login_url
 from compstack.sqlalchemy import db
 
 try:
@@ -43,13 +45,13 @@ def login_client_as_user(client, username, password, validate_login_response=Tru
         if validate_login_response:
             assert resp.status_code == 200, resp.status
             assert 'You logged in successfully!' in resp.data, resp.data[0:500]
-            assert req.url == 'http://localhost/'
+            assert req.url.endswith(after_login_url()), '%s != %s' % (req.url, after_login_url())
         return req, resp
     elif isinstance(client, (paste.fixture.TestApp, TestApp)):
         res = client.post('/users/login', params=topost)
         res = res.follow()
         if validate_login_response:
-            assert res.request.url == '/' or res.request.url == 'http://localhost/', res.request.url
+            assert res.request.url.endswith(after_login_url()), '%s != %s' % (res.request.url, after_login_url())
             res.mustcontain('You logged in successfully!')
         return res
     else:

@@ -7,7 +7,7 @@ def after_login_url():
             return settings.components.auth.after_login_url()
         else:
             return settings.components.auth.after_login_url
-    return current_url(root_only=True)
+    return '/'
 
 def load_session_user(user_obj):
     user.id = user_obj.id
