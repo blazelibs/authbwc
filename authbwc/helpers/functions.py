@@ -26,13 +26,13 @@ def add_administrative_user(allow_profile_defaults=True):
         super_user = True
         )
 
-def add_user(login_id, email, password=None, super_user=True, send_email=True):
+def add_user(login_id, email, password=None, super_user=False, send_email=True):
     """
         Creates a new user and optionally sends out the welcome email
     """
     from compstack.auth.model.orm import User
     from compstack.auth.helpers import send_new_user_email
-    
+
     u = User.add(
         login_id = login_id,
         email_address = email,
