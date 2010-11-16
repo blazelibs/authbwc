@@ -40,7 +40,7 @@ setup(
     ],
     author='Randy Syring',
     author_email='rsyring@gmail.com',
-    url='',
+    url='http://bitbucket.org/rsyring/authbwc/',
     license='BSD',
     packages=find_packages(exclude=['ez_setup']),
     include_package_data=True,
