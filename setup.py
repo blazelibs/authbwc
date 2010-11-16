@@ -42,7 +42,7 @@ setup(
     author_email='rsyring@gmail.com',
     url='http://bitbucket.org/rsyring/authbwc/',
     license='BSD',
-    packages=find_packages(exclude=['ez_setup']),
+    packages=find_packages(exclude=['authbwc_*']),
     include_package_data=True,
     zip_safe=False,
     install_requires=[
