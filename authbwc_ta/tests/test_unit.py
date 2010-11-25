@@ -7,8 +7,9 @@ from blazeweb.globals import settings
 from blazeweb.testing import inrequest
 from blazeutils import randchars
 from datagridbwc_ta.tests._supporting import assertEqualSQL
-from nose.tools import nottest
+from nose.tools import nottest, eq_
 
+from compstack.auth.helpers import after_login_url
 from compstack.auth.lib.testing import create_user_with_permissions
 from compstack.auth.model.queries import query_denied_group_permissions, \
     query_approved_group_permissions, query_user_group_permissions, \
@@ -235,3 +236,21 @@ class TestPermissions(object):
         perm_map = User.get(self.user.id).permission_map
         for rec in perm_map:
             assert rec['resulting_approval'] == (rec['permission_name'] in permissions_approved)
+
+class TestAfterLoginUrl(object):
+    def test_no_settings(self):
+        settings.components.auth.after_login_url = None
+        eq_('/', after_login_url())
+
+    def test_with_function(self):
+        settings.components.auth.after_login_url = lambda: '/foobar'
+        eq_('/foobar', after_login_url())
+
+    def test_with_string(self):
+        settings.components.auth.after_login_url = '/foobar'
+        eq_('/foobar', after_login_url())
+
+    @inrequest('/thepage', 'http://example.com/script')
+    def test_with_script_name(self):
+        settings.components.auth.after_login_url = 'foobar'
+        eq_('/script/foobar', after_login_url())
