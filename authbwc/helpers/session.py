@@ -1,13 +1,15 @@
 from blazeweb.globals import settings, user
-from blazeweb.routing import current_url
+from blazeweb.routing import prefix_relative_url
 
 def after_login_url():
     if settings.components.auth.after_login_url:
         if callable(settings.components.auth.after_login_url):
-            return settings.components.auth.after_login_url()
+            url = settings.components.auth.after_login_url()
         else:
-            return settings.components.auth.after_login_url
-    return '/'
+            url = settings.components.auth.after_login_url
+    else:
+        url = ''
+    return prefix_relative_url(url)
 
 def load_session_user(user_obj):
     user.id = user_obj.id

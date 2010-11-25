@@ -48,5 +48,6 @@ setup(
     install_requires=[
         'CommonBWC>=0.1.0',
         'DataGridBWC>=0.1.0',
+        'BlazeWeb>=0.3.1',
     ],
 )
