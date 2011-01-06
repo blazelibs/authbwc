@@ -12,6 +12,8 @@ def after_login_url():
     return prefix_relative_url(url)
 
 def load_session_user(user_obj):
+    user.clear()
+
     user.id = user_obj.id
     user.login_id = user_obj.login_id
     user.display_name = user_obj.name_or_login
