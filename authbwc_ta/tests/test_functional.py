@@ -4,7 +4,7 @@ import re
 
 import minimock
 from blazeweb.globals import ag
-from blazeweb.testing import Client
+from blazeweb.testing import Client, TestApp
 from blazeutils import randchars
 from werkzeug import BaseResponse, BaseRequest
 
@@ -618,6 +618,21 @@ class TestUserLogins(object):
         assert 'That user is inactive.' in resp.data
         assert req.url == 'http://localhost/users/login'
 
+    def test_cleared_login(self):
+        super_user = create_user_with_permissions(super_user=True)
+        ta = TestApp(ag.wsgi_test_app)
+        topost = {'login_id': super_user.login_id,
+              'password': super_user.text_password,
+              'login-form-submit-flag':'1'}
+        r = ta.post('/users/login', topost)
+        assert 'auth-manage' in r.user.perms
+
+        user = create_user_with_permissions()
+        topost = {'login_id': user.login_id,
+              'password': user.text_password,
+              'login-form-submit-flag':'1'}
+        r = ta.post('/users/login', topost)
+        assert len(r.user.perms) == 0
 
 class TestRecoverPassword(object):
 
