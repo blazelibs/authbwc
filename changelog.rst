@@ -2,6 +2,15 @@
 Change Log
 ===========
 
+0.1.4 released 2011-01-07
+--------------------------
+
+* SECURITY FIX: fixed an issue with the way the HTTP session user permissions
+    were loaded.  This vulnerability made it possible for a user to gain the
+    permissions of the user logged in previously.  The user would have had
+    to be sharing the same http session for this access to have been
+    gained.
+
 0.1.3 released 2010-11-24
 --------------------------
 
