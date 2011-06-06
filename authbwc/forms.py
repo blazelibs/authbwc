@@ -6,8 +6,8 @@ from formencode import Invalid
 from formencode.validators import FancyValidator, MaxLength, MinLength
 
 from compstack.auth.helpers import validate_password_complexity, note_password_complexity
-from compstack.auth.helpers.forms import Form
 from compstack.auth.model.orm import User as orm_User, Group as orm_Group, Permission as orm_Permission
+from compstack.common.lib.forms import Form
 
 class UserFormBase(Form):
     def add_name_fields(self):
@@ -128,7 +128,7 @@ class UserFormBase(Form):
                 errors['email_address'].remove(err)
                 break
 
-        Form.add_field_errors(self, errors)
+        return Form.add_field_errors(self, errors)
 
 class User(UserFormBase):
     def init(self):
