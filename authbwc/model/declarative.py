@@ -86,8 +86,8 @@ class AuthRelationsMixin(object):
             vuserperms.c.permission_name.in_(tolist(permissions))
         ).all()
 
-    @property
-    def permission_map(self):
+    @classmethod
+    def cm_permission_map(cls, uid):
         from compstack.auth.model.queries import query_users_permissions
         user_perm = query_users_permissions().alias()
         s = select([user_perm.c.user_id,
@@ -97,7 +97,7 @@ class AuthRelationsMixin(object):
                     user_perm.c.user_approved,
                     user_perm.c.group_approved,
                     user_perm.c.group_denied,],
-                from_obj=user_perm).where(user_perm.c.user_id==self.id)
+                from_obj=user_perm).where(user_perm.c.user_id==uid)
         results = db.sess.execute(s)
         retval = []
         for row in results:
@@ -122,6 +122,10 @@ class AuthRelationsMixin(object):
             nrow[u'resulting_approval'] = approved
             retval.append(nrow)
         return retval
+
+    @property
+    def permission_map(self):
+        return self.__class__.cm_permission_map(self.id)
 
     @property
     def permission_map_groups(self):
@@ -282,7 +286,62 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
     @classmethod
     def get_by_email(cls, email_address):
         # case-insensitive query
-        return db.sess.query(cls).filter(func.lower(cls.email_address)==func.lower(email_address)).first()
+        return db.sess.query(cls) \
+            .filter(func.lower(cls.email_address)==func.lower(email_address)) \
+            .first()
+
+    @classmethod
+    def cm_permission_dict(cls, uid, su_override=True):
+        """
+            returns a dictionary that has the permission name as the key and
+            the resulting approval, for the user with the given user_id `uid`
+            as the value.
+
+            Example return:
+                { 'approved-perm-name': True, 'denied-perm-name': False }
+
+            kwargs:
+                `su_override`: if user is a super user, show all perms as approved;
+                    default: True
+        """
+        retval = {}
+        user_is_super = False
+        if su_override:
+            user_is_super = bool(db.sess.query(cls.super_user).filter_by(id=uid).scalar())
+        for pmap in cls.cm_permission_map(uid):
+            retval[pmap['permission_name']] = user_is_super or pmap['resulting_approval']
+        return retval
+        u = cls.get(uid)
+        return u.permission_dict()
+
+    def permission_dict(self, su_override=True):
+        """
+            same as cm_perm_dict() for the current instance
+        """
+        return self.__class__.cm_permission_dict(self.id, su_override=su_override)
+
+    @classmethod
+    def cm_has_permission(cls, uid, *perms, **kwargs):
+        """
+            Return True if the user has all permiss names given, False otherwise
+
+            kwargs:
+                su_override: if user is a super user, show all perms as approved;
+                    default: True
+        """
+        su_override = kwargs.pop('su_override', True)
+        pdict = cls.cm_permission_dict(uid, su_override=su_override)
+        if not pdict:
+            return False
+        for pname in perms:
+            if pname not in pdict:
+                return False
+            if not pdict[pname]:
+                return False
+        return True
+
+    def has_permission(self, *perms, **kwargs):
+        return self.__class__.cm_has_permission(self.id, *perms, **kwargs)
 
     @classmethod
     def test_create(cls):
