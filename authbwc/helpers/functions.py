@@ -24,7 +24,9 @@ def add_administrative_user(allow_profile_defaults=True):
         login_id = unicode(ulogin),
         email_address = unicode(uemail),
         password = p1,
-        super_user = True
+        super_user = True,
+        reset_required = False,
+        pass_reset_ok = False,
         )
 
 def add_user(login_id, email, password=None, super_user=False, send_email=True):
