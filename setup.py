@@ -1,42 +1,26 @@
-"""
-Introduction
----------------
-
-AuthBWC is a component for `BlazeWeb <http://pypi.python.org/pypi/BlazeWeb/>`_
-applications.  It provides users, groups, permissions, related helpers
-and views.  Proper integration of this component will allow applications to have
-views that can only be accessed by certain users.
-
-Includes email notifications when an account is created as well as an email
-based password reset mechanism.
-
-Questions & Comments
----------------------
-
-Please visit: http://groups.google.com/group/blazelibs
-
-Current Status
----------------
-
-The code stays pretty stable, but the API may change in the future.
-
-The `AuthBWC tip <http://bitbucket.org/rsyring/authbwc/get/tip.zip#egg=authbwc-dev>`_
-is installable via `easy_install` with ``easy_install AuthBWC==dev``
-"""
-
+import os
 from setuptools import setup, find_packages
 
 from authbwc import VERSION
 
+cdir = os.path.abspath(os.path.dirname(__file__))
+README = open(os.path.join(cdir, 'readme.rst')).read()
+CHANGELOG = open(os.path.join(cdir, 'changelog.rst')).read()
+
 setup(
     name='AuthBWC',
     version=VERSION,
-    description="An authentication and authorization component for the BlazeWeb framework",
-    long_description=__doc__,
+    description="A user authentication and authorization component for the BlazeWeb framework",
+    long_description=README + '\n\n' + CHANGELOG,
     classifiers=[
-    'Development Status :: 4 - Beta',
-    'Intended Audience :: Developers',
-    'License :: OSI Approved :: BSD License',
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2.5',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Topic :: Internet :: WWW/HTTP'
     ],
     author='Randy Syring',
     author_email='rsyring@gmail.com',
@@ -49,5 +33,8 @@ setup(
         'CommonBWC>=0.1.0',
         'DataGridBWC>=0.1.0',
         'BlazeWeb>=0.3.1',
+        # need for control panel code.  This should go away eventually, see
+        # #5607.
+        'BaseBWA'
     ],
 )
