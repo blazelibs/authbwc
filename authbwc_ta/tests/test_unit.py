@@ -6,7 +6,6 @@ import smtplib
 from blazeweb.globals import settings
 from blazeweb.testing import inrequest
 from blazeutils import randchars
-from datagridbwc_ta.tests._supporting import assertEqualSQL
 from nose.tools import nottest, eq_
 
 from compstack.auth.helpers import after_login_url
