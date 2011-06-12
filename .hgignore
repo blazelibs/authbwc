@@ -5,3 +5,7 @@
 ^env$
 ^docs/_build
 [^/]+-stats\.txt$
+syntax: glob
+.coverage
+coverage.xml
+nosetests.xml
