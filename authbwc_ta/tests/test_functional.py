@@ -21,12 +21,32 @@ class TestUserViews(object):
         perms = [u'auth-manage', u'users-test1', u'users-test2']
         cls.userid = login_client_with_permissions(cls.c, perms)
 
-    def test_manage_paging(self):
+    def test_users_manage_paging(self):
         User.test_create()
         User.test_create()
 
         r = self.c.get('/users/manage?page=2&perpage=1')
         assert '<h2>Manage Users</h2>' in r.data
+
+    def test_groups_manage_paging(self):
+        Group.test_create()
+        Group.test_create()
+
+        r = self.c.get('/groups/manage?page=2&perpage=1')
+        assert '<h2>Manage Groups</h2>' in r.data
+
+    def test_permissions_manage_paging(self):
+        x = Permission.test_create()
+        y = Permission.test_create()
+
+        r = self.c.get('/permissions/manage?page=2&perpage=1')
+
+        db.sess.add(x)
+        db.sess.add(y)
+        Permission.delete(x.id)
+        Permission.delete(y.id)
+
+        assert '<h2>Manage Permissions</h2>' in r.data
 
     def test_required_fields(self):
         topost = {

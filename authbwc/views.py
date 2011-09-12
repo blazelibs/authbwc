@@ -355,6 +355,7 @@ class GroupCrud(CrudBase):
         dg = DataGrid(
             db.sess.execute,
             per_page=30,
+            def_sort=lambda q: q.order_by(orm_Group.id.asc()),
             class_='datagrid'
             )
         dg.add_col(
@@ -393,6 +394,7 @@ class PermissionCrud(CrudBase):
         dg = DataGrid(
             db.sess.execute,
             per_page=30,
+            def_sort=lambda q: q.order_by(orm_Permission.id.asc()),
             class_='datagrid'
             )
         dg.add_col(
