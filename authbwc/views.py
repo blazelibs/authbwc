@@ -80,6 +80,7 @@ class UserCrud(CrudBase):
         dg = DataGrid(
             db.sess.execute,
             per_page=30,
+            def_sort=lambda q: q.order_by(orm_User.id.asc()),
             class_='datagrid'
             )
         dg.add_col(

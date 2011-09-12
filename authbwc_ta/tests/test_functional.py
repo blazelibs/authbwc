@@ -21,6 +21,13 @@ class TestUserViews(object):
         perms = [u'auth-manage', u'users-test1', u'users-test2']
         cls.userid = login_client_with_permissions(cls.c, perms)
 
+    def test_manage_paging(self):
+        User.test_create()
+        User.test_create()
+
+        r = self.c.get('/users/manage?page=2&perpage=1')
+        assert '<h2>Manage Users</h2>' in r.data
+
     def test_required_fields(self):
         topost = {
           'user-submit-flag':'submitted'
