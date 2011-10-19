@@ -1,6 +1,11 @@
 Change Log
 ----------
 
+0.1.6 released 2011-10-19
+=========================
+
+* fix manage pages when used with MSSQL
+
 0.1.5 released 2011-06-11
 =========================
 
