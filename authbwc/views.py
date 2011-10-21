@@ -222,7 +222,7 @@ class ResetPassword(View):
         self.render_template()
 
     def get(self, login_id, key):
-        session_user.add_message('Notice', "Please choose a new password to complete the reset request.")
+        session_user.add_message('notice', "Please choose a new password to complete the reset request.")
         self.assign_form()
         self.render_template()
 
