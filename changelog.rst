@@ -1,10 +1,10 @@
 Change Log
 ----------
 
-0.1.7 released ??
+0.1.7 released 2011-10-31
 =========================
 
-* ??
+* fix user message css styling issue on password reset page
 
 0.1.6 released 2011-10-19
 =========================
