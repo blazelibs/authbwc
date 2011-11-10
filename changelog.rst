@@ -1,10 +1,10 @@
 Change Log
 ----------
 
-0.1.8 released ??
+0.1.8 released 2011-11-09
 =========================
 
-* ??
+* **BC BREAK**: change test_create() methods to testing_create()
 
 0.1.7 released 2011-10-31
 =========================
