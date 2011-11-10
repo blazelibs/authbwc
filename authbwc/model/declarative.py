@@ -344,7 +344,7 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
         return self.__class__.cm_has_permission(self.id, *perms, **kwargs)
 
     @classmethod
-    def test_create(cls):
+    def testing_create(cls):
         login_id = randchars()
         email_address = '%s@example.com' % login_id
         return cls.add(login_id=login_id, email_address=email_address)
@@ -456,5 +456,5 @@ class GroupMixin(DefaultMixin):
         g.assign_permissions(capproved, cdenied)
 
     @classmethod
-    def test_create(cls):
+    def testing_create(cls):
         return cls.add(name=randchars())

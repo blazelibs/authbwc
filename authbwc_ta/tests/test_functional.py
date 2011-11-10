@@ -22,22 +22,22 @@ class TestUserViews(object):
         cls.userid = login_client_with_permissions(cls.c, perms)
 
     def test_users_manage_paging(self):
-        User.test_create()
-        User.test_create()
+        User.testing_create()
+        User.testing_create()
 
         r = self.c.get('/users/manage?page=2&perpage=1')
         assert '<h2>Manage Users</h2>' in r.data
 
     def test_groups_manage_paging(self):
-        Group.test_create()
-        Group.test_create()
+        Group.testing_create()
+        Group.testing_create()
 
         r = self.c.get('/groups/manage?page=2&perpage=1')
         assert '<h2>Manage Groups</h2>' in r.data
 
     def test_permissions_manage_paging(self):
-        x = Permission.test_create()
-        y = Permission.test_create()
+        x = Permission.testing_create()
+        y = Permission.testing_create()
 
         r = self.c.get('/permissions/manage?page=2&perpage=1')
 

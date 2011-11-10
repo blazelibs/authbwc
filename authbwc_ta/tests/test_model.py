@@ -5,7 +5,7 @@ from authbwc.model.orm import User, Permission
 class TestUser(object):
 
     def test_permission_dict(self):
-        u = User.test_create()
+        u = User.testing_create()
         expect = {u'auth-manage': False, u'prof-test-2': False,
             u'ugp_approved': False, u'ugp_denied': False, u'users-test1': False,
             u'users-test2': False, u'prof-test-1': False}
@@ -25,7 +25,7 @@ class TestUser(object):
         eq_(u.permission_dict(su_override=False), expect)
 
     def test_has_perm(self):
-        u = User.test_create()
+        u = User.testing_create()
         p = Permission.get_by(name=u'auth-manage')
         p2 = Permission.get_by(name=u'prof-test-1')
         eq_(u.has_permission(u'auth-manage'), False)
