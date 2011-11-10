@@ -40,5 +40,5 @@ class Permission(Base, DefaultMixin):
         return '<Permission: "%s">' % self.name
 
     @classmethod
-    def test_create(cls):
+    def testing_create(cls):
         return cls.add(name=randchars())
