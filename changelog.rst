@@ -4,7 +4,7 @@ Change Log
 0.1.9 released ???
 =========================
 
-* ???
+* make User.testing_create() more robust
 
 0.1.8 released 2011-11-09
 =========================

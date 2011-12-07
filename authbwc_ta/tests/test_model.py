@@ -1,6 +1,8 @@
 from nose.tools import eq_
 
 from authbwc.model.orm import User, Permission
+from authbwc.model.metadata import user_permission_assignments as upa
+from compstack.sqlalchemy import db
 
 class TestUser(object):
 
@@ -51,3 +53,23 @@ class TestUser(object):
 
         # discount super user
         eq_(u.has_permission(u'ugp_denied', su_override=False), False)
+
+    def test_testing_create_args(self):
+        u = User.testing_create(loginid = u'foobar')
+        eq_(u.login_id, u'foobar')
+        eq_(u.email_address, u'foobar@example.com')
+        eq_(u.reset_required, False)
+
+    def test_testing_create_perms(self):
+        # approved perms
+        u = User.testing_create(approved_perms=[u'auth-manage', u'prof-test-1'])
+        eq_(u.has_permission(u'auth-manage', u'prof-test-1'), True)
+
+        # non-list usage
+        u = User.testing_create(approved_perms=u'auth-manage', denied_perms=u'prof-test-1')
+        eq_(u.has_permission(u'auth-manage'), True)
+        eq_(u.has_permission(u'prof-test-1'), False)
+
+        # make sure deny permission is there, not False above b/c its not mapped
+        perm_count = db.sess.query(upa.c.id).filter(upa.c.user_id == u.id).count()
+        eq_(perm_count, 2)

@@ -344,10 +344,47 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
         return self.__class__.cm_has_permission(self.id, *perms, **kwargs)
 
     @classmethod
-    def testing_create(cls):
-        login_id = randchars()
+    def testing_create(cls, loginid = None, approved_perms=[], denied_perms=[],
+                reset_required=False):
+        # use the hierarchy to find the Permission in case the app has changed
+        # it
+        from compstack.auth.model.orm import Permission
+
+        login_id = loginid or randchars()
         email_address = '%s@example.com' % login_id
-        return cls.add(login_id=login_id, email_address=email_address)
+        password = randchars(15)
+
+        appr_perm_ids = []
+        denied_perm_ids = []
+        # create the permissions
+        for perm in tolist(approved_perms):
+            p = Permission.get_by(name=perm)
+            if p is None:
+                raise ValueError('permission %s does not exist' % perm)
+            appr_perm_ids.append(p.id)
+        for perm in tolist(denied_perms):
+            p = Permission.get_by(name=perm)
+            if p is None:
+                raise ValueError('permission %s does not exist' % perm)
+            denied_perm_ids.append(p.id)
+
+        u = cls.add(
+            login_id=login_id,
+            email_address=email_address,
+            password = password,
+            reset_required = reset_required,
+            # don't let the update method set reset_required
+            pass_reset_ok = False,
+            approved_permissions = appr_perm_ids,
+            denied_permissions = denied_perm_ids,
+            # not quite sure why these are needed, they should default, but I
+            # ran into an issue when testing that would throw SAValidation
+            # errors up when I leave them out.
+            inactive_flag = False,
+            super_user = False,
+        )
+        u.text_password = password
+        return u
 
 class GroupMixin(DefaultMixin):
     name = Column(Unicode(150), nullable=False, index=True, unique=True)
