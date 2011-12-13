@@ -820,3 +820,45 @@ class TestPasswordResetRequired(object):
         req, resp = self.c.post('/users/profile', data=topost, follow_redirects=True)
         assert '/users/profile' in req.url
         assert '<h2>Change Password</h2>' not in resp.data, resp.data
+
+
+class TestPermissionMap(object):
+
+    @classmethod
+    def setup_class(cls):
+        cls.userid = User.testing_create().id
+        cls.tam = TestApp(ag.wsgi_test_app)
+        login_client_with_permissions(cls.tam, [u'auth-manage'])
+
+    def test_anonymous(self):
+        ta = TestApp(ag.wsgi_test_app)
+        ta.get('/users/permissions/{0}'.format(self.userid), status=401)
+
+    def test_unauthorized(self):
+        ta = TestApp(ag.wsgi_test_app)
+        login_client_with_permissions(ta)
+        ta.get('/users/permissions/{0}'.format(self.userid), status=403)
+
+    def test_page_load(self):
+        resp = self.tam.get('/users/permissions/{0}'.format(self.userid))
+        assert '<h1>Permissions for: ' in resp
+
+    def test_no_exc_with_group_permissions(self):
+        g = Group.testing_create()
+        ap = Permission.testing_create()
+        dp = Permission.testing_create()
+        g.assign_permissions([ap.id], [dp.id])
+        u = User.testing_create(groups=g)
+
+        resp = self.tam.get('/users/permissions/{0}'.format(u.id))
+        assert '<h1>Permissions for: ' in resp
+
+    def test_no_exc_with_user_permissions(self):
+        u = User.testing_create()
+        ap = Permission.testing_create()
+        dp = Permission.testing_create()
+        u.assign_permissions([ap.id], [dp.id])
+        db.sess.commit()
+
+        resp = self.tam.get('/users/permissions/{0}'.format(u.id))
+        assert '<h1>Permissions for: ' in resp
