@@ -22,7 +22,7 @@ class AuthRelationsMixin(object):
     """
     @classproperty
     def groups(cls):
-        return relation('Group', secondary='auth_user_group_map', backref='users', cascade='delete')
+        return relation('Group', secondary='auth_user_group_map')
 
     def assign_permissions(self, approved_perm_ids, denied_perm_ids):
         from compstack.auth.model.metadata import user_permission_assignments as tbl_upa
@@ -345,7 +345,7 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
 
     @classmethod
     def testing_create(cls, loginid = None, approved_perms=[], denied_perms=[],
-                reset_required=False):
+                reset_required=False, groups=[]):
         # use the hierarchy to find the Permission in case the app has changed
         # it
         from compstack.auth.model.orm import Permission
@@ -383,13 +383,17 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
             inactive_flag = False,
             super_user = False,
         )
+        u.groups.extend(tolist(groups))
+        db.sess.commit()
         u.text_password = password
         return u
 
 class GroupMixin(DefaultMixin):
     name = Column(Unicode(150), nullable=False, index=True, unique=True)
 
-    # 'users' relation defined as backref on the groups relation in User
+    @classproperty
+    def users(cls):
+        return relation('User', secondary='auth_user_group_map')
 
     def __repr__(self):
         return '<Group "%s">' % (self.name)

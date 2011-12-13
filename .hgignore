@@ -10,3 +10,4 @@ syntax: glob
 coverage.xml
 nosetests.xml
 *.komodo*
+authbwc_ta/config/site_settings.py

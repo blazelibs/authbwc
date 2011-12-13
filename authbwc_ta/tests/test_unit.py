@@ -135,19 +135,6 @@ def test_user_group_assignment():
     assert len(u.groups) == 1
     assert u.groups[0].id == g2.id
 
-def test_group_delete():
-    g1 = Group.add_iu(name=u'group_for_testing_%s'%randchars(15))
-    g2 = Group.add_iu(name=u'group_for_testing_%s'%randchars(15))
-
-    u = create_user_with_permissions()
-    User.edit(u.id, assigned_groups=[g1.id,g2.id])
-
-    ret = Group.delete(g1.id)
-    assert ret == True
-    assert len(g2.users) == 1
-    assert len(u.groups) == 1
-    assert u.groups[0].id == g2.id
-
 def test_inactive_property():
     user = create_user_with_permissions()
 

@@ -4,6 +4,8 @@ Change Log
 0.1.9 released ???
 =========================
 
+* MAJOR: fix bug that was causing groups to be deleted when a user is deleted.  Make
+    sure that you run the fix-group-fk task to shore up the DB constraints.
 * make User.testing_create() more robust
 
 0.1.8 released 2011-11-09
