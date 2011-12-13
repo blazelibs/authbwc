@@ -6,7 +6,17 @@ from authbwc.model.metadata import user_permission_assignments as upa, \
 from compstack.sqlalchemy import db
 
 class TestUser(object):
-    
+    @classmethod
+    def setup_class(self):
+        Permission.delete_all()
+        Permission.add(name=u'ugp_approved')
+        Permission.add(name=u'ugp_denied')
+        Permission.add(name=u'users-test1')
+        Permission.add(name=u'users-test2')
+        Permission.add(name=u'prof-test-1')
+        Permission.add(name=u'prof-test-2')
+        Permission.add(name=u'auth-manage')
+
     def setUp(self):
         User.delete_all()
         Group.delete_all()
