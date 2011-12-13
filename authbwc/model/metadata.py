@@ -34,6 +34,6 @@ Index('ix_auth_permission_assignments_users_1',
 
 # user <-> group table
 user_groups = Table('auth_user_group_map', db.meta,
-    Column('auth_user_id', Integer, ForeignKey(User.id, ondelete='cascade')),
-    Column('auth_group_id', Integer, ForeignKey(Group.id))
+    Column('auth_user_id', Integer, ForeignKey(User.id, name='fk_auth_ugmap_user_id', ondelete='cascade')),
+    Column('auth_group_id', Integer, ForeignKey(Group.id, name='fk_auth_ugmap_group_id', ondelete='cascade'))
 )

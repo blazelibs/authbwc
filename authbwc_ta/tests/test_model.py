@@ -1,10 +1,15 @@
 from nose.tools import eq_
 
-from authbwc.model.orm import User, Permission
-from authbwc.model.metadata import user_permission_assignments as upa
+from authbwc.model.orm import User, Permission, Group
+from authbwc.model.metadata import user_permission_assignments as upa, \
+    user_groups as tbl_ugm
 from compstack.sqlalchemy import db
 
 class TestUser(object):
+    
+    def setUp(self):
+        User.delete_all()
+        Group.delete_all()
 
     def test_permission_dict(self):
         u = User.testing_create()
@@ -73,3 +78,86 @@ class TestUser(object):
         # make sure deny permission is there, not False above b/c its not mapped
         perm_count = db.sess.query(upa.c.id).filter(upa.c.user_id == u.id).count()
         eq_(perm_count, 2)
+
+    def test_user_delete_doesnt_delete_group(self):
+        # create group and make sure count logic works
+        g1 = Group.testing_create()
+        g1_id = g1.id
+        eq_(Group.count_by(id=g1_id), 1)
+
+        # create user assigned to group
+        u = User.testing_create(groups=g1)
+
+        # delete user
+        User.delete(u.id)
+
+        # group should still be there
+        eq_(Group.count_by(id=g1_id), 1)
+
+    def test_ugmap_fk(self):
+        g = Group.testing_create()
+        u = User.testing_create(groups=g)
+        uid = u.id
+
+        eq_(db.sess.query(tbl_ugm).count(), 1)
+
+        # delete the user with delete_where() because .delete() loads the ORM
+        # object and then calls <session>.delete().  That method will trigger SA
+        # to issue a DELETE statement on the map table. Therefore, using
+        # .delete() would allow this test to pass even if our FK was not
+        # configured correctly.
+        User.delete_where(User.id==uid)
+
+        # shouldn't be any mappings left
+        eq_(db.sess.query(tbl_ugm).count(), 0)
+
+class TestGroups(object):
+
+    def setUp(self):
+        User.delete_all()
+        Group.delete_all()
+
+    def test_group_delete(self):
+        g1 = Group.testing_create()
+        g2 = Group.testing_create()
+
+        u = User.testing_create(groups=[g1,g2])
+        eq_(len(u.groups), 2)
+
+        assert Group.delete(g1.id)
+        eq_(len(g2.users), 1)
+        eq_(len(u.groups), 1)
+        eq_(u.groups[0].id, g2.id)
+        eq_(Group.count(), 1)
+
+    def test_group_delete_doesnt_affect_user(self):
+        # create group
+        g1 = Group.testing_create()
+
+        # create user assigned to group and make sure count logic works
+        u = User.testing_create(groups=g1)
+        u1_id = u.id
+        eq_(User.count_by(id=u1_id), 1)
+
+        # delete group
+        Group.delete(g1.id)
+
+        # user should still be there
+        eq_(User.count_by(id=u1_id), 1)
+
+    def test_ugmap_fk(self):
+        g = Group.testing_create()
+        gid = g.id
+        u = User.testing_create(groups=g)
+
+        eq_(db.sess.query(tbl_ugm).count(), 1)
+
+        # delete the group with delete_where() because .delete() loads the ORM
+        # object and then calls <session>.delete().  That method will trigger SA
+        # to issue a DELETE statement on the map table. Therefore, using
+        # .delete() would allow this test to pass even if our FK was not
+        # configured correctly.
+        Group.delete_where(Group.id==gid)
+
+        # shouldn't be any mappings left
+        eq_(db.sess.query(tbl_ugm).count(), 0)
