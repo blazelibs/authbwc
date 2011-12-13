@@ -1,7 +1,15 @@
-from blazeweb.script import console_dispatch
+import paste.script.command as pscmd
 
-@console_dispatch
-def action_users_addadmin():
-    """ used to add an admin user to the database """
-    from compstack.auth.helpers import add_administrative_user
-    add_administrative_user(allow_profile_defaults=False)
+class AddAdministrator(pscmd.Command):
+    # Parser configuration
+    summary = "add an administrative user"
+    usage = ""
+
+    parser = pscmd.Command.standard_parser(verbose=False)
+
+    min_args = 0
+    max_args = 0
+
+    def command(self):
+        from compstack.auth.helpers import add_administrative_user
+        add_administrative_user(allow_profile_defaults=False)
