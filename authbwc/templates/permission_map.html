@@ -37,7 +37,7 @@
                     <td class="denied">
                         {% if row['group_denied'] <= -1 %}
                             {% for group in permgroups[row['permission_id']]['denied'] %}
-                                <a href="{{ url_for('auth:GroupUpdate', id=group['id'])}}"
+                                <a href="{{ url_for('auth:GroupCrud', action='edit', id=group['id'])}}"
                                 title="edit group">{{group['name']}}</a>
                             {% endfor %}
                         {% else %}
@@ -47,7 +47,7 @@
                     <td class="approved">
                         {% if row['group_approved'] >= 1 %}
                             {% for group in permgroups[row['permission_id']]['approved'] %}
-                                <a href="{{ url_for('auth:GroupUpdate', id=group['id'])}}"
+                                <a href="{{ url_for('auth:GroupCrud', action='edit', id=group['id'])}}"
                                 title="edit group">{{group['name']}}</a>
                             {% endfor %}
                         {% else %}
