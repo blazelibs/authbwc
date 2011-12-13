@@ -37,4 +37,8 @@ setup(
         # #5607.
         'BaseBWA'
     ],
+    entry_points="""
+        [blazeweb.app_command]
+        add-admin-user = authbwc.commands:AddAdministrator
+    """,
 )
