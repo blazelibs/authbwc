@@ -1,0 +1,5 @@
+recursive-include authbwc *
+recursive-exclude authbwc *.pyc
+recursive-include authbwc_ta *
+recursive-exclude authbwc_ta *.pyc
+include *.rst

@@ -1,0 +1,13 @@
+^MANIFEST$
+^(build|dist|AuthBWC\.egg-info)/
+\.py[co]$
+\.DS_Store$
+^env$
+^docs/_build
+[^/]+-stats\.txt$
+syntax: glob
+.coverage
+coverage.xml
+nosetests.xml
+*.komodo*
+authbwc_ta/config/site_settings.py
