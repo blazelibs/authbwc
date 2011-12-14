@@ -1,14 +1,19 @@
 Change Log
 ----------
 
+0.1.10 released ???
+=========================
+
+* ???
+
 0.1.9 released 2011-12-13
 =========================
 
-* MAJOR: fix bug that was causing groups to be deleted when a user is deleted.  Make
-    sure that you run the fix-group-fk task to shore up the DB constraints.
+* (MAJOR) fix bug that was causing groups to be deleted when a user is deleted.  Make
+  sure that you run the fix-group-fk task to shore up the DB constraints.
 * make User.testing_create() more robust
 * fix bug in user permission map template that was causing exceptions if a user
-    was assigned to a group with permissions
+  was assigned to a group with permissions
 * add console command to add administrative user
 
 0.1.8 released 2011-11-09
@@ -36,14 +41,14 @@ Change Log
 0.1.4 released 2011-01-07
 =========================
 
-* SECURITY FIX: fixed an issue with the way the HTTP session user permissions
-    were loaded.  This vulnerability made it possible for a user to gain the
-    permissions of the user logged in previously.  The user would have had
-    to be sharing the same http session for this access to have been
-    gained.
+* (SECURITY FIX) fixed an issue with the way the HTTP session user permissions
+  were loaded.  This vulnerability made it possible for a user to gain the
+  permissions of the user logged in previously.  The user would have had
+  to be sharing the same http session for this access to have been
+  gained.
 
 0.1.3 released 2010-11-24
 =========================
 
 * modifying after_login_url() to take script_name into account (requires BlazeWeb
-    upgrade to 0.3.1)
+  upgrade to 0.3.1)
