@@ -7,6 +7,7 @@ class DevelopCmd(STDevelopCmd):
         # add in requirements for testing only when using the develop command
         self.distribution.install_requires.extend([
             'WebTest',
+            'PyQuery',
         ])
         STDevelopCmd.run(self)
 
