@@ -855,6 +855,11 @@ class TestPermissionMap(object):
         resp = self.tam.get('/users/permissions/{0}'.format(u.id))
         assert '<h1>Permissions for: ' in resp
 
+        d = resp.pyq
+        db.sess.add(g)
+        assert str(d('td.approved a[href="/groups/edit/{0}"]'.format(g.id)))
+        assert str(d('td.denied a[href="/groups/edit/{0}"]'.format(g.id)))
+
     def test_no_exc_with_user_permissions(self):
         u = User.testing_create()
         ap = Permission.testing_create()
@@ -864,3 +869,7 @@ class TestPermissionMap(object):
 
         resp = self.tam.get('/users/permissions/{0}'.format(u.id))
         assert '<h1>Permissions for: ' in resp
+
+        d = resp.pyq
+        assert str(d('td.approved a[href="/users/edit/{0}"]'.format(u.id)))
+        assert str(d('td.denied a[href="/users/edit/{0}"]'.format(u.id)))
