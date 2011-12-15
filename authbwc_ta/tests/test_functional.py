@@ -842,6 +842,8 @@ class TestPermissionMap(object):
     def test_page_load(self):
         resp = self.tam.get('/users/permissions/{0}'.format(self.userid))
         assert '<h1>Permissions for: ' in resp
+        assert '/users/edit/{0}'.format(self.userid) in resp
+        assert '<table class="datagrid"' in resp
 
     def test_no_exc_with_group_permissions(self):
         g = Group.testing_create()
