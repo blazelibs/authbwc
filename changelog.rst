@@ -4,7 +4,7 @@ Change Log
 0.1.10 released ???
 =========================
 
-* ???
+* fix bad links in user permission map template (mlewellyn)
 
 0.1.9 released 2011-12-13
 =========================
