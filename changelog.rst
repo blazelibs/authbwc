@@ -5,6 +5,7 @@ Change Log
 =========================
 
 * fix bad links in user permission map template (mlewellyn)
+* adjust message on login page to reference authorized users
 
 0.1.9 released 2011-12-13
 =========================
