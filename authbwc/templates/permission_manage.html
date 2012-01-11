@@ -3,7 +3,7 @@
 {% extends extend_from %}
 {% block title %}{{pagetitle}} | {{super()}}{% endblock %}
 {% block primary_content %}
-    <h2>{{pagetitle}}</h2>
+    <h1>{{pagetitle}}</h1>
 
     {% if gridhtml %}
         {{ gridhtml|safe }}
