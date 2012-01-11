@@ -46,7 +46,7 @@ class TestUserViews(object):
         Permission.delete(x.id)
         Permission.delete(y.id)
 
-        assert '<h2>Manage Permissions</h2>' in r.data
+        assert '<h1>Manage Permissions</h1>' in r.data
 
     def test_required_fields(self):
         topost = {
@@ -808,7 +808,7 @@ class TestPasswordResetRequired(object):
     def test_reset_required(self):
         req, resp = self.c.get('/users/profile', follow_redirects=True)
         assert '/users/profile' in req.url
-        assert '<h2>Change Password</h2>' in resp.data
+        assert '<h1>Change Password</h1>' in resp.data
 
         topost = {
             'change-password-form-submit-flag': u'submitted',
@@ -819,7 +819,7 @@ class TestPasswordResetRequired(object):
         }
         req, resp = self.c.post('/users/profile', data=topost, follow_redirects=True)
         assert '/users/profile' in req.url
-        assert '<h2>Change Password</h2>' not in resp.data, resp.data
+        assert '<h1>Change Password</h1>' not in resp.data, resp.data
 
 
 class TestPermissionMap(object):
