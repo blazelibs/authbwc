@@ -13,6 +13,11 @@ class DevelopCmd(STDevelopCmd):
 
 from authbwc import VERSION
 
+NEXT_VERSION = """
+Link to tip as next version (for setup.py requirements):
+http://bitbucket.org/rsyring/authbwc/get/tip.zip#egg=AuthBWC-{0}post1
+""".format(VERSION)
+
 cdir = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(cdir, 'readme.rst')).read()
 CHANGELOG = open(os.path.join(cdir, 'changelog.rst')).read()
@@ -21,7 +26,7 @@ setup(
     name='AuthBWC',
     version=VERSION,
     description="A user authentication and authorization component for the BlazeWeb framework",
-    long_description=README + '\n\n' + CHANGELOG,
+    long_description= '\n\n'.join((README, NEXT_VERSION, CHANGELOG)),
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
