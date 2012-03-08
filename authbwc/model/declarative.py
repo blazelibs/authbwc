@@ -90,13 +90,14 @@ class AuthRelationsMixin(object):
     def cm_permission_map(cls, uid):
         from compstack.auth.model.queries import query_users_permissions
         user_perm = query_users_permissions().alias()
-        s = select([user_perm.c.user_id,
-                    user_perm.c.permission_id,
-                    user_perm.c.permission_name,
-                    user_perm.c.login_id,
-                    user_perm.c.user_approved,
-                    user_perm.c.group_approved,
-                    user_perm.c.group_denied,],
+        s = select([user_perm.c.user_id.label('user_id'),
+                    user_perm.c.permission_id.label('permission_id'),
+                    user_perm.c.permission_name.label('permission_name'),
+                    user_perm.c.login_id.label('login_id'),
+                    user_perm.c.user_approved.label('user_approved'),
+                    user_perm.c.group_approved.label('group_approved'),
+                    user_perm.c.group_denied.label('group_denied'),
+                ],
                 from_obj=user_perm).where(user_perm.c.user_id==uid)
         results = db.sess.execute(s)
         retval = []
