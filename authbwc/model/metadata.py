@@ -11,7 +11,7 @@ group_permission_assignments = Table('auth_permission_assignments_groups', db.me
     Column('group_id', Integer, ForeignKey("auth_groups.id", ondelete='cascade'), nullable = False),
     Column('permission_id', Integer, ForeignKey("auth_permissions.id", ondelete='cascade'), nullable = False),
     Column('approved', Integer, CheckConstraint('approved in (-1, 1)'), nullable = False),
-    useexisting=True
+    extend_existing=True
 )
 Index('ix_auth_permission_assignments_groups_1',
     group_permission_assignments.c.group_id,
@@ -24,7 +24,7 @@ user_permission_assignments = Table('auth_permission_assignments_users', db.meta
     Column('user_id', Integer, ForeignKey("auth_users.id", ondelete='cascade'), nullable = False),
     Column('permission_id', Integer, ForeignKey("auth_permissions.id", ondelete='cascade'), nullable = False),
     Column('approved', Integer, CheckConstraint('approved in (-1, 1)'), nullable = False),
-    useexisting=True
+    extend_existing=True
 )
 
 Index('ix_auth_permission_assignments_users_1',
