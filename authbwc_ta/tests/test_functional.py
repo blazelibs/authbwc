@@ -28,6 +28,12 @@ class TestUserViews(object):
         r = self.c.get('/users/manage?page=2&perpage=1')
         assert '<h2>Manage Users</h2>' in r.data
 
+    def test_users_manage_name_filter(self):
+        u = User.testing_create()
+        User.edit(u.id, name_first=u'Jack', name_last=u'Frost')
+        r = self.c.get('/users/manage?filteron=name&filteronop=contains&filterfor=Frost')
+        assert '<td>Jack Frost</td>' in r.data
+
     def test_groups_manage_paging(self):
         Group.testing_create()
         Group.testing_create()

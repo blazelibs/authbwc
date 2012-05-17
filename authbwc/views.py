@@ -68,93 +68,107 @@ class UserCrud(CrudBase):
         CrudBase.form_when_completed(self)
 
     def _display_name(self, user):
-        retval = '%s %s' % (user[orm_User.__table__.c.name_first] or '', user[orm_User.__table__.c.name_last] or '')
+        retval = '%s %s' % (user[self.users.c.name_first] or '', user[self.users.c.name_last] or '')
         return retval.strip()
 
     def manage_init_grid(self):
+        # use a custom query to provide the name field, which
+        # combines first and last name. Allows filter to work
+        # on the full name
+        users = db.sess.query(
+            orm_User.id,
+            orm_User.inactive_flag,
+            orm_User.inactive_date,
+            orm_User.name_first,
+            orm_User.name_last,
+            (orm_User.name_first+u' '+orm_User.name_last).label('name'),
+            orm_User.login_id,
+            orm_User.super_user,
+            orm_User.reset_required,
+        ).subquery()
+        self.users = users
+
         def determine_inactive(user):
-            if user[orm_User.__table__.c.inactive_flag] or (user[orm_User.__table__.c.inactive_date] and user[orm_User.__table__.c.inactive_date] < datetime.datetime.now()):
+            if user[users.c.inactive_flag] or (user[users.c.inactive_date] and user[users.c.inactive_date] < datetime.datetime.now()):
                 return True
             return False
 
         dg = DataGrid(
             db.sess.execute,
             per_page=30,
-            def_sort=lambda q: q.order_by(orm_User.id.asc()),
+            def_sort=lambda q: q.order_by(users.c.id.asc()),
             class_='datagrid'
             )
         dg.add_col(
             'id',
-            orm_User.id,
+            users.c.id,
             inresult=True
         )
         dg.add_col(
             'inactive_flag',
-            orm_User.inactive_flag,
+            users.c.inactive_flag,
             inresult=True
         )
         dg.add_col(
             'inactive_date',
-            orm_User.inactive_date,
+            users.c.inactive_date,
             inresult=True
         )
         dg.add_col(
             'name_first',
-            orm_User.name_first,
+            users.c.name_first,
             inresult=True
         )
         dg.add_col(
             'name_last',
-            orm_User.name_last,
+            users.c.name_last,
             inresult=True
         )
-        dg.add_tablecol(
+        """dg.add_tablecol(
             Col('Actions',
                 extractor=self.manage_action_links,
                 width_th='8%'
             ),
-            orm_User.id,
+            users.c.id,
             sort=None
-        )
+        )"""
         dg.add_tablecol(
             Col('Login Id'),
-            orm_User.login_id,
+            users.c.login_id,
             filter_on=True,
             sort='both'
         )
         dg.add_tablecol(
-            Col('Name',
-                extractor=self._display_name
-            ),
-            orm_User.name_first,
+            Col('Name', extractor=self._display_name),
+            users.c.name,
             filter_on=True,
             sort='both'
         )
         dg.add_tablecol(
             YesNo('Super User'),
-            orm_User.super_user,
+            users.c.super_user,
             filter_on=False,
             sort=False
         )
         dg.add_tablecol(
             YesNo('Reset Required'),
-            orm_User.reset_required,
+            users.c.reset_required,
             filter_on=False,
             sort=False
         )
         dg.add_tablecol(
             YesNo('Inactive', extractor=determine_inactive),
-            orm_User.inactive_flag,
+            users.c.inactive_flag,
             filter_on=False,
             sort=False
         )
         dg.add_tablecol(
             Link( 'Permission Map',
                  validate_url=False,
-                 urlfrom=lambda uobj: url_for('auth:PermissionMap', objid=uobj[orm_User.__table__.c.id]),
+                 urlfrom=lambda uobj: url_for('auth:PermissionMap', objid=uobj[users.c.id]),
                  extractor = lambda row: 'view permission map'
             ),
-            orm_User.id,
+            users.c.id,
             filter_on=False,
             sort=False
         )
