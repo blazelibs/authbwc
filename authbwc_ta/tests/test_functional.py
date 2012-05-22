@@ -34,6 +34,17 @@ class TestUserViews(object):
         r = self.c.get('/users/manage?filteron=name&filteronop=contains&filterfor=Frost')
         assert '<td>Jack Frost</td>' in r.data
 
+    def test_users_manage_columns(self):
+        u = User.testing_create()
+        r = self.c.get('/users/manage')
+        assert '<th width="8%">Actions</th>' in r.data
+        assert '<th><a href="/users/manage?sort=loginid" class="" title="">Login Id</a></th>' in r.data
+        assert '<th><a href="/users/manage?sort=name" class="" title="">Name</a></th>' in r.data
+        assert '<th>Super User</th>' in r.data
+        assert '<th>Reset Required</th>' in r.data
+        assert '<th>Inactive</th>' in r.data
+        assert '<th>Permission Map</th>' in r.data
+
     def test_groups_manage_paging(self):
         Group.testing_create()
         Group.testing_create()
