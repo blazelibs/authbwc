@@ -5,6 +5,8 @@ from blazeweb.globals import settings, rg, user as session_user
 from blazeweb.routing import url_for, current_url
 from blazeweb.utils import redirect, abort
 from blazeweb.views import View, SecureView
+from webhelpers.html import literal
+from webhelpers.html.tags import link_to
 from werkzeug.exceptions import NotFound
 from compstack.auth.forms import ChangePasswordForm, NewPasswordForm, \
     LostPasswordForm, LoginForm, UserProfileForm, User as UserForm, Group as GroupForm, \
@@ -71,6 +73,16 @@ class UserCrud(CrudBase):
         retval = '%s %s' % (user[self.users.c.name_first] or '', user[self.users.c.name_last] or '')
         return retval.strip()
 
+    def manage_action_links(self, row):
+        idc = self.users.c.id
+        edit_link = link_to('(edit)', url_for(self.endpoint, action='edit', objid=row[idc]), class_='edit_link', title='edit %s' % self.objname)
+        if self.delete_is_authorized:
+            return literal('%s%s') % \
+                (link_to('(delete)', url_for(self.endpoint, action='delete', objid=row[idc]), class_='delete_link', title='delete %s' % self.objname),
+                edit_link)
+        else:
+            return literal(edit_link)
+
     def manage_init_grid(self):
         # use a custom query to provide the name field, which
         # combines first and last name. Allows filter to work
@@ -124,14 +136,14 @@ class UserCrud(CrudBase):
             users.c.name_last,
             inresult=True
         )
-        """dg.add_tablecol(
+        dg.add_tablecol(
             Col('Actions',
                 extractor=self.manage_action_links,
                 width_th='8%'
             ),
             users.c.id,
             sort=None
-        )"""
+        )
         dg.add_tablecol(
             Col('Login Id'),
             users.c.login_id,
