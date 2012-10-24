@@ -1,8 +1,8 @@
 Change Log
 ----------
 
-0.1.10 released ???
-=========================
+0.1.10 released 2012-12-24
+==========================
 
 * **BC BREAK**: change <h2> primary headings to <h1>
 * fix bad links in user permission map template (mlewellyn)
