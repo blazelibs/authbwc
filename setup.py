@@ -34,7 +34,7 @@ setup(
     ],
     author='Randy Syring',
     author_email='rsyring@gmail.com',
-    url='http://bitbucket.org/rsyring/authbwc/',
+    url='http://bitbucket.org/blazelibs/authbwc/',
     license='BSD',
     packages=find_packages(exclude=['authbwc_*']),
     include_package_data=True,

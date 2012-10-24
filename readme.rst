@@ -19,5 +19,5 @@ Current Status
 
 The code stays pretty stable, but the API may change in the future.
 
-The `AuthBWC tip <http://bitbucket.org/rsyring/authbwc/get/tip.zip#egg=authbwc-dev>`_
+The `AuthBWC tip <http://bitbucket.org/blazelibs/authbwc/get/tip.zip#egg=authbwc-dev>`_
 is installable via `easy_install` with ``easy_install AuthBWC==dev``
