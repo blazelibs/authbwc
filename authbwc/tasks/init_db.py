@@ -13,9 +13,9 @@ def action_40_admin_user():
 
 @attributes('+test')
 def action_40_test_data():
-    Permission.add(name=u'ugp_approved')
-    Permission.add(name=u'ugp_denied')
-    Permission.add(name=u'users-test1')
-    Permission.add(name=u'users-test2')
-    Permission.add(name=u'prof-test-1')
-    Permission.add(name=u'prof-test-2')
+    Permission.add_iu(name=u'ugp_approved')
+    Permission.add_iu(name=u'ugp_denied')
+    Permission.add_iu(name=u'users-test1')
+    Permission.add_iu(name=u'users-test2')
+    Permission.add_iu(name=u'prof-test-1')
+    Permission.add_iu(name=u'prof-test-2')
