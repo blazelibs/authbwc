@@ -1,0 +1,7 @@
+{{ include_js() }}
+{% extends extend_from %}
+{% block title %}{{ pagetitle }} | {{super()}}{% endblock %}
+{% block body %}
+    <h2>{{ pagetitle }}</h2>
+    {{ form.render()|safe }}
+{% endblock body%}

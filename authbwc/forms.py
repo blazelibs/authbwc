@@ -145,6 +145,7 @@ class UserFormBase(Form):
 
 class User(UserFormBase):
     def init(self):
+        self.req_note_level = 'form'
         self.add_name_fields()
         self.add_login_id_field()
         self.add_email_field()
@@ -166,6 +167,7 @@ class User(UserFormBase):
 
 class UserProfileForm(UserFormBase):
     def init(self):
+        self.req_note_level = 'form'
         self.add_name_fields()
         self.add_email_field()
         self.add_login_id_field()
@@ -210,6 +212,7 @@ class Group(Form):
         el = sg.add_cancel('cancel')
 
     def init(self):
+        self.req_note_level = 'form'
         self.add_name_field()
         self.add_user_membership_section()
         self.add_group_permissions_section()
@@ -228,6 +231,7 @@ class Group(Form):
 class Permission(Form):
 
     def init(self):
+        self.req_note_level = 'form'
         el = self.add_static('name', 'Permission Name', required=True)
 
         el = self.add_text('description', 'Description')
