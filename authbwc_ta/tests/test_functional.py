@@ -13,6 +13,7 @@ from compstack.auth.lib.testing import login_client_with_permissions, \
 from compstack.auth.model.orm import User, Group, Permission
 from compstack.sqlalchemy import db
 
+
 class TestUserViews(object):
 
     @classmethod
@@ -38,7 +39,8 @@ class TestUserViews(object):
         u = User.testing_create()
         r = self.c.get('/users/manage')
         assert '<th width="8%">Actions</th>' in r.data
-        assert '<th><a href="/users/manage?sort=loginid" class="" title="">Login Id</a></th>' in r.data
+        assert '<th><a href="/users/manage?sort=loginid" class="" title="">Login Id</a></th>' \
+            in r.data
         assert '<th><a href="/users/manage?sort=name" class="" title="">Name</a></th>' in r.data
         assert '<th>Super User</th>' in r.data
         assert '<th>Reset Required</th>' in r.data
@@ -67,7 +69,7 @@ class TestUserViews(object):
 
     def test_required_fields(self):
         topost = {
-          'user-submit-flag':'submitted'
+            'user-submit-flag': 'submitted'
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
@@ -81,7 +83,7 @@ class TestUserViews(object):
             'password': 'testtest',
             'email_address': 'test@example.com',
             'password-confirm': 'testtest',
-            'user-submit-flag':'submitted',
+            'user-submit-flag': 'submitted',
             'inactive_flag': False,
             'inactive_date': '',
             'name_first': '',
@@ -95,7 +97,7 @@ class TestUserViews(object):
         topost = {
             'login_id': 'r'*151,
             'email_address': 'test@example.com',
-            'user-submit-flag':'submitted'
+            'user-submit-flag': 'submitted'
         }
         r = self.c.post('users/add', data=topost)
         assert 'Login Id: Enter a value not greater than 150 characters long' in r.data, r.data
@@ -108,7 +110,7 @@ class TestUserViews(object):
             'email_address': user.email_address,
             'password-confirm': 'testtest',
             'email': 'test@exacmple.com',
-            'user-submit-flag':'submitted',
+            'user-submit-flag': 'submitted',
             'inactive_flag': False,
             'inactive_date': '',
             'name_first': '',
@@ -122,7 +124,7 @@ class TestUserViews(object):
         topost = {
             'login_id': randchars(10),
             'email_address': 'r'*140 + '@example.com',
-            'user-submit-flag':'submitted'
+            'user-submit-flag': 'submitted'
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
@@ -131,7 +133,7 @@ class TestUserViews(object):
     def test_email_format(self):
         topost = {
             'email_address': 'test',
-            'user-submit-flag':'submitted'
+            'user-submit-flag': 'submitted'
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
@@ -144,7 +146,7 @@ class TestUserViews(object):
             'email_address': 'abc@example.com',
             'password-confirm': 'nottests',
             'email': 'test@exacmple.com',
-            'user-submit-flag':'submitted'
+            'user-submit-flag': 'submitted'
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
@@ -163,7 +165,7 @@ class TestUserViews(object):
             'email_address': 'abc@example.com',
             'password-confirm': 'testtest',
             'email': 'test@exacmple.com',
-            'user-submit-flag':'submitted',
+            'user-submit-flag': 'submitted',
             'approved_permissions': perm,
             'denied_permissions': perm
         }
@@ -175,12 +177,14 @@ class TestUserViews(object):
     def test_fields_saved(self):
         ap = Permission.get_by(name=u'users-test1').id
         dp = Permission.get_by(name=u'users-test2').id
-        gp = Group.get_by(name=u'test-group') or Group.add_iu(name=u'test-group', approved_permissions=[], denied_permissions=[], assigned_users=[])
+        gp = Group.get_by(name=u'test-group') or Group.add_iu(
+            name=u'test-group', approved_permissions=[], denied_permissions=[], assigned_users=[]
+        )
         gp = gp.id
         topost = {
             'login_id': 'usersaved',
             'email_address': 'usersaved@example.com',
-            'user-submit-flag':'submitted',
+            'user-submit-flag': 'submitted',
             'approved_permissions': ap,
             'denied_permissions': dp,
             'assigned_groups': gp,
@@ -235,7 +239,7 @@ class TestUserViews(object):
         topost = {
             'login_id': 'usersaved',
             'email_address': 'usersaved@example.com',
-            'user-submit-flag':'submitted',
+            'user-submit-flag': 'submitted',
             'approved_permissions': dp,
             'denied_permissions': ap,
             'assigned_groups': None,
@@ -258,8 +262,11 @@ class TestUserViews(object):
         assert 'User edited successfully' in r.data
         assert req.url.endswith('users/manage')
 
-        assert tt.check('Called smtp_connection.sendmail(...usersaved@example.com...Your password for this site has been reset'
-                        '...first successful login...')
+        assert tt.check(
+            'Called smtp_connection.sendmail(...usersaved@example.com...Your '
+            'password for this site has been reset'
+            '...first successful login...'
+        )
         # restore the mocked objects
         minimock.restore()
 
@@ -295,7 +302,7 @@ class TestUserViews(object):
         topost = {
             'login_id': 'usersaved',
             'email_address': 'usersaved@example.com',
-            'user-submit-flag':'submitted',
+            'user-submit-flag': 'submitted',
             'approved_permissions': dp,
             'denied_permissions': ap,
             'assigned_groups': None,
@@ -328,8 +335,8 @@ class TestUserViews(object):
         userlogin = randchars(12)
         topost = {
             'login_id': userlogin,
-            'email_address': '%s@example.com'%userlogin,
-            'user-submit-flag':'submitted',
+            'email_address': '%s@example.com' % userlogin,
+            'user-submit-flag': 'submitted',
             'approved_permissions': [],
             'denied_permissions': [],
             'assigned_groups': [],
@@ -352,9 +359,9 @@ class TestUserViews(object):
 
         topost['password'] = 'new_password'
         topost['password-confirm'] = 'new_password'
-        user = User.get_by_email('%s@example.com'%userlogin)
+        user = User.get_by_email('%s@example.com' % userlogin)
 
-        req, r = self.c.post('users/edit/%s'%user.id, data=topost, follow_redirects=True)
+        req, r = self.c.post('users/edit/%s' % user.id, data=topost, follow_redirects=True)
         assert 'User edited successfully' in r.data, r.data
         assert 'An error occurred while sending the user notification email.' in r.data
         assert req.url.endswith('users/manage')
@@ -368,7 +375,7 @@ class TestUserViews(object):
             'email_address': 'abc@example.com',
             'password-confirm': 't',
             'email': 'test@exacmple.com',
-            'user-submit-flag':'submitted'
+            'user-submit-flag': 'submitted'
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
@@ -380,7 +387,7 @@ class TestUserViews(object):
             'email_address': 'abc@example.com',
             'password-confirm': 't'*26,
             'email': 'test@exacmple.com',
-            'user-submit-flag':'submitted'
+            'user-submit-flag': 'submitted'
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
@@ -407,7 +414,7 @@ class TestUserViews(object):
         topost = {
             'login_id': 'usersaved_noemailnotify',
             'email_address': 'usersaved_noemailnotify@example.com',
-            'user-submit-flag':'submitted',
+            'user-submit-flag': 'submitted',
             'approved_permissions': None,
             'denied_permissions': None,
             'assigned_groups': None,
@@ -433,8 +440,9 @@ class TestUserViews(object):
 
     def test_super_edit_forbidden(self):
         u = create_user_with_permissions(super_user=True)
-        r = self.c.get('users/edit/%s'%u.id)
+        r = self.c.get('users/edit/%s' % u.id)
         assert r.status_code == 403, r.status
+
 
 class TestUserProfileView(object):
 
@@ -451,7 +459,7 @@ class TestUserProfileView(object):
             'name_last': 'userslastname',
             'login_id': user.login_id,
             'email_address': user.email_address,
-            'user-profile-form-submit-flag':'submitted'
+            'user-profile-form-submit-flag': 'submitted'
         }
         return topost
 
@@ -540,12 +548,13 @@ class TestUserProfileView(object):
 
         # add user to group
         user = User.get(self.userid)
-        gp = Group.add_iu(name=u'test-group', approved_permissions=[], denied_permissions=[], assigned_users=[user.id]).id
+        gp = Group.add_iu(name=u'test-group', approved_permissions=[], denied_permissions=[],
+                          assigned_users=[user.id]).id
 
         r = self.c.post('users/profile', data=self.get_to_post())
         assert r.status_code == 200, r.status
         user = User.get(self.userid)
-        approved, denied =  user.assigned_permission_ids
+        approved, denied = user.assigned_permission_ids
         assert p1 in approved
         assert p2 in denied
         assert gp in [g.id for g in user.groups]
@@ -559,6 +568,7 @@ class TestUserProfileView(object):
         su = create_user_with_permissions(super_user=True)
         r = self.c.get('users/edit/%s' % su.id)
         assert r.status_code == 403, r.status
+
 
 class TestUserViewsSuperUser(object):
 
@@ -575,7 +585,9 @@ class TestUserViewsSuperUser(object):
     def test_fields_saved(self):
         ap = Permission.get_by(name=u'users-test1').id
         dp = Permission.get_by(name=u'users-test2').id
-        gp = Group.get_by(name=u'test-group') or Group.add_iu(name=u'test-group', approved_permissions=[], denied_permissions=[], assigned_users=[])
+        gp = Group.get_by(name=u'test-group') or Group.add_iu(
+            name=u'test-group', approved_permissions=[], denied_permissions=[], assigned_users=[]
+        )
         gp = gp.id
         topost = {
             'login_id': 'usersavedsu',
@@ -583,7 +595,7 @@ class TestUserViewsSuperUser(object):
             'email_address': 'usersavedsu@example.com',
             'password-confirm': 'testtest',
             'email': 'test@exacmple.com',
-            'user-submit-flag':'submitted',
+            'user-submit-flag': 'submitted',
             'approved_permissions': ap,
             'denied_permissions': dp,
             'assigned_groups': gp,
@@ -624,10 +636,11 @@ class TestUserViewsSuperUser(object):
 
     def test_super_delete(self):
         su = create_user_with_permissions(super_user=True)
-        req, r  = self.c.get('users/delete/%s' % su.id, follow_redirects=True)
+        req, r = self.c.get('users/delete/%s' % su.id, follow_redirects=True)
         assert r.status_code == 200, r.status
         assert 'User deleted' in r.data
         assert req.url.endswith('users/manage')
+
 
 class TestUserLogins(object):
 
@@ -639,9 +652,11 @@ class TestUserLogins(object):
         user = self.user
 
         client = Client(ag.wsgi_test_app, BaseResponse)
-        topost = {'login_id': user.login_id,
-              'password': 'foobar',
-              'login-form-submit-flag':'1'}
+        topost = {
+            'login_id': user.login_id,
+            'password': 'foobar',
+            'login-form-submit-flag': '1'
+        }
         resp = client.post('users/login', data=topost)
         assert resp.status_code == 200, resp.status
         assert 'Login failed!' in resp.data
@@ -654,9 +669,11 @@ class TestUserLogins(object):
 
         # log user in
         client = Client(ag.wsgi_test_app, BaseResponse)
-        topost = {'login_id': user.login_id,
-              'password': user.text_password,
-              'login-form-submit-flag':'1'}
+        topost = {
+            'login_id': user.login_id,
+            'password': user.text_password,
+            'login-form-submit-flag': '1'
+        }
         req, resp = client.post('users/login', data=topost, follow_redirects=True)
         assert resp.status_code == 200, resp.status
         assert 'That user is inactive.' in resp.data
@@ -665,18 +682,23 @@ class TestUserLogins(object):
     def test_cleared_login(self):
         super_user = create_user_with_permissions(super_user=True)
         ta = TestApp(ag.wsgi_test_app)
-        topost = {'login_id': super_user.login_id,
-              'password': super_user.text_password,
-              'login-form-submit-flag':'1'}
+        topost = {
+            'login_id': super_user.login_id,
+            'password': super_user.text_password,
+            'login-form-submit-flag': '1'
+        }
         r = ta.post('/users/login', topost)
         assert 'auth-manage' in r.user.perms
 
         user = create_user_with_permissions()
-        topost = {'login_id': user.login_id,
-              'password': user.text_password,
-              'login-form-submit-flag':'1'}
+        topost = {
+            'login_id': user.login_id,
+            'password': user.text_password,
+            'login-form-submit-flag': '1'
+        }
         r = ta.post('/users/login', topost)
         assert len(r.user.perms) == 0
+
 
 class TestRecoverPassword(object):
 
@@ -748,7 +770,8 @@ class TestRecoverPassword(object):
         db.sess.commit()
 
         # check expired message
-        req, resp = self.c.get('/users/reset-password/%s/%s' % (user.login_id, user.pass_reset_key), follow_redirects=True)
+        req, resp = self.c.get('/users/reset-password/%s/%s' % (user.login_id, user.pass_reset_key),
+                               follow_redirects=True)
         assert resp.status_code == 200, resp.status
         assert 'Recover Password' in resp.data
         assert 'password reset link expired, use the form below to resend reset link' in resp.data
@@ -765,10 +788,12 @@ class TestRecoverPassword(object):
             'password-confirm': 'TestPassword2',
             'new-password-form-submit-flag': 'submitted',
         }
-        req, r = self.c.post('/users/reset-password/%s/%s' % (user.login_id, user.pass_reset_key), data=topost, follow_redirects=True)
+        req, r = self.c.post('/users/reset-password/%s/%s' % (user.login_id, user.pass_reset_key),
+                             data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
         assert 'Your password has been reset successfully' in r.data
         assert req.url == 'http://localhost/'
+
 
 class TestGroupViews(object):
 
@@ -780,7 +805,7 @@ class TestGroupViews(object):
 
     def test_required_fields(self):
         topost = {
-          'group-submit-flag':'submitted'
+            'group-submit-flag': 'submitted'
         }
         req, resp = self.c.post('groups/add', data=topost, follow_redirects=True)
         assert resp.status_code == 200, resp.status
@@ -812,15 +837,17 @@ class TestGroupViews(object):
         assert resp.status_code == 200, resp.status
         assert 'Group Name: the value for this field is not unique' in resp.data
 
+
 class TestPasswordResetRequired(object):
 
     @classmethod
     def setup_class(cls):
         cls.c = Client(ag.wsgi_test_app, BaseResponse)
         cls.user = create_user_with_permissions()
-        cls.user.reset_required=True
+        cls.user.reset_required = True
         db.sess.commit()
-        cls.userid = login_client_as_user(cls.c, cls.user.login_id, cls.user.text_password, validate_login_response=False)
+        cls.userid = login_client_as_user(cls.c, cls.user.login_id, cls.user.text_password,
+                                          validate_login_response=False)
 
     def test_reset_required(self):
         req, resp = self.c.get('/users/profile', follow_redirects=True)
@@ -830,8 +857,8 @@ class TestPasswordResetRequired(object):
         topost = {
             'change-password-form-submit-flag': u'submitted',
             'old_password': self.user.text_password,
-            'password': '%s123'%self.user.text_password,
-            'password-confirm': '%s123'%self.user.text_password,
+            'password': '%s123' % self.user.text_password,
+            'password-confirm': '%s123' % self.user.text_password,
             'submit': u'Submit'
         }
         req, resp = self.c.post('/users/profile', data=topost, follow_redirects=True)

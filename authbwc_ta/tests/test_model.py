@@ -5,6 +5,7 @@ from authbwc.model.metadata import user_permission_assignments as upa, \
     user_groups as tbl_ugm
 from compstack.sqlalchemy import db
 
+
 class TestUser(object):
     @classmethod
     def setup_class(self):
@@ -23,20 +24,23 @@ class TestUser(object):
 
     def test_permission_dict(self):
         u = User.testing_create()
-        expect = {u'auth-manage': False, u'prof-test-2': False,
+        expect = {
+            u'auth-manage': False, u'prof-test-2': False,
             u'ugp_approved': False, u'ugp_denied': False, u'users-test1': False,
             u'users-test2': False, u'prof-test-1': False}
         eq_(u.permission_dict(), expect)
 
         # with SU
         u.super_user = True
-        expect = {u'auth-manage': True, u'prof-test-2': True,
+        expect = {
+            u'auth-manage': True, u'prof-test-2': True,
             u'ugp_approved': True, u'ugp_denied': True, u'users-test1': True,
             u'users-test2': True, u'prof-test-1': True}
         eq_(u.permission_dict(), expect)
 
         # with SU but override off
-        expect = {u'auth-manage': False, u'prof-test-2': False,
+        expect = {
+            u'auth-manage': False, u'prof-test-2': False,
             u'ugp_approved': False, u'ugp_denied': False, u'users-test1': False,
             u'users-test2': False, u'prof-test-1': False}
         eq_(u.permission_dict(su_override=False), expect)
@@ -70,7 +74,7 @@ class TestUser(object):
         eq_(u.has_permission(u'ugp_denied', su_override=False), False)
 
     def test_testing_create_args(self):
-        u = User.testing_create(loginid = u'foobar')
+        u = User.testing_create(loginid=u'foobar')
         eq_(u.login_id, u'foobar')
         eq_(u.email_address, u'foobar@example.com')
         eq_(u.reset_required, False)
@@ -116,10 +120,11 @@ class TestUser(object):
         # to issue a DELETE statement on the map table. Therefore, using
         # .delete() would allow this test to pass even if our FK was not
         # configured correctly.
-        User.delete_where(User.id==uid)
+        User.delete_where(User.id == uid)
 
         # shouldn't be any mappings left
         eq_(db.sess.query(tbl_ugm).count(), 0)
+
 
 class TestGroups(object):
 
@@ -131,7 +136,7 @@ class TestGroups(object):
         g1 = Group.testing_create()
         g2 = Group.testing_create()
 
-        u = User.testing_create(groups=[g1,g2])
+        u = User.testing_create(groups=[g1, g2])
         eq_(len(u.groups), 2)
 
         assert Group.delete(g1.id)
@@ -167,7 +172,7 @@ class TestGroups(object):
         # to issue a DELETE statement on the map table. Therefore, using
         # .delete() would allow this test to pass even if our FK was not
         # configured correctly.
-        Group.delete_where(Group.id==gid)
+        Group.delete_where(Group.id == gid)
 
         # shouldn't be any mappings left
         eq_(db.sess.query(tbl_ugm).count(), 0)

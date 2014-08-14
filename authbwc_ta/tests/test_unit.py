@@ -16,30 +16,36 @@ from compstack.auth.model.queries import query_denied_group_permissions, \
 from compstack.auth.model.orm import User, Group, Permission
 from compstack.sqlalchemy import db
 
+
 def test_group_unique():
     g1 = Group.add_iu(name=u'test unique group name')
     g2 = Group.add_iu(name=u'test unique group name')
     assert g1 and g2 is None
 
+
 def test_group_get_by_name():
-    g = Group.add_iu(name=u'group_for_testing_%s'%randchars(15))
+    g = Group.add_iu(name=u'group_for_testing_%s' % randchars(15))
     assert Group.get_by(name=g.name).id == g.id
+
 
 def test_permission_unique():
     p1 = Permission.add_iu(name=u'test unique permission name')
     p2 = Permission.add_iu(name=u'test unique permission name')
     assert p1 and p2 is None
 
+
 def test_permission_get_by_name():
-    p = Permission.add_iu(name=u'permission_for_testing_%s'%randchars(15))
+    p = Permission.add_iu(name=u'permission_for_testing_%s' % randchars(15))
     assert Permission.get_by(name=p.name).id == p.id
+
 
 def test_user_unique():
     u1 = create_user_with_permissions()
-    u2 = User.add_iu(login_id=u1.login_id, email_address='test%s@example.com'%u1.login_id)
-    assert u2 is None, '%s, %s'%(u1.id, u2.id)
-    u2 = User.add_iu(login_id='test%s'%u1.login_id, email_address=u1.email_address)
+    u2 = User.add_iu(login_id=u1.login_id, email_address='test%s@example.com' % u1.login_id)
+    assert u2 is None, '%s, %s' % (u1.id, u2.id)
+    u2 = User.add_iu(login_id='test%s' % u1.login_id, email_address=u1.email_address)
     assert u2 is None
+
 
 def test_user_update():
     u = create_user_with_permissions()
@@ -53,6 +59,7 @@ def test_user_update():
     assert not u.reset_required
     u = User.edit(u.id, password='new_password')
     assert u.reset_required
+
 
 def test_password_hashing():
     u = create_user_with_permissions()
@@ -87,23 +94,27 @@ def test_password_hashing():
     finally:
         settings.components.auth.password_salt = None
 
+
 def test_password_validate():
     u = create_user_with_permissions()
     password = u.text_password
     assert u.validate_password(password)
     assert not u.validate_password('foobar')
 
+
 def test_user_get_by_login():
     u = create_user_with_permissions()
     obj = User.get_by(login_id=u.login_id)
     assert u.id == obj.id
 
+
 def test_user_get_by_email():
     u = create_user_with_permissions()
     obj = User.get_by_email(u.email_address)
     assert u.id == obj.id
-    obj = User.get_by_email((u'%s'%u.email_address).upper())
+    obj = User.get_by_email((u'%s' % u.email_address).upper())
     assert u.id == obj.id
+
 
 def test_user_name_or_login():
     u = create_user_with_permissions()
@@ -111,6 +122,7 @@ def test_user_name_or_login():
     u.name_first = u'testname'
     assert u.name != ''
     assert u.name_or_login == u.name
+
 
 def test_user_validate():
     u = create_user_with_permissions()
@@ -120,20 +132,22 @@ def test_user_validate():
     assert User.validate(u'bad_login', u'testpass123') is None
     assert User.validate(u.login_id, u'testpass123').id == u.id
 
+
 def test_user_group_assignment():
-    g1 = Group.add_iu(name=u'group_for_testing_%s'%randchars(15))
-    g2 = Group.add_iu(name=u'group_for_testing_%s'%randchars(15))
+    g1 = Group.add_iu(name=u'group_for_testing_%s' % randchars(15))
+    g2 = Group.add_iu(name=u'group_for_testing_%s' % randchars(15))
 
     u = create_user_with_permissions()
     assert u.groups == []
 
-    User.edit(u.id, assigned_groups=[g1.id,g2.id])
+    User.edit(u.id, assigned_groups=[g1.id, g2.id])
     assert len(u.groups) == 2
     assert len(g1.users) == len(g2.users) == 1
 
     User.edit(u.id, assigned_groups=g2.id)
     assert len(u.groups) == 1
     assert u.groups[0].id == g2.id
+
 
 def test_inactive_property():
     user = create_user_with_permissions()
@@ -151,6 +165,7 @@ def test_inactive_property():
 
     assert user.inactive
 
+
 class TestPermissions(object):
 
     @classmethod
@@ -165,7 +180,8 @@ class TestPermissions(object):
         cls.user2 = create_user_with_permissions(u'ugp_approved')
         cls.g1 = Group.add(name=u'ugp_g1')
         cls.g2 = Group.add(name=u'ugp_g2')
-        Group.assign_permissions_by_name(u'ugp_g1', (u'ugp_approved_grp', u'ugp_denied', u'ugp_denied_grp'))
+        Group.assign_permissions_by_name(u'ugp_g1', (u'ugp_approved_grp', u'ugp_denied',
+                                                     u'ugp_denied_grp'))
         Group.assign_permissions_by_name(u'ugp_g2', None, u'ugp_denied_grp')
         cls.user.groups.append(cls.g1)
         cls.user.groups.append(cls.g2)
@@ -199,8 +215,8 @@ class TestPermissions(object):
         # test group perms map
         perm_map = User.get(self.user.id).permission_map_groups
 
-        assert not perm_map.has_key(Permission.get_by(name=u'ugp_approved').id)
-        assert not perm_map.has_key(Permission.get_by(name=u'ugp_not_approved').id)
+        assert not Permission.get_by(name=u'ugp_approved').id in perm_map
+        assert not Permission.get_by(name=u'ugp_not_approved').id in perm_map
 
         assert len(perm_map[self.perm_approved_grp.id]['approved']) == 1
         assert perm_map[self.perm_approved_grp.id]['approved'][0]['id'] == self.g1.id
@@ -222,6 +238,7 @@ class TestPermissions(object):
         perm_map = User.get(self.user.id).permission_map
         for rec in perm_map:
             assert rec['resulting_approval'] == (rec['permission_name'] in permissions_approved)
+
 
 class TestAfterLoginUrl(object):
     def test_no_settings(self):
