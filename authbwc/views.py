@@ -27,6 +27,8 @@ class CrudBase(CommonCrudBase):
     def init(self, *args, **kwargs):
         CommonCrudBase.init(self, *args, **kwargs)
         self.add_processor('session_key', String)
+        self.addedit_template_endpoint = 'auth:crud_addedit.html'
+        self.manage_template_endpoint = 'auth:dg_crud_manage.html'
 
     def auth_post(self, action=None, objid=None, session_key=None):
         self.session_key = session_key
@@ -55,7 +57,6 @@ class UserCrud(CrudBase):
         CrudBase.init(self, 'User', 'Users', UserForm, orm_User)
         self.require_all = 'auth-manage'
         self.form_auto_init = False
-        self.manage_template_endpoint = 'auth:dg_crud_manage.html'
 
     def auth_calculate(self, objid=None):
         CrudBase.auth_calculate(self, objid=objid)
@@ -327,7 +328,6 @@ class GroupCrud(CrudBase):
     def init(self):
         CrudBase.init(self, 'Group', 'Groups', GroupForm, orm_Group)
         self.require_all = 'auth-manage'
-        self.manage_template_endpoint = 'auth:dg_crud_manage.html'
 
     def form_assign_defaults(self):
         if self.action == self.EDIT:
