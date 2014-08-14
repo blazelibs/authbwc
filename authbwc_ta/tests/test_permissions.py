@@ -3,6 +3,7 @@ from werkzeug import Client, BaseResponse, BaseRequest
 from compstack.auth.lib.testing import login_client_with_permissions, create_user_with_permissions
 from compstack.auth.model.orm import Group, Permission
 
+
 class TestNotAuthenticated(object):
 
     @classmethod
@@ -48,6 +49,7 @@ class TestNotAuthenticated(object):
         r = self.c.get('/users/logout')
         assert r.status_code == 302, r.status
         assert '/users/login' in r.data
+
 
 class TestNoPerms(object):
 
@@ -101,6 +103,7 @@ class TestNoPerms(object):
         environ, r = c.get('/users/logout', as_tuple=True, follow_redirects=True)
         assert r.status_code == 200, r.status
         assert BaseRequest(environ).url == 'http://localhost/users/login'
+
 
 class TestAuthManage(object):
 

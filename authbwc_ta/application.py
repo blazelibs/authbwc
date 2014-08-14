@@ -6,6 +6,7 @@ from sqlalchemybwc.lib.middleware import SQLAlchemyApp
 
 import authbwc_ta.config.settings as settingsmod
 
+
 def make_wsgi(profile='Dev'):
     app = WSGIApp(settingsmod, profile)
 
@@ -16,6 +17,7 @@ def make_wsgi(profile='Dev'):
     visitmods('views')
 
     return full_wsgi_stack(app)
+
 
 def script_entry():
     application_entry(make_wsgi)
