@@ -6,8 +6,10 @@ from formencode import Invalid
 from formencode.validators import FancyValidator, MaxLength, MinLength
 
 from compstack.auth.helpers import validate_password_complexity, note_password_complexity
-from compstack.auth.model.orm import User as orm_User, Group as orm_Group, Permission as orm_Permission
+from compstack.auth.model.orm import User as orm_User, Group as orm_Group, \
+    Permission as orm_Permission
 from compstack.common.lib.forms import Form
+
 
 class UserFormBase(Form):
     def add_name_fields(self):
@@ -33,7 +35,12 @@ class UserFormBase(Form):
 
     def add_password_fields(self, required, label='Password', add_note=True):
         el = self.add_password_field(required, label, add_note)
-        cel = self.add_confirm('password-confirm', 'Confirm %s'%label, required=required, match=el)
+        cel = self.add_confirm(
+            'password-confirm',
+            'Confirm %s' % label,
+            required=required,
+            match=el
+        )
         return el, cel
 
     def add_password_notes(self, is_add, pasel, cel):
@@ -68,8 +75,10 @@ class UserFormBase(Form):
         iflag.add_note("setting this will prevent this user from logging in")
 
         idate = self.add_date('inactive_date', 'Inactive Date')
-        idate.add_note("setting this will prevent this user from logging in after"
-                    " the date given (regardless of the checkbox setting above)")
+        idate.add_note(
+            "setting this will prevent this user from logging in after"
+            " the date given (regardless of the checkbox setting above)"
+        )
         idate.add_note('date format: mm/dd/yyyy')
         return iflag, idate
 
@@ -111,7 +120,7 @@ class UserFormBase(Form):
 
     def validate_password_complexity(self, value):
         ret = validate_password_complexity(value)
-        if not ret == True:
+        if isinstance(ret, basestring):
             raise ValueInvalid(ret)
         return value
 
@@ -124,11 +133,14 @@ class UserFormBase(Form):
 
         for err in errors.get('email_address', []):
             if 'not unique' in err:
-                self.elements.email_address.add_error('a user with that email address already exists')
+                self.elements.email_address.add_error(
+                    'a user with that email address already exists'
+                )
                 errors['email_address'].remove(err)
                 break
 
         return Form.add_field_errors(self, errors)
+
 
 class User(UserFormBase):
     def init(self):
@@ -150,6 +162,7 @@ class User(UserFormBase):
 
         self.add_validator(self.validate_perms)
 
+
 class UserProfileForm(UserFormBase):
     def init(self):
         self.add_name_fields()
@@ -158,6 +171,7 @@ class UserProfileForm(UserFormBase):
         pasel, confel = self.add_password_fields(False)
         pasel.add_note('password will change only if you enter a value above')
         self.add_submit_buttons()
+
 
 class Group(Form):
     def add_name_field(self):
@@ -198,6 +212,7 @@ class Group(Form):
         if len(assigned.intersection(denied)) != 0:
             raise ValueInvalid('you can not approve and deny the same permission')
 
+
 class Permission(Form):
 
     def init(self):
@@ -221,6 +236,7 @@ class LoginForm(Form):
         el.add_processor(MaxLength(25))
 
         self.add_submit('submit')
+
 
 class ChangePasswordForm(UserFormBase):
 
@@ -247,12 +263,14 @@ class ChangePasswordForm(UserFormBase):
             form.password.add_error(err)
             raise ValueInvalid()
 
+
 class NewPasswordForm(UserFormBase):
 
     def init(self):
         self.add_password_fields(True)
 
         self.add_submit('submit')
+
 
 class LostPasswordForm(Form):
 

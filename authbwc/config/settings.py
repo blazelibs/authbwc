@@ -1,6 +1,7 @@
 from basebwa.lib.cpanel import ControlPanelSection, ControlPanelGroup, ControlPanelLink
 from blazeweb.config import ComponentSettings
 
+
 class Settings(ComponentSettings):
 
     def init(self):
@@ -19,7 +20,7 @@ class Settings(ComponentSettings):
         self.add_route('/permissions/<action>/<int:objid>', endpoint='auth:PermissionCrud')
         self.add_route('/users/profile', 'auth:UserProfile')
 
-        self.for_me.cp_nav.enabled=True
+        self.for_me.cp_nav.enabled = True
         self.for_me.cp_nav.section = ControlPanelSection(
             "Users",
             'auth-manage',

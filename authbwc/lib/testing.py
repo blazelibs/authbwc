@@ -12,6 +12,7 @@ try:
 except ImportError:
     TestApp = None
 
+
 def login_client_with_permissions(client, approved_perms=None, denied_perms=None, super_user=False):
     """
         Creates a user with the given permissions and then logs in with said
@@ -30,17 +31,21 @@ def login_client_with_permissions(client, approved_perms=None, denied_perms=None
 
     return user_id
 
+
 def login_client_as_user(client, username, password, validate_login_response=True):
-    topost = {'login_id': username,
-          'password': password,
-          'login-form-submit-flag':'1'}
+    topost = {
+        'login_id': username,
+        'password': password,
+        'login-form-submit-flag': '1'
+    }
     if isinstance(client, (Client, WerkzeugClient)):
         if isinstance(client, Client):
             # blazeweb client handles follow_redirects differently
             req, resp = client.post('users/login', data=topost, follow_redirects=True)
         else:
             # werkzeug Client
-            environ, resp = client.post('users/login', data=topost, as_tuple=True, follow_redirects=True)
+            environ, resp = client.post('users/login', data=topost, as_tuple=True,
+                                        follow_redirects=True)
             req = BaseRequest(environ)
         if validate_login_response:
             assert resp.status_code == 200, resp.status
@@ -51,11 +56,13 @@ def login_client_as_user(client, username, password, validate_login_response=Tru
         res = client.post('/users/login', params=topost)
         res = res.follow()
         if validate_login_response:
-            assert res.request.url.endswith(after_login_url()), '%s != %s' % (res.request.url, after_login_url())
+            assert res.request.url.endswith(after_login_url()), \
+                '%s != %s' % (res.request.url, after_login_url())
             res.mustcontain('You logged in successfully!')
         return res
     else:
         raise TypeError('client is of an unexpected type: %s' % client.__class__)
+
 
 def create_user_with_permissions(approved_perms=None, denied_perms=None, super_user=False):
     from compstack.auth.model.orm import User, Permission
@@ -77,12 +84,18 @@ def create_user_with_permissions(approved_perms=None, denied_perms=None, super_u
     # create the user
     username = u'user_for_testing_%s' % randchars(15)
     password = randchars(15)
-    user = User.add(login_id=username, email_address=u'%s@example.com' % username,
-         password=password, super_user = super_user, assigned_groups = [],
-         approved_permissions = appr_perm_ids, denied_permissions = denied_perm_ids)
+    user = User.add(
+        login_id=username,
+        email_address=u'%s@example.com' % username,
+        password=password,
+        super_user=super_user,
+        assigned_groups=[],
+        approved_permissions=appr_perm_ids,
+        denied_permissions=denied_perm_ids
+    )
 
     # turn login flag off
-    user.reset_required=False
+    user.reset_required = False
     db.sess.commit()
 
     # make text password available

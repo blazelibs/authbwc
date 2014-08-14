@@ -15,6 +15,7 @@ from compstack.sqlalchemy.lib.columns import SmallIntBool
 from compstack.sqlalchemy.lib.declarative import DefaultMixin
 from compstack.sqlalchemy.lib.decorators import transaction, transaction_ncm
 
+
 class AuthRelationsMixin(object):
     """
         This mixin provides methods and properties for a user-like entity
@@ -33,11 +34,17 @@ class AuthRelationsMixin(object):
 
         # insert "approved" records
         if approved_perm_ids is not None and len(approved_perm_ids) != 0:
-            insval.extend([{'user_id' : self.id, 'permission_id' : pid, 'approved' : 1} for pid in approved_perm_ids])
+            insval.extend([
+                {'user_id': self.id, 'permission_id': pid, 'approved': 1}
+                for pid in approved_perm_ids
+            ])
 
         # insert "denied" records
         if denied_perm_ids is not None and len(denied_perm_ids) != 0:
-            insval.extend([{'user_id' : self.id, 'permission_id' : pid, 'approved' : -1} for pid in denied_perm_ids])
+            insval.extend([
+                {'user_id': self.id, 'permission_id': pid, 'approved': -1}
+                for pid in denied_perm_ids
+            ])
 
         # do inserts
         if insval:
@@ -53,13 +60,13 @@ class AuthRelationsMixin(object):
         from compstack.auth.model.metadata import user_permission_assignments as tbl_upa
         s = select(
             [tbl_upa.c.permission_id],
-            and_(tbl_upa.c.user_id==self.id, tbl_upa.c.approved == 1)
-            )
+            and_(tbl_upa.c.user_id == self.id, tbl_upa.c.approved == 1)
+        )
         approved = [r[0] for r in db.sess.execute(s)]
         s = select(
             [tbl_upa.c.permission_id],
-            and_(tbl_upa.c.user_id==self.id, tbl_upa.c.approved == -1)
-            )
+            and_(tbl_upa.c.user_id == self.id, tbl_upa.c.approved == -1)
+        )
         denied = [r[0] for r in db.sess.execute(s)]
 
         return approved, denied
@@ -74,9 +81,9 @@ class AuthRelationsMixin(object):
             or_(
                 vuserperms.c.user_approved == 1,
                 and_(
-                    vuserperms.c.user_approved == None,
+                    vuserperms.c.user_approved.is_(None),
                     or_(
-                        vuserperms.c.group_denied == None,
+                        vuserperms.c.group_denied.is_(None),
                         vuserperms.c.group_denied >= 0,
                     ),
                     vuserperms.c.group_approved >= 1
@@ -90,15 +97,20 @@ class AuthRelationsMixin(object):
     def cm_permission_map(cls, uid):
         from compstack.auth.model.queries import query_users_permissions
         user_perm = query_users_permissions().alias()
-        s = select([user_perm.c.user_id.label('user_id'),
-                    user_perm.c.permission_id.label('permission_id'),
-                    user_perm.c.permission_name.label('permission_name'),
-                    user_perm.c.login_id.label('login_id'),
-                    user_perm.c.user_approved.label('user_approved'),
-                    user_perm.c.group_approved.label('group_approved'),
-                    user_perm.c.group_denied.label('group_denied'),
-                ],
-                from_obj=user_perm).where(user_perm.c.user_id==uid)
+        s = select(
+            [
+                user_perm.c.user_id.label('user_id'),
+                user_perm.c.permission_id.label('permission_id'),
+                user_perm.c.permission_name.label('permission_name'),
+                user_perm.c.login_id.label('login_id'),
+                user_perm.c.user_approved.label('user_approved'),
+                user_perm.c.group_approved.label('group_approved'),
+                user_perm.c.group_denied.label('group_denied'),
+            ],
+            from_obj=user_perm
+        ).where(
+            user_perm.c.user_id == uid
+        )
         results = db.sess.execute(s)
         retval = []
         for row in results:
@@ -132,21 +144,30 @@ class AuthRelationsMixin(object):
     def permission_map_groups(self):
         from compstack.auth.model.queries import query_user_group_permissions
         user_group_perm = query_user_group_permissions().alias()
-        s = select([user_group_perm.c.permission_id,
-                    user_group_perm.c.group_name,
-                    user_group_perm.c.group_id,
-                    user_group_perm.c.group_approved],
-                from_obj=user_group_perm).where(user_group_perm.c.user_id==self.id)
+        s = select(
+            [
+                user_group_perm.c.permission_id,
+                user_group_perm.c.group_name,
+                user_group_perm.c.group_id,
+                user_group_perm.c.group_approved
+            ],
+            from_obj=user_group_perm
+        ).where(user_group_perm.c.user_id == self.id)
         results = db.sess.execute(s)
         retval = {}
         for row in results:
-            if not retval.has_key(row['permission_id']):
-                retval[row['permission_id']] = {'approved' : [], 'denied' : []}
+            if not row['permission_id'] in retval:
+                retval[row['permission_id']] = {'approved': [], 'denied': []}
             if row['group_approved'] <= -1:
-                retval[row['permission_id']]['denied'].append({'name':row['group_name'], 'id':row['group_id']})
+                retval[row['permission_id']]['denied'].append(
+                    {'name': row['group_name'], 'id': row['group_id']}
+                )
             elif row['group_approved'] >= 1:
-                retval[row['permission_id']]['approved'].append({'name':row['group_name'], 'id':row['group_id']})
+                retval[row['permission_id']]['approved'].append(
+                    {'name': row['group_name'], 'id': row['group_id']}
+                )
         return retval
+
 
 class UserMixin(DefaultMixin, AuthRelationsMixin):
     """
@@ -174,7 +195,7 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
             self.pass_salt = record_salt
             self.pass_hash = self.calc_pass_hash(password, record_salt)
             self.text_password = password
-    password = property(None,set_password)
+    password = property(None, set_password)
 
     @property
     def inactive(self):
@@ -186,7 +207,10 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
 
     @property
     def name(self):
-        retval = '%s %s' % (self.name_first if self.name_first else '', self.name_last if self.name_last else '')
+        retval = '%s %s' % (
+            self.name_first if self.name_first else '',
+            self.name_last if self.name_last else ''
+        )
         return retval.strip()
 
     @property
@@ -213,7 +237,7 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
         """
             Returns the user that matches login_id and password or None
         """
-        u = cls.get_by(login_id = login_id)
+        u = cls.get_by(login_id=login_id)
         if not u:
             return
         if u.validate_password(password):
@@ -254,14 +278,20 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
         for k, v in kwargs.iteritems():
             try:
                 # some values can not be set directly
-                if k not in ('pass_hash', 'pass_salt', 'assigned_groups', 'approved_permissions', 'denied_permissions'):
+                if k not in (
+                    'pass_hash', 'pass_salt', 'assigned_groups',
+                    'approved_permissions', 'denied_permissions'
+                ):
                     setattr(u, k, v)
             except AttributeError:
                 pass
 
         u.groups = [Group.get(gid) for gid in tolist(kwargs.get('assigned_groups', []))]
         db.sess.flush()
-        u.assign_permissions(kwargs.get('approved_permissions', []), kwargs.get('denied_permissions', []))
+        u.assign_permissions(
+            kwargs.get('approved_permissions', []),
+            kwargs.get('denied_permissions', [])
+        )
         return u
 
     @transaction_ncm
@@ -288,7 +318,7 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
     def get_by_email(cls, email_address):
         # case-insensitive query
         return db.sess.query(cls) \
-            .filter(func.lower(cls.email_address)==func.lower(email_address)) \
+            .filter(func.lower(cls.email_address) == func.lower(email_address)) \
             .first()
 
     @classmethod
@@ -345,8 +375,8 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
         return self.__class__.cm_has_permission(self.id, *perms, **kwargs)
 
     @classmethod
-    def testing_create(cls, loginid = None, approved_perms=[], denied_perms=[],
-                reset_required=False, groups=[]):
+    def testing_create(cls, loginid=None, approved_perms=[], denied_perms=[],
+                       reset_required=False, groups=[]):
         # use the hierarchy to find the Permission in case the app has changed
         # it
         from compstack.auth.model.orm import Permission
@@ -372,22 +402,23 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
         u = cls.add(
             login_id=login_id,
             email_address=email_address,
-            password = password,
-            reset_required = reset_required,
+            password=password,
+            reset_required=reset_required,
             # don't let the update method set reset_required
-            pass_reset_ok = False,
-            approved_permissions = appr_perm_ids,
-            denied_permissions = denied_perm_ids,
+            pass_reset_ok=False,
+            approved_permissions=appr_perm_ids,
+            denied_permissions=denied_perm_ids,
             # not quite sure why these are needed, they should default, but I
             # ran into an issue when testing that would throw SAValidation
             # errors up when I leave them out.
-            inactive_flag = False,
-            super_user = False,
+            inactive_flag=False,
+            super_user=False,
         )
         u.groups.extend(tolist(groups))
         db.sess.commit()
         u.text_password = password
         return u
+
 
 class GroupMixin(DefaultMixin):
     name = Column(Unicode(150), nullable=False, index=True, unique=True)
@@ -428,9 +459,12 @@ class GroupMixin(DefaultMixin):
             except AttributeError:
                 pass
 
-        g.users = [User.get(uid) for uid in tolist(kwargs.get('assigned_users',[]))]
+        g.users = [User.get(uid) for uid in tolist(kwargs.get('assigned_users', []))]
         db.sess.flush()
-        g.assign_permissions(kwargs.get('approved_permissions',[]), kwargs.get('denied_permissions',[]))
+        g.assign_permissions(
+            kwargs.get('approved_permissions', []),
+            kwargs.get('denied_permissions', [])
+        )
         return g
 
     def assign_permissions(self, approved_perm_ids, denied_perm_ids):
@@ -442,11 +476,17 @@ class GroupMixin(DefaultMixin):
 
         # insert "approved" records
         if approved_perm_ids is not None and len(approved_perm_ids) != 0:
-            insval.extend([{'group_id' : self.id, 'permission_id' : pid, 'approved' : 1} for pid in approved_perm_ids])
+            insval.extend([
+                {'group_id': self.id, 'permission_id': pid, 'approved': 1}
+                for pid in approved_perm_ids
+            ])
 
         # insert "denied" records
         if denied_perm_ids is not None and len(denied_perm_ids) != 0:
-            insval.extend([{'group_id' : self.id, 'permission_id' : pid, 'approved' : -1} for pid in denied_perm_ids])
+            insval.extend([
+                {'group_id': self.id, 'permission_id': pid, 'approved': -1}
+                for pid in denied_perm_ids
+            ])
 
         # do inserts
         if insval:
@@ -459,8 +499,12 @@ class GroupMixin(DefaultMixin):
         # Note: this function is a wrapper for assign_permissions and will commit db trans
         from compstack.auth.model.orm import Permission
         group = cls.get_by(name=unicode(group_name))
-        approved_perm_ids = [item.id for item in [Permission.get_by(name=unicode(perm)) for perm in tolist(approved_perm_list)]]
-        denied_perm_ids = [item.id for item in [Permission.get_by(name=unicode(perm)) for perm in tolist(denied_perm_list)]]
+        approved_perm_ids = [item.id for item in [
+            Permission.get_by(name=unicode(perm)) for perm in tolist(approved_perm_list)
+        ]]
+        denied_perm_ids = [item.id for item in [
+            Permission.get_by(name=unicode(perm)) for perm in tolist(denied_perm_list)
+        ]]
         group.assign_permissions(approved_perm_ids, denied_perm_ids)
 
     @property
@@ -473,13 +517,13 @@ class GroupMixin(DefaultMixin):
         from compstack.auth.model.metadata import group_permission_assignments as tbl_gpa
         s = select(
             [tbl_gpa.c.permission_id],
-            and_(tbl_gpa.c.group_id==self.id, tbl_gpa.c.approved == 1)
-            )
+            and_(tbl_gpa.c.group_id == self.id, tbl_gpa.c.approved == 1)
+        )
         approved = [r[0] for r in db.sess.execute(s)]
         s = select(
             [tbl_gpa.c.permission_id],
-            and_(tbl_gpa.c.group_id==self.id, tbl_gpa.c.approved == -1)
-            )
+            and_(tbl_gpa.c.group_id == self.id, tbl_gpa.c.approved == -1)
+        )
         denied = [r[0] for r in db.sess.execute(s)]
 
         return approved, denied
