@@ -1,3 +1,4 @@
+import datetime as dt
 from nose.tools import eq_
 
 from authbwc.model.orm import User, Permission, Group
@@ -21,6 +22,28 @@ class TestUser(object):
     def setUp(self):
         User.delete_all()
         Group.delete_all()
+
+    def test_name(self):
+        u = User.testing_create()
+        u.name_first = u'x'
+        u.name_last = u'y'
+        db.sess.commit()
+        eq_(u.name, 'x y')
+        eq_(User.list_where(User.name == u'x y')[0], u)
+
+    def test_inactive_flagged(self):
+        u = User.testing_create()
+        u.inactive_flag = True
+        db.sess.commit()
+        assert u.inactive
+        eq_(User.list_where(User.inactive == True)[0], u)
+
+    def test_inactive_dated(self):
+        u = User.testing_create()
+        u.inactive_date = dt.date(2000, 1, 1)
+        db.sess.commit()
+        assert u.inactive
+        eq_(User.list_where(User.inactive == True)[0], u)
 
     def test_permission_dict(self):
         u = User.testing_create()

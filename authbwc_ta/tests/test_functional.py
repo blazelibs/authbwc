@@ -26,46 +26,34 @@ class TestUserViews(object):
         User.testing_create()
         User.testing_create()
 
-        r = self.c.get('/users/manage?page=2&perpage=1')
+        r = self.c.get('/users/manage?onpage=2&perpage=1')
         assert '<h2>Manage Users</h2>' in r.data
 
     def test_users_manage_name_filter(self):
         u = User.testing_create()
         User.edit(u.id, name_first=u'Jack', name_last=u'Frost')
-        r = self.c.get('/users/manage?filteron=name&filteronop=contains&filterfor=Frost')
+        r = self.c.get('/users/manage?op(name)=contains&v1(name)=Frost')
         assert '<td>Jack Frost</td>' in r.data
-
-    def test_users_manage_columns(self):
-        u = User.testing_create()
-        r = self.c.get('/users/manage')
-        assert '<th width="8%">Actions</th>' in r.data
-        assert '<th><a href="/users/manage?sort=loginid" class="" title="">Login Id</a></th>' \
-            in r.data
-        assert '<th><a href="/users/manage?sort=name" class="" title="">Name</a></th>' in r.data
-        assert '<th>Super User</th>' in r.data
-        assert '<th>Reset Required</th>' in r.data
-        assert '<th>Inactive</th>' in r.data
-        assert '<th>Permission Map</th>' in r.data
 
     def test_groups_manage_paging(self):
         Group.testing_create()
         Group.testing_create()
 
-        r = self.c.get('/groups/manage?page=2&perpage=1')
+        r = self.c.get('/groups/manage?onpage=2&perpage=1')
         assert '<h2>Manage Groups</h2>' in r.data
 
     def test_permissions_manage_paging(self):
         x = Permission.testing_create()
         y = Permission.testing_create()
 
-        r = self.c.get('/permissions/manage?page=2&perpage=1')
+        r = self.c.get('/permissions/manage?onpage=2&perpage=1')
 
         db.sess.add(x)
         db.sess.add(y)
         Permission.delete(x.id)
         Permission.delete(y.id)
 
-        assert '<h1>Manage Permissions</h1>' in r.data
+        assert '<h2>Manage Permissions</h2>' in r.data
 
     def test_required_fields(self):
         topost = {

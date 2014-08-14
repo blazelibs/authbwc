@@ -5,19 +5,16 @@ from blazeweb.globals import settings, rg, user as session_user
 from blazeweb.routing import url_for, current_url
 from blazeweb.utils import redirect, abort
 from blazeweb.views import View, SecureView
-from webhelpers.html import literal
-from webhelpers.html.tags import link_to
 from werkzeug.exceptions import NotFound
 from compstack.auth.forms import ChangePasswordForm, NewPasswordForm, \
     LostPasswordForm, LoginForm, UserProfileForm, User as UserForm, Group as GroupForm, \
     Permission as PermissionForm
+from compstack.auth.grids import GroupGrid, PermissionGrid, UserGrid
 from compstack.auth.helpers import after_login_url, load_session_user, send_new_user_email, \
     send_change_password_email, send_reset_password_email
 from compstack.auth.model.orm import User as orm_User, Group as orm_Group, \
     Permission as orm_Permission
 from compstack.common.lib.views import CrudBase, FormMixin
-from compstack.datagrid.lib import DataGrid, Col, YesNo, Link
-from compstack.sqlalchemy import db
 
 _modname = 'auth'
 
@@ -29,6 +26,7 @@ class UserCrud(CrudBase):
         CrudBase.init(self, 'User', 'Users', UserForm, orm_User)
         self.require_all = 'auth-manage'
         self.form_auto_init = False
+        self.manage_template_endpoint = 'auth:dg_crud_manage.html'
 
     def auth_calculate(self, objid=None):
         CrudBase.auth_calculate(self, objid=objid)
@@ -77,122 +75,18 @@ class UserCrud(CrudBase):
 
         CrudBase.form_when_completed(self)
 
-    def _display_name(self, user):
-        retval = '%s %s' % (user[self.users.c.name_first] or '', user[self.users.c.name_last] or '')
-        return retval.strip()
-
-    def manage_action_links(self, row):
-        idc = self.users.c.id
-        edit_link = link_to('(edit)', url_for(self.endpoint, action='edit', objid=row[idc]), class_='edit_link', title='edit %s' % self.objname)
-        if self.delete_is_authorized:
-            return literal('%s%s') % \
-                (link_to('(delete)', url_for(self.endpoint, action='delete', objid=row[idc]), class_='delete_link', title='delete %s' % self.objname),
-                edit_link)
-        else:
-            return literal(edit_link)
-
-    def manage_init_grid(self):
-        # use a custom query to provide the name field, which
-        # combines first and last name. Allows filter to work
-        # on the full name
-        users = db.sess.query(
-            orm_User.id,
-            orm_User.inactive_flag,
-            orm_User.inactive_date,
-            orm_User.name_first,
-            orm_User.name_last,
-            (orm_User.name_first+u' '+orm_User.name_last).label('name'),
-            orm_User.login_id,
-            orm_User.super_user,
-            orm_User.reset_required,
-        ).subquery()
-        self.users = users
-
-        def determine_inactive(user):
-            if user[users.c.inactive_flag] or (user[users.c.inactive_date] and user[users.c.inactive_date] < datetime.datetime.now()):
-                return True
-            return False
-
-        dg = DataGrid(
-            db.sess.execute,
-            per_page=30,
-            def_sort=lambda q: q.order_by(users.c.id.asc()),
-            class_='datagrid'
-            )
-        dg.add_col(
-            'id',
-            users.c.id,
-            inresult=True
-        )
-        dg.add_col(
-            'inactive_flag',
-            users.c.inactive_flag,
-            inresult=True
-        )
-        dg.add_col(
-            'inactive_date',
-            users.c.inactive_date,
-            inresult=True
-        )
-        dg.add_col(
-            'name_first',
-            users.c.name_first,
-            inresult=True
-        )
-        dg.add_col(
-            'name_last',
-            users.c.name_last,
-            inresult=True
-        )
-        dg.add_tablecol(
-            Col('Actions',
-                extractor=self.manage_action_links,
-                width_th='8%'
-            ),
-            users.c.id,
-            sort=None
-        )
-        dg.add_tablecol(
-            Col('Login Id'),
-            users.c.login_id,
-            filter_on=True,
-            sort='both'
-        )
-        dg.add_tablecol(
-            Col('Name', extractor=self._display_name),
-            users.c.name,
-            filter_on=True,
-            sort='both'
-        )
-        dg.add_tablecol(
-            YesNo('Super User'),
-            users.c.super_user,
-            filter_on=False,
-            sort=False
-        )
-        dg.add_tablecol(
-            YesNo('Reset Required'),
-            users.c.reset_required,
-            filter_on=False,
-            sort=False
-        )
-        dg.add_tablecol(
-            YesNo('Inactive', extractor=determine_inactive),
-            users.c.inactive_flag,
-            filter_on=False,
-            sort=False
-        )
-        dg.add_tablecol(
-            Link( 'Permission Map',
-                 validate_url=False,
-                 urlfrom=lambda uobj: url_for('auth:PermissionMap', objid=uobj[users.c.id]),
-                 extractor = lambda row: 'view permission map'
-            ),
-            users.c.id,
-            filter_on=False,
-            sort=False
-        )
-        return dg
+    def manage_assign_vars(self):
+        dg = UserGrid()
+        dg.apply_qs_args()
+        if dg.export_to == 'xls':
+            dg.xls.as_response()
+        self.assign('grid', dg)
+        self.assign('endpoint', self.endpoint)
+        self.assign('pagetitle', self.manage_title % {'objnamepl': self.objnamepl})
+        self.assign('endpoint', self.endpoint)
+        self.assign('objectname', self.objname)
+        self.assign('objectnamepl', self.objnamepl)
+        self.assign('extend_from', self.extend_from)
 
 
 class ChangePassword(SecureView):
@@ -404,6 +298,7 @@ class GroupCrud(CrudBase):
     def init(self):
         CrudBase.init(self, 'Group', 'Groups', GroupForm, orm_Group)
         self.require_all = 'auth-manage'
+        self.manage_template_endpoint = 'auth:dg_crud_manage.html'
 
     def form_assign_defaults(self):
         if self.action == self.EDIT:
@@ -413,33 +308,18 @@ class GroupCrud(CrudBase):
                 self.objinst.assigned_permission_ids
             self.form.set_defaults(vals)
 
-    def manage_init_grid(self):
-        dg = DataGrid(
-            db.sess.execute,
-            per_page=30,
-            def_sort=lambda q: q.order_by(orm_Group.id.asc()),
-            class_='datagrid'
-            )
-        dg.add_col(
-            'id',
-            orm_Group.id,
-            inresult=True
-        )
-        dg.add_tablecol(
-            Col('Actions',
-                extractor=self.manage_action_links,
-                width_th='8%'
-            ),
-            orm_Group.id,
-            sort=None
-        )
-        dg.add_tablecol(
-            Col('Name'),
-            orm_Group.name,
-            filter_on=True,
-            sort='both'
-        )
-        return dg
+    def manage_assign_vars(self):
+        dg = GroupGrid()
+        dg.apply_qs_args()
+        if dg.export_to == 'xls':
+            dg.xls.as_response()
+        self.assign('grid', dg)
+        self.assign('endpoint', self.endpoint)
+        self.assign('pagetitle', self.manage_title % {'objnamepl': self.objnamepl})
+        self.assign('endpoint', self.endpoint)
+        self.assign('objectname', self.objname)
+        self.assign('objectnamepl', self.objnamepl)
+        self.assign('extend_from', self.extend_from)
 
 
 class PermissionCrud(CrudBase):
@@ -453,36 +333,15 @@ class PermissionCrud(CrudBase):
         if self.action in [self.ADD, self.DELETE]:
             abort(400)
 
-    def manage_init_grid(self):
-        dg = DataGrid(
-            db.sess.execute,
-            per_page=30,
-            def_sort=lambda q: q.order_by(orm_Permission.id.asc()),
-            class_='datagrid'
-            )
-        dg.add_col(
-            'id',
-            orm_Permission.id,
-            inresult=True
-        )
-        dg.add_tablecol(
-            Col('Actions',
-                extractor=self.manage_action_links,
-                width_th='8%'
-            ),
-            orm_Permission.id,
-            sort=None
-        )
-        dg.add_tablecol(
-            Col('Permission', width_td="35%"),
-            orm_Permission.name,
-            filter_on=True,
-            sort='both'
-        )
-        dg.add_tablecol(
-            Col('Description'),
-            orm_Permission.description,
-            filter_on=False,
-            sort=False
-        )
-        return dg
+    def manage_assign_vars(self):
+        dg = PermissionGrid()
+        dg.apply_qs_args()
+        if dg.export_to == 'xls':
+            dg.xls.as_response()
+        self.assign('grid', dg)
+        self.assign('endpoint', self.endpoint)
+        self.assign('pagetitle', self.manage_title % {'objnamepl': self.objnamepl})
+        self.assign('endpoint', self.endpoint)
+        self.assign('objectname', self.objname)
+        self.assign('objectnamepl', self.objnamepl)
+        self.assign('extend_from', self.extend_from)
