@@ -337,6 +337,19 @@ class GroupCrud(CrudBase):
                 self.objinst.assigned_permission_ids
             self.form.set_defaults(vals)
 
+    def form_orm_edit(self):
+        # form does not list inactive users. But, such users should remain in
+        #   their respective groups in case of reactivation. Pull them into
+        #   the list here
+        d = self.form.get_values()
+        existing_inactives = orm_User.query().join(orm_User.groups).filter(
+            self.ormcls.id == self.objid,
+            orm_User.inactive == True
+        ).all()
+        d['assigned_users'] += [u.id for u in existing_inactives]
+
+        return self.ormcls.edit(self.objid, **d)
+
     def manage_assign_vars(self):
         dg = GroupGrid()
         dg.apply_qs_args()

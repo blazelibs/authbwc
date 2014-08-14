@@ -1,11 +1,11 @@
-import datetime
-import smtplib
-import re
-
-import minimock
+from blazeutils import randchars
 from blazeweb.globals import ag
 from blazeweb.testing import Client, TestApp
-from blazeutils import randchars
+import datetime
+import minimock
+from nose.tools import eq_
+import re
+import smtplib
 from werkzeug import BaseResponse, BaseRequest
 
 from compstack.auth.lib.testing import login_client_with_permissions, \
@@ -266,7 +266,7 @@ class TestUserViews(object):
         assert re.search(r'password: None', mmdump) is None
         minimock.restore()
 
-        user = User.get_by_email(u'usersaved@example.com')
+        db.sess.expire(user)
         assert user.login_id == 'usersaved'
         assert user.reset_required
         assert not user.super_user
@@ -306,7 +306,7 @@ class TestUserViews(object):
         assert 'User edited successfully' in r.data
         assert req.url.endswith('users/manage')
 
-        user = User.get_by_email(u'usersaved@example.com')
+        db.sess.expire(user)
         assert user.login_id == 'usersaved'
         assert user.reset_required
         assert not user.super_user
@@ -527,7 +527,7 @@ class TestUserProfileView(object):
         topost['password-confirm'] = 'newpass'
         r = self.c.post('users/profile', data=topost)
         assert r.status_code == 200, r.status
-        user = User.get(self.userid)
+        db.sess.expire(user)
         assert user.pass_hash != pass_hash
 
     def test_perm_changes(self):
@@ -728,7 +728,7 @@ class TestRecoverPassword(object):
         smtplib.SMTP.mock_returns = minimock.Mock('smtp_connection', tracker=tt)
 
         # test posting to the restore password view
-        user = User.get(user_id)
+        db.sess.expire(user)
         topost = {
             'email_address': user.email_address,
             'lost-password-form-submit-flag': 'submitted',
@@ -739,7 +739,7 @@ class TestRecoverPassword(object):
         assert req.url == 'http://localhost/'
 
         # test the mock strings (i.e. test the email that was sent out)
-        user = User.get(user_id)
+        db.sess.expire(user)
         assert tt.check('Called smtp_connection.sendmail(...%s...has been issu'
                         'ed to reset the password...' % user.email_address)
         # restore the mocked objects
@@ -752,7 +752,7 @@ class TestRecoverPassword(object):
         assert 'Please choose a new password to complete the reset request' in r.data
 
         # expire the date
-        user = User.get(user_id)
+        db.sess.expire(user)
         orig_reset_ts = user.pass_reset_ts
         user.pass_reset_ts = datetime.datetime(2000, 10, 10)
         db.sess.commit()
@@ -766,7 +766,7 @@ class TestRecoverPassword(object):
         assert req.url.endswith('users/recover-password')
 
         # unexpire the date
-        user = User.get(user_id)
+        db.sess.expire(user)
         user.pass_reset_ts = orig_reset_ts
         db.sess.commit()
 
@@ -790,6 +790,33 @@ class TestGroupViews(object):
         cls.c = Client(ag.wsgi_test_app, BaseResponse)
         perms = [u'auth-manage', u'users-test1', u'users-test2']
         cls.userid = login_client_with_permissions(cls.c, perms)
+
+    def test_not_losing_inactives(self):
+        u1 = User.testing_create()
+        u2 = User.testing_create()
+        u2.inactive_flag = True
+
+        g = Group.testing_create()
+        g.users = [u2]
+        db.sess.commit()
+
+        topost = {
+            'approved_permissions': [],
+            'assigned_users': [u1.id],
+            'denied_permissions': [],
+            'group-submit-flag': u'submitted',
+            'name': g.name,
+            'submit': u'Submit'
+        }
+        req, resp = self.c.post('groups/edit/{0}'.format(g.id), data=topost,
+                                follow_redirects=True)
+        assert resp.status_code == 200, resp.status
+        assert '/groups/manage' in req.url, req.url
+
+        db.sess.expire(g)
+        eq_(len(g.users), 2)
+        assert u1 in g.users
+        assert u2 in g.users
 
     def test_required_fields(self):
         topost = {

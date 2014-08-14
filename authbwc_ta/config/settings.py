@@ -41,6 +41,7 @@ class Test(Default):
         Default.init(self)
         self.apply_test_settings()
 
+        self.components.sqlalchemy.use_split_sessions = True
         self.template.default = 'common:layout_testing.html'
         self.template.admin = 'common:layout_testing.html'
         self.emails.from_default = 'admin@example.com'
