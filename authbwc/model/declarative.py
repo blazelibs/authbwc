@@ -4,10 +4,10 @@ from hashlib import sha512
 from blazeutils.helpers import tolist
 from blazeutils.strings import randchars
 from blazeweb.globals import settings
-from sqlalchemy import Column, Unicode, DateTime, String
-from sqlalchemy.orm import join, relation
-from sqlalchemy.sql import select, and_, alias, or_, func, text
-from sqlalchemy.sql.functions import sum
+import sqlalchemy as sa
+from sqlalchemy.ext.hybrid import hybrid_property
+import sqlalchemy.orm as saorm
+import sqlalchemy.sql as sasql
 from sqlalchemy.util import classproperty
 
 from compstack.sqlalchemy import db
@@ -23,7 +23,7 @@ class AuthRelationsMixin(object):
     """
     @classproperty
     def groups(cls):
-        return relation('Group', secondary='auth_user_group_map')
+        return saorm.relationship('Group', secondary='auth_user_group_map')
 
     def assign_permissions(self, approved_perm_ids, denied_perm_ids):
         from compstack.auth.model.metadata import user_permission_assignments as tbl_upa
@@ -58,14 +58,14 @@ class AuthRelationsMixin(object):
     @property
     def assigned_permission_ids(self):
         from compstack.auth.model.metadata import user_permission_assignments as tbl_upa
-        s = select(
+        s = sasql.select(
             [tbl_upa.c.permission_id],
-            and_(tbl_upa.c.user_id == self.id, tbl_upa.c.approved == 1)
+            sasql.and_(tbl_upa.c.user_id == self.id, tbl_upa.c.approved == 1)
         )
         approved = [r[0] for r in db.sess.execute(s)]
-        s = select(
+        s = sasql.select(
             [tbl_upa.c.permission_id],
-            and_(tbl_upa.c.user_id == self.id, tbl_upa.c.approved == -1)
+            sasql.and_(tbl_upa.c.user_id == self.id, tbl_upa.c.approved == -1)
         )
         denied = [r[0] for r in db.sess.execute(s)]
 
@@ -76,13 +76,13 @@ class AuthRelationsMixin(object):
         from compstack.auth.model.queries import query_users_permissions
         vuserperms = query_users_permissions().alias()
         return db.sess.query(cls).select_from(
-            join(cls, vuserperms, cls.id == vuserperms.c.user_id)
+            saorm.join(cls, vuserperms, cls.id == vuserperms.c.user_id)
         ).filter(
-            or_(
+            sasql.or_(
                 vuserperms.c.user_approved == 1,
-                and_(
+                sasql.and_(
                     vuserperms.c.user_approved.is_(None),
-                    or_(
+                    sasql.or_(
                         vuserperms.c.group_denied.is_(None),
                         vuserperms.c.group_denied >= 0,
                     ),
@@ -97,7 +97,7 @@ class AuthRelationsMixin(object):
     def cm_permission_map(cls, uid):
         from compstack.auth.model.queries import query_users_permissions
         user_perm = query_users_permissions().alias()
-        s = select(
+        s = sasql.select(
             [
                 user_perm.c.user_id.label('user_id'),
                 user_perm.c.permission_id.label('permission_id'),
@@ -144,7 +144,7 @@ class AuthRelationsMixin(object):
     def permission_map_groups(self):
         from compstack.auth.model.queries import query_user_group_permissions
         user_group_perm = query_user_group_permissions().alias()
-        s = select(
+        s = sasql.select(
             [
                 user_group_perm.c.permission_id,
                 user_group_perm.c.group_name,
@@ -173,18 +173,18 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
     """
         A mixin with common
     """
-    login_id = Column(Unicode(150), nullable=False, unique=True)
-    email_address = Column(Unicode(150), nullable=False, unique=True)
-    pass_hash = Column(String(128), nullable=False)
-    pass_salt = Column(String(32), nullable=False)
-    reset_required = Column(SmallIntBool, server_default=text('1'), nullable=False)
-    super_user = Column(SmallIntBool, server_default=text('0'), nullable=False)
-    name_first = Column(Unicode(255))
-    name_last = Column(Unicode(255))
-    inactive_flag = Column(SmallIntBool, nullable=False, server_default=text('0'))
-    inactive_date = Column(DateTime)
-    pass_reset_ts = Column(DateTime)
-    pass_reset_key = Column(String(12))
+    login_id = sa.Column(sa.Unicode(150), nullable=False, unique=True)
+    email_address = sa.Column(sa.Unicode(150), nullable=False, unique=True)
+    pass_hash = sa.Column(sa.String(128), nullable=False)
+    pass_salt = sa.Column(sa.String(32), nullable=False)
+    reset_required = sa.Column(SmallIntBool, server_default=sasql.text('1'), nullable=False)
+    super_user = sa.Column(SmallIntBool, server_default=sasql.text('0'), nullable=False)
+    name_first = sa.Column(sa.Unicode(255))
+    name_last = sa.Column(sa.Unicode(255))
+    inactive_flag = sa.Column(SmallIntBool, nullable=False, server_default=sasql.text('0'))
+    inactive_date = sa.Column(sa.DateTime)
+    pass_reset_ts = sa.Column(sa.DateTime)
+    pass_reset_key = sa.Column(sa.String(12))
 
     def __repr__(self):
         return '<User "%s" : %s>' % (self.login_id, self.email_address)
@@ -197,7 +197,7 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
             self.text_password = password
     password = property(None, set_password)
 
-    @property
+    @hybrid_property
     def inactive(self):
         if self.inactive_flag:
             return True
@@ -205,13 +205,42 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
             return True
         return False
 
-    @property
+    @inactive.expression
+    def inactive(cls):
+        return sasql.case(
+            [(
+                sasql.or_(
+                    cls.inactive_flag == True,
+                    sasql.and_(
+                        cls.inactive_date.isnot(None),
+                        cls.inactive_date < datetime.now()
+                    )
+                ),
+                True
+            )],
+            else_=False
+        ).label('inactive')
+
+    @hybrid_property
     def name(self):
         retval = '%s %s' % (
             self.name_first if self.name_first else '',
             self.name_last if self.name_last else ''
         )
         return retval.strip()
+
+    @name.expression
+    def name(cls):
+        nf = sasql.functions.coalesce(cls.name_first, u'')
+        nl = sasql.functions.coalesce(cls.name_last, u'')
+        return (
+            nf +
+            sasql.case(
+                [(sasql.or_(nf == u'', nl == u''), u'')],
+                else_=u' '
+            ) +
+            nl
+        ).label('name')
 
     @property
     def name_or_login(self):
@@ -318,7 +347,7 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
     def get_by_email(cls, email_address):
         # case-insensitive query
         return db.sess.query(cls) \
-            .filter(func.lower(cls.email_address) == func.lower(email_address)) \
+            .filter(sasql.func.lower(cls.email_address) == sasql.func.lower(email_address)) \
             .first()
 
     @classmethod
@@ -421,11 +450,11 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
 
 
 class GroupMixin(DefaultMixin):
-    name = Column(Unicode(150), nullable=False, index=True, unique=True)
+    name = sa.Column(sa.Unicode(150), nullable=False, index=True, unique=True)
 
     @classproperty
     def users(cls):
-        return relation('User', secondary='auth_user_group_map')
+        return saorm.relationship('User', secondary='auth_user_group_map')
 
     def __repr__(self):
         return '<Group "%s">' % (self.name)
@@ -515,14 +544,14 @@ class GroupMixin(DefaultMixin):
     @property
     def assigned_permission_ids(self):
         from compstack.auth.model.metadata import group_permission_assignments as tbl_gpa
-        s = select(
+        s = sasql.select(
             [tbl_gpa.c.permission_id],
-            and_(tbl_gpa.c.group_id == self.id, tbl_gpa.c.approved == 1)
+            sasql.and_(tbl_gpa.c.group_id == self.id, tbl_gpa.c.approved == 1)
         )
         approved = [r[0] for r in db.sess.execute(s)]
-        s = select(
+        s = sasql.select(
             [tbl_gpa.c.permission_id],
-            and_(tbl_gpa.c.group_id == self.id, tbl_gpa.c.approved == -1)
+            sasql.and_(tbl_gpa.c.group_id == self.id, tbl_gpa.c.approved == -1)
         )
         denied = [r[0] for r in db.sess.execute(s)]
 
