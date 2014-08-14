@@ -5,6 +5,8 @@ from blazeweb.globals import settings, rg, user as session_user
 from blazeweb.routing import url_for, current_url
 from blazeweb.utils import redirect, abort
 from blazeweb.views import View, SecureView
+from formencode.validators import String
+from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import NotFound
 from compstack.auth.forms import ChangePasswordForm, NewPasswordForm, \
     LostPasswordForm, LoginForm, UserProfileForm, User as UserForm, Group as GroupForm, \
@@ -14,11 +16,38 @@ from compstack.auth.helpers import after_login_url, load_session_user, send_new_
     send_change_password_email, send_reset_password_email
 from compstack.auth.model.orm import User as orm_User, Group as orm_Group, \
     Permission as orm_Permission
-from compstack.common.lib.views import CrudBase, FormMixin
+from compstack.common.lib.views import CrudBase as CommonCrudBase, FormMixin
 
 _modname = 'auth'
 
 log = logging.getLogger(__name__)
+
+
+class CrudBase(CommonCrudBase):
+    def init(self, *args, **kwargs):
+        CommonCrudBase.init(self, *args, **kwargs)
+        self.add_processor('session_key', String)
+
+    def auth_post(self, action=None, objid=None, session_key=None):
+        self.session_key = session_key
+        CommonCrudBase.auth_post(self, action, objid)
+
+    def form_when_completed(self):
+        redirect(url_for(
+            self.endpoint,
+            action='manage',
+            session_key=self.session_key
+        ))
+
+    def delete_record(self):
+        try:
+            CommonCrudBase.delete_record(self)
+        except IntegrityError:
+            session_user.add_message(
+                'warning',
+                'could not delete, the {0} is in use'.format(self.objname)
+            )
+            redirect(url_for(self.endpoint, action='manage', session_key=self.session_key))
 
 
 class UserCrud(CrudBase):
@@ -37,8 +66,8 @@ class UserCrud(CrudBase):
             if edited_user_obj and edited_user_obj.super_user and not sess_user_obj.super_user:
                 self.is_authorized = False
 
-    def auth_post(self, action=None, objid=None):
-        CrudBase.auth_post(self, action, objid)
+    def auth_post(self, action=None, objid=None, session_key=None):
+        CrudBase.auth_post(self, action, objid, session_key)
         if self.action == self.DELETE:
             # prevent self-deletion
             if objid == session_user.id:
@@ -328,8 +357,8 @@ class PermissionCrud(CrudBase):
         self.require_all = 'auth-manage'
         self.manage_template_endpoint = 'auth:permission_manage.html'
 
-    def auth_post(self, action=None, objid=None):
-        CrudBase.auth_post(self, action, objid)
+    def auth_post(self, action=None, objid=None, session_key=None):
+        CrudBase.auth_post(self, action, objid, session_key)
         if self.action in [self.ADD, self.DELETE]:
             abort(400)
 
