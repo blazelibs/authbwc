@@ -13,7 +13,8 @@ from compstack.auth.forms import ChangePasswordForm, NewPasswordForm, \
     Permission as PermissionForm
 from compstack.auth.helpers import after_login_url, load_session_user, send_new_user_email, \
     send_change_password_email, send_reset_password_email
-from compstack.auth.model.orm import User as orm_User, Group as orm_Group, Permission as orm_Permission
+from compstack.auth.model.orm import User as orm_User, Group as orm_Group, \
+    Permission as orm_Permission
 from compstack.common.lib.views import CrudBase, FormMixin
 from compstack.datagrid.lib import DataGrid, Col, YesNo, Link
 from compstack.sqlalchemy import db
@@ -21,6 +22,7 @@ from compstack.sqlalchemy import db
 _modname = 'auth'
 
 log = logging.getLogger(__name__)
+
 
 class UserCrud(CrudBase):
     def init(self):
@@ -55,7 +57,10 @@ class UserCrud(CrudBase):
         if self.action == self.EDIT:
             vals = self.objinst.to_dict()
             vals['assigned_groups'] = self.objinst.group_ids
-            vals['approved_permissions'], vals['denied_permissions'] = self.objinst.assigned_permission_ids
+            (
+                vals['approved_permissions'],
+                vals['denied_permissions']
+            ) = self.objinst.assigned_permission_ids
             self.form.set_defaults(vals)
 
     def form_when_completed(self):
@@ -65,7 +70,10 @@ class UserCrud(CrudBase):
             elif self.form.elements.password.value:
                 email_sent = send_change_password_email(self.form_resulting_entity)
             if (self.action == self.ADD or self.form.elements.password.value) and not email_sent:
-                session_user.add_message('error', 'An error occurred while sending the user notification email.')
+                session_user.add_message(
+                    'error',
+                    'An error occurred while sending the user notification email.'
+                )
 
         CrudBase.form_when_completed(self)
 
@@ -186,6 +194,7 @@ class UserCrud(CrudBase):
         )
         return dg
 
+
 class ChangePassword(SecureView):
     def auth_pre(self):
         self.check_authorization = False
@@ -198,7 +207,8 @@ class ChangePassword(SecureView):
             orm_User.get(session_user.id).update_password(self.form.elements.password.value)
             session_user.reset_required = False
             session_user.add_message('notice', 'Your password has been changed successfully.')
-            url = after_login_url() if rg.request.url == url_for('auth:ChangePassword') else rg.request.url
+            url = after_login_url() if rg.request.url == url_for('auth:ChangePassword') \
+                else rg.request.url
             redirect(url)
         elif self.form.is_submitted():
             # form was submitted, but invalid
@@ -209,6 +219,7 @@ class ChangePassword(SecureView):
     def default(self):
         self.assign('form', self.form)
         self.render_template()
+
 
 class ResetPassword(View):
 
@@ -221,7 +232,9 @@ class ResetPassword(View):
             self.abort()
         if key != user.pass_reset_key:
             self.abort()
-        expires_on = user.pass_reset_ts + datetime.timedelta(hours=settings.components.auth.password_rest_expires_after)
+        expires_on = user.pass_reset_ts + datetime.timedelta(
+            hours=settings.components.auth.password_rest_expires_after
+        )
         if datetime.datetime.utcnow() > expires_on:
             self.abort('password reset link expired')
 
@@ -248,7 +261,10 @@ class ResetPassword(View):
         self.render_template()
 
     def get(self, login_id, key):
-        session_user.add_message('notice', "Please choose a new password to complete the reset request.")
+        session_user.add_message(
+            'notice',
+            "Please choose a new password to complete the reset request."
+        )
         self.assign_form()
         self.render_template()
 
@@ -260,6 +276,7 @@ class ResetPassword(View):
         url = url_for('auth:LostPassword')
         redirect(url)
 
+
 class LostPassword(View):
     def init(self):
         self.form = LostPasswordForm()
@@ -270,13 +287,23 @@ class LostPassword(View):
             user_obj = orm_User.reset_password(em_address)
             if user_obj:
                 if send_reset_password_email(user_obj):
-                    session_user.add_message('notice', 'An email with a link to reset your password has been sent.')
+                    session_user.add_message(
+                        'notice',
+                        'An email with a link to reset your password has been sent.'
+                    )
                 else:
-                    session_user.add_message('error', 'An error occurred while sending the notification email. Your password has not been reset.')
+                    session_user.add_message(
+                        'error',
+                        'An error occurred while sending the notification email. Your '
+                        + 'password has not been reset.'
+                    )
                 url = current_url(root_only=True)
                 redirect(url)
             else:
-                session_user.add_message('error', 'Did not find a user with email address: %s' % em_address)
+                session_user.add_message(
+                    'error',
+                    'Did not find a user with email address: %s' % em_address
+                )
         elif self.form.is_submitted():
             # form was submitted, but invalid
             self.form.assign_user_errors()
@@ -286,6 +313,7 @@ class LostPassword(View):
     def default(self):
         self.assign('form', self.form)
         self.render_template()
+
 
 class UserProfile(SecureView, FormMixin):
     def init(self):
@@ -306,10 +334,11 @@ class UserProfile(SecureView, FormMixin):
         # assigned groups and permissions stay the same for profile submissions
         formvals['assigned_groups'] = self.objinst.group_ids
         formvals['approved_permissions'], formvals['denied_permissions'] = \
-                self.objinst.assigned_permission_ids
+            self.objinst.assigned_permission_ids
         formvals['pass_reset_ok'] = False
         orm_User.edit(self.objid, **formvals)
         session_user.add_message('notice', 'profile updated succesfully')
+
 
 class PermissionMap(SecureView):
     def auth_pre(self):
@@ -322,6 +351,7 @@ class PermissionMap(SecureView):
         self.assign('permgroups', dbuser.permission_map_groups)
         self.render_template()
 
+
 class Login(View):
     def init(self):
         self.form = LoginForm()
@@ -331,13 +361,14 @@ class Login(View):
             user = orm_User.validate(
                 self.form.els.login_id.value,
                 self.form.els.password.value
-                )
+            )
             if user:
                 if user.inactive:
                     session_user.add_message('error', 'That user is inactive.')
                 else:
                     load_session_user(user)
-                    log.application('user %s logged in; session id: %s; remote_ip: %s', user.login_id, rg.session.id, rg.request.remote_addr)
+                    log.application('user %s logged in; session id: %s; remote_ip: %s',
+                                    user.login_id, rg.session.id, rg.request.remote_addr)
                     session_user.add_message('notice', 'You logged in successfully!')
                     if user.reset_required:
                         url = url_for('auth:ChangePassword')
@@ -345,7 +376,9 @@ class Login(View):
                         url = after_login_url()
                     redirect(url)
             else:
-                log.application('user login failed; user login: %s; session id: %s; remote_ip: %s', self.form.elements.login_id.value, rg.session.id, rg.request.remote_addr)
+                log.application('user login failed; user login: %s; session id: %s; remote_ip: %s',
+                                self.form.elements.login_id.value, rg.session.id,
+                                rg.request.remote_addr)
                 session_user.add_message('error', 'Login failed!  Please try again.')
         elif self.form.is_submitted():
             # form was submitted, but invalid
@@ -357,6 +390,7 @@ class Login(View):
         self.assign('form', self.form)
         self.render_template()
 
+
 class Logout(View):
 
     def default(self):
@@ -364,6 +398,7 @@ class Logout(View):
 
         url = url_for('auth:Login')
         redirect(url)
+
 
 class GroupCrud(CrudBase):
     def init(self):
@@ -374,7 +409,8 @@ class GroupCrud(CrudBase):
         if self.action == self.EDIT:
             vals = self.objinst.to_dict()
             vals['assigned_users'] = self.objinst.user_ids
-            vals['approved_permissions'], vals['denied_permissions'] = self.objinst.assigned_permission_ids
+            vals['approved_permissions'], vals['denied_permissions'] = \
+                self.objinst.assigned_permission_ids
             self.form.set_defaults(vals)
 
     def manage_init_grid(self):
@@ -404,6 +440,7 @@ class GroupCrud(CrudBase):
             sort='both'
         )
         return dg
+
 
 class PermissionCrud(CrudBase):
     def init(self):

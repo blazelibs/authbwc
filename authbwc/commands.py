@@ -1,5 +1,6 @@
 import paste.script.command as pscmd
 
+
 class AddAdministrator(pscmd.Command):
     # Parser configuration
     summary = "add an administrative user"

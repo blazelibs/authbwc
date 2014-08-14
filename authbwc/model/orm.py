@@ -18,7 +18,7 @@ if settings.components.auth.model_create_user:
         __tablename__ = 'auth_users'
 
         val.validates_constraints()
-        validates_unique('login_id','email_address')
+        validates_unique('login_id', 'email_address')
 
 if settings.components.auth.model_create_group:
     class Group(Base, GroupMixin):
@@ -26,6 +26,7 @@ if settings.components.auth.model_create_group:
 
         val.validates_constraints()
         validates_unique('name')
+
 
 class Permission(Base, DefaultMixin):
     __tablename__ = 'auth_permissions'
