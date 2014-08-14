@@ -89,7 +89,8 @@ class UserFormBase(Form):
         hel = self.add_header('group_membership_header', 'Group Membership')
         group_opts = self.get_group_options()
         if multi:
-            gel = self.add_mselect('assigned_groups', group_opts, 'Assign to', required=required)
+            gel = self.add_mselect('assigned_groups', group_opts, 'Assign to',
+                                   required=required, choose=None)
         else:
             gel = self.add_select('assigned_groups', group_opts, 'Assign to', required=required)
         return hel, gel
@@ -97,8 +98,8 @@ class UserFormBase(Form):
     def add_user_permissions_section(self):
         hel = self.add_header('user_permissions_header', 'User Permissions')
         perm_opts = orm_Permission.pairs('id:name', orm_Permission.name)
-        gel = self.add_mselect('approved_permissions', perm_opts, 'Approved')
-        gel = self.add_mselect('denied_permissions', perm_opts, 'Denied')
+        gel = self.add_mselect('approved_permissions', perm_opts, 'Approved', choose=None)
+        gel = self.add_mselect('denied_permissions', perm_opts, 'Denied', choose=None)
         return hel, gel
 
     def add_submit_buttons(self):
@@ -180,16 +181,27 @@ class Group(Form):
     def add_user_membership_section(self):
         el = self.add_header('group_membership_header', 'Users In Group')
 
-        user_opts = orm_User.pairs('id:login_id', orm_User.login_id)
-        el = self.add_mselect('assigned_users', user_opts, 'Assign')
+        # list only active users, using the "inactive" hybrid property to account
+        #   for all cases
+        users = orm_User.list_where(
+            orm_User.inactive == False,
+            order_by=[orm_User.name, orm_User.login_id]
+        )
+        user_opts = [
+            (
+                u.id,
+                '{0} ({1})'.format(u.name, u.login_id) if u.name else u.login_id
+            ) for u in users
+        ]
+        el = self.add_mselect('assigned_users', user_opts, 'Assign', choose=None)
 
     def add_group_permissions_section(self):
         el = self.add_header('group_permissions_header', 'Group Permissions')
 
         perm_opts = orm_Permission.pairs('id:name', orm_Permission.name)
-        el = self.add_mselect('approved_permissions', perm_opts, 'Approved')
+        el = self.add_mselect('approved_permissions', perm_opts, 'Approved', choose=None)
 
-        el = self.add_mselect('denied_permissions', perm_opts, 'Denied')
+        el = self.add_mselect('denied_permissions', perm_opts, 'Denied', choose=None)
 
     def add_submit_buttons(self):
         self.add_header('submit-fields-header', '')
