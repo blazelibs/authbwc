@@ -45,6 +45,7 @@ setup(
         'CommonBWC>=0.1.0',
         'DataGridBWC>=0.2.0',
         'BlazeWeb>=0.3.1',
+        'TemplatingBWC>=0.3.0', # for Select2
         # need for control panel code.  This should go away eventually, see
         # #5607.
         'BaseBWA'
