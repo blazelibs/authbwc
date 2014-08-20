@@ -1,10 +1,10 @@
 Change Log
 ----------
 
-0.2.1 released ??
+0.2.1 released 2014-08-30
 ==========================
 
-* ???
+* depend on TemplatingBWC for Select2 usage
 
 0.2.0 released 2014-08-30
 ==========================
