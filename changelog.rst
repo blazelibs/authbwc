@@ -1,12 +1,17 @@
 Change Log
 ----------
 
-0.2.1 released 2014-08-30
+0.2.2 released ???
+==========================
+
+* ???
+
+0.2.1 released 2014-08-20
 ==========================
 
 * depend on TemplatingBWC for Select2 usage
 
-0.2.0 released 2014-08-30
+0.2.0 released 2014-08-20
 ==========================
 
 **BC BREAK**: some of these changes could break existing apps.  The user experience will also be
