@@ -2,6 +2,7 @@ import os
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop as STDevelopCmd
 
+
 class DevelopCmd(STDevelopCmd):
     def run(self):
         # add in requirements for testing only when using the develop command
@@ -21,7 +22,7 @@ setup(
     name='AuthBWC',
     version=VERSION,
     description="A user authentication and authorization component for the BlazeWeb framework",
-    long_description= '\n\n'.join((README, CHANGELOG)),
+    long_description='\n\n'.join((README, CHANGELOG)),
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
@@ -39,10 +40,10 @@ setup(
     packages=find_packages(exclude=['authbwc_*']),
     include_package_data=True,
     zip_safe=False,
-    cmdclass = {'develop': DevelopCmd},
+    cmdclass={'develop': DevelopCmd},
     install_requires=[
         'CommonBWC>=0.1.0',
-        'DataGridBWC>=0.1.0',
+        'DataGridBWC>=0.2.0',
         'BlazeWeb>=0.3.1',
         # need for control panel code.  This should go away eventually, see
         # #5607.
