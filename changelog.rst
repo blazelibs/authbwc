@@ -1,10 +1,18 @@
 Change Log
 ----------
 
-0.1.11 released ???
+0.2.0 released 2014-08-30
 ==========================
 
-* 
+**BC BREAK**: some of these changes could break existing apps.  The user experience will also be
+modified (we hope for the better).
+
+* pep8 linting applied to code
+* replaced older datagrids with newer declarative datagrids
+* enabled sessions on grids, trap FK delete exception
+* show only active users on Group form
+* applying Select2 UI enhancement
+* update dependencies, requires newer DataGridBWC version
 
 0.1.10 released 2012-12-24
 ==========================
