@@ -1,7 +1,7 @@
 Change Log
 ----------
 
-0.2.2 released ???
+0.2.2 released 2014-08-22
 ==========================
 
 * replaced DatagridBWC usage with WebGrid
