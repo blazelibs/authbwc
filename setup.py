@@ -43,9 +43,9 @@ setup(
     cmdclass={'develop': DevelopCmd},
     install_requires=[
         'CommonBWC>=0.1.0',
-        'WebGrid>=0.1.5',
+        'WebGrid>=0.1.6',
         'BlazeWeb>=0.3.1',
-        'TemplatingBWC>=0.3.0', # for Select2
+        'TemplatingBWC>=0.3.0',  # for Select2
         # need for control panel code.  This should go away eventually, see
         # #5607.
         'BaseBWA'
