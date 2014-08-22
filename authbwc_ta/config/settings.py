@@ -20,7 +20,7 @@ class Default(DefaultSettings):
         self.init_routing()
 
         self.add_component(app_package, 'sqlalchemy', 'sqlalchemybwc')
-        self.add_component(app_package, 'datagrid', 'datagridbwc')
+        self.add_component(app_package, 'webgrid', 'webgrid')
         self.add_component(app_package, 'auth', 'authbwc')
         self.add_component(app_package, 'common', 'commonbwc')
 

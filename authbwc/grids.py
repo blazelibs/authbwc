@@ -1,8 +1,7 @@
 from blazeweb.routing import url_for
-from datagridbwc.lib.declarative import Grid, Column, DateTimeColumn, YesNoColumn, \
-    LinkColumnBase
-from datagridbwc.lib.filters import ops, FilterBase, OptionsFilterBase, \
-    Operator, TextFilter
+from webgrid import Column, DateTimeColumn, YesNoColumn, LinkColumnBase
+from webgrid.blazeweb import Grid
+from webgrid.filters import ops, FilterBase, OptionsFilterBase, Operator, TextFilter
 from webhelpers.html import literal
 from webhelpers.html.tags import link_to
 
