@@ -43,7 +43,7 @@ setup(
     cmdclass={'develop': DevelopCmd},
     install_requires=[
         'CommonBWC>=0.1.0',
-        'DataGridBWC>=0.2.0',
+        'WebGrid>=0.1.5',
         'BlazeWeb>=0.3.1',
         'TemplatingBWC>=0.3.0', # for Select2
         # need for control panel code.  This should go away eventually, see
