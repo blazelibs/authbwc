@@ -91,7 +91,7 @@ class UserCrud(CrudBase):
             ) = self.objinst.assigned_permission_ids
             self.form.set_defaults(vals)
 
-    def form_when_completed(self):
+    def send_email_notifications(self):
         if self.form.elements.email_notify.value:
             if self.action == self.ADD:
                 email_sent = send_new_user_email(self.form_resulting_entity)
@@ -102,6 +102,9 @@ class UserCrud(CrudBase):
                     'error',
                     'An error occurred while sending the user notification email.'
                 )
+
+    def form_when_completed(self):
+        self.send_email_notifications()
 
         CrudBase.form_when_completed(self)
 
