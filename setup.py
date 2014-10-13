@@ -45,6 +45,7 @@ setup(
         'CommonBWC>=0.1.0',
         'WebGrid>=0.1.6',
         'BlazeWeb>=0.3.1',
+        'SQLAlchemyBWC',
         'TemplatingBWC>=0.3.0',  # for Select2
         # need for control panel code.  This should go away eventually, see
         # #5607.

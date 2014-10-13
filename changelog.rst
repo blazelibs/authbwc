@@ -1,10 +1,11 @@
 Change Log
 ----------
 
-0.2.3 released <in development>
+0.2.3 released 2014-10-13
 ==========================
 
-*
+* added SQLAlchemyBWC requirement to match usage
+* refactor form submission email notifications for easier overrides
 
 0.2.2 released 2014-08-22
 ==========================
