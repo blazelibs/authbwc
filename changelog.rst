@@ -1,10 +1,10 @@
 Change Log
 ----------
 
-0.2.4 released <in development>
+0.2.4 released 2015-12-04
 ==========================
 
-* ?
+* updated compatibility with SQLAlchemy to prevent warnings
 
 0.2.3 released 2014-10-13
 ==========================

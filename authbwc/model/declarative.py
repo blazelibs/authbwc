@@ -5,10 +5,10 @@ from blazeutils.helpers import tolist
 from blazeutils.strings import randchars
 from blazeweb.globals import settings
 import sqlalchemy as sa
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 import sqlalchemy.orm as saorm
 import sqlalchemy.sql as sasql
-from sqlalchemy.util import classproperty
 
 from compstack.sqlalchemy import db
 from compstack.sqlalchemy.lib.columns import SmallIntBool
@@ -21,7 +21,7 @@ class AuthRelationsMixin(object):
         This mixin provides methods and properties for a user-like entity
         to be related to groups and permissions.
     """
-    @classproperty
+    @declared_attr
     def groups(cls):
         return saorm.relationship('Group', secondary='auth_user_group_map')
 
@@ -452,7 +452,7 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
 class GroupMixin(DefaultMixin):
     name = sa.Column(sa.Unicode(150), nullable=False, index=True, unique=True)
 
-    @classproperty
+    @declared_attr
     def users(cls):
         return saorm.relationship('User', secondary='auth_user_group_map')
 
