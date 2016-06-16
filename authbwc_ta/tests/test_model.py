@@ -116,6 +116,70 @@ class TestUser(object):
         perm_count = db.sess.query(upa.c.id).filter(upa.c.user_id == u.id).count()
         eq_(perm_count, 2)
 
+    def test_set_permissions(self):
+        u = User.testing_create()
+        expect = {
+            u'auth-manage': False, u'prof-test-2': False,
+            u'ugp_approved': False, u'ugp_denied': False, u'users-test1': False,
+            u'users-test2': False, u'prof-test-1': False}
+        eq_(u.permission_dict(), expect)
+
+        u.set_permissions([Permission.get_by(name=u'auth-manage').id,
+                           Permission.get_by(name=u'prof-test-2').id], True)
+
+        expect = {
+            u'auth-manage': True, u'prof-test-2': True,
+            u'ugp_approved': False, u'ugp_denied': False, u'users-test1': False,
+            u'users-test2': False, u'prof-test-1': False}
+        eq_(u.permission_dict(), expect)
+
+        u.set_permissions([Permission.get_by(name=u'auth-manage').id,
+                           Permission.get_by(name=u'users-test1').id], False)
+
+        expect = {
+            u'auth-manage': False, u'prof-test-2': True,
+            u'ugp_approved': False, u'ugp_denied': False, u'users-test1': False,
+            u'users-test2': False, u'prof-test-1': False}
+        eq_(u.permission_dict(), expect)
+
+        u.set_permissions([Permission.get_by(name=u'users-test2').id], True)
+
+        expect = {
+            u'auth-manage': False, u'prof-test-2': False,
+            u'ugp_approved': False, u'ugp_denied': False, u'users-test1': False,
+            u'users-test2': True, u'prof-test-1': False}
+        eq_(u.permission_dict(), expect)
+
+    def test_edit_permissions(self):
+        u = User.testing_create(approved_perms=[u'auth-manage', u'prof-test-1'],
+                                denied_perms=[u'prof-test-2'])
+        eq_(u.has_permission(u'auth-manage', u'prof-test-1'), True)
+        eq_(u.has_permission(u'prof-test-2'), False)
+
+        User.edit(u.id, loginid=u'perm-edited-user')
+        eq_(u.has_permission(u'auth-manage', u'prof-test-1'), True)
+
+        User.edit(u.id, approved_permissions=[
+            Permission.get_by(name=u'users-test1').id,
+            Permission.get_by(name=u'prof-test-2').id
+        ])
+        eq_(u.has_permission(u'auth-manage'), False)
+        eq_(u.has_permission(u'prof-test-1'), False)
+        eq_(u.has_permission(u'users-test1'), True)
+        eq_(u.has_permission(u'prof-test-2'), True)
+
+    def test_edit_groups(self):
+        group1 = Group.testing_create()
+        group2 = Group.testing_create()
+        u = User.testing_create(groups=group1)
+        eq_(u.groups, [group1])
+
+        User.edit(u.id, loginid=u'group-edited-user')
+        eq_(u.groups, [group1])
+
+        User.edit(u.id, assigned_groups=group2.id)
+        eq_(u.groups, [group2])
+
     def test_user_delete_doesnt_delete_group(self):
         # create group and make sure count logic works
         g1 = Group.testing_create()

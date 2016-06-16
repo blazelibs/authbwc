@@ -25,30 +25,27 @@ class AuthRelationsMixin(object):
     def groups(cls):
         return saorm.relationship('Group', secondary='auth_user_group_map')
 
-    def assign_permissions(self, approved_perm_ids, denied_perm_ids):
+    def set_permissions(self, perm_ids, approved=True):
         from compstack.auth.model.metadata import user_permission_assignments as tbl_upa
-        insval = []
+        approved = 1 if approved else -1
+
+        perm_ids = perm_ids or []
+        condition = tbl_upa.c.approved == approved
+        if perm_ids:
+            condition = sasql.or_(
+                condition,
+                tbl_upa.c.permission_id.in_(perm_ids)
+            )
 
         # delete existing permission assignments for this user (i.e. we start over)
-        db.sess.execute(tbl_upa.delete(tbl_upa.c.user_id == self.id))
-
-        # insert "approved" records
-        if approved_perm_ids is not None and len(approved_perm_ids) != 0:
-            insval.extend([
-                {'user_id': self.id, 'permission_id': pid, 'approved': 1}
-                for pid in approved_perm_ids
-            ])
-
-        # insert "denied" records
-        if denied_perm_ids is not None and len(denied_perm_ids) != 0:
-            insval.extend([
-                {'user_id': self.id, 'permission_id': pid, 'approved': -1}
-                for pid in denied_perm_ids
-            ])
-
-        # do inserts
+        db.sess.execute(tbl_upa.delete(sasql.and_(tbl_upa.c.user_id == self.id, condition)))
+        insval = [{'user_id': self.id, 'permission_id': p, 'approved': approved} for p in perm_ids]
         if insval:
             db.sess.execute(tbl_upa.insert(), insval)
+
+    def assign_permissions(self, approved_perm_ids, denied_perm_ids):
+        self.set_permissions(approved_perm_ids, True)
+        self.set_permissions(denied_perm_ids, False)
 
     @property
     def group_ids(self):
@@ -315,12 +312,13 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
             except AttributeError:
                 pass
 
-        u.groups = [Group.get(gid) for gid in tolist(kwargs.get('assigned_groups', []))]
+        if 'assigned_groups' in kwargs:
+            u.groups = [Group.get(gid) for gid in tolist(kwargs['assigned_groups'])]
         db.sess.flush()
-        u.assign_permissions(
-            kwargs.get('approved_permissions', []),
-            kwargs.get('denied_permissions', [])
-        )
+        if 'approved_permissions' in kwargs:
+            u.set_permissions(kwargs['approved_permissions'], True)
+        if 'denied_permissions' in kwargs:
+            u.set_permissions(kwargs['denied_permissions'], False)
         return u
 
     @transaction_ncm
