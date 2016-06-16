@@ -1,0 +1,8 @@
+{% set jquery_ui_includes = ['base', 'multiselect'] %}
+{{ include_js('common:crud_manage.js') }}
+{% extends extend_from %}
+{% block title %}{{ pagetitle }} | {{super()}}{% endblock%}
+{% block body %}
+    <h2>{{ pagetitle }}</h2>
+    {{ grid.html()|content }}
+{% endblock body%}

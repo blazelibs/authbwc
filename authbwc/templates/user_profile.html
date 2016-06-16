@@ -1,0 +1,6 @@
+{% extends settings.template.admin %}
+{% block title %}User Profile | {{super()}}{% endblock %}
+{% block primary_content %}
+    <h1>User Profile</h1>
+    {{ form.render()|safe }}
+{% endblock primary_content %}

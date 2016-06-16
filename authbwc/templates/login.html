@@ -1,0 +1,8 @@
+{% extends settings.template.default %}
+{% block title %}User Login | {{super()}}{% endblock %}
+{% block primary_content %}
+    <h1>User Login</h1>
+    <p><strong>Only Authorized Users</strong> may use the form below to sign in.</p>
+    {{ form.render()|safe }}
+    <p><a href="{{ url_for('auth:LostPassword') }}">Recover Login Id/Password</a></p>
+{% endblock primary_content %}

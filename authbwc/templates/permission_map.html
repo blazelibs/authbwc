@@ -1,0 +1,73 @@
+{{ include_css() -}}
+{% extends settings.template.admin %}
+{% block title %}User Permission Map | {{super()}}{% endblock %}
+{% block primary_content %}
+    <h1>Permissions for: <a href="{{ url_for('auth:UserCrud', action='edit', objid=dbuser.id) }}"
+            title="edit user">{{dbuser.login_id}}</a></h1>
+    {% for row in result %}
+        {% if loop.first %}
+            <table class="datagrid" cellpadding="0" cellspacing="0">
+                <tr>
+                    <th class="first_col">Permission</th>
+                    <th>User Denied</th>
+                    <th>User Approved</th>
+                    <th>Group Denied</th>
+                    <th>Group Approved</th>
+                    <th>Resulting Permission</th>
+                </tr>
+        {% endif %}
+                <tr>
+                    <td class="first_col">{{row['permission_name']}}</td>
+                    <td class="denied">
+                        {% if row['user_approved'] == -1 %}
+                            <a href="{{ url_for('auth:UserCrud', action='edit', objid=row['user_id'])}}"
+                                title="edit user">denied</a>
+                        {% else %}
+                            &nbsp;
+                        {% endif %}
+                    </td>
+                    <td class="approved">
+                        {% if row['user_approved'] == 1 %}
+                            <a href="{{ url_for('auth:UserCrud', action='edit', objid=row['user_id'])}}"
+                                title="edit user">approved</a>
+                        {% else %}
+                            &nbsp;
+                        {% endif %}
+                    </td>
+                    <td class="denied">
+                        {% if row['group_denied'] <= -1 %}
+                            {% for group in permgroups[row['permission_id']]['denied'] %}
+                                <a href="{{ url_for('auth:GroupCrud', action='edit', objid=group['id'])}}"
+                                title="edit group">{{group['name']}}</a>
+                            {% endfor %}
+                        {% else %}
+                            &nbsp;
+                        {% endif %}
+                    </td>
+                    <td class="approved">
+                        {% if row['group_approved'] >= 1 %}
+                            {% for group in permgroups[row['permission_id']]['approved'] %}
+                                <a href="{{ url_for('auth:GroupCrud', action='edit', objid=group['id'])}}"
+                                title="edit group">{{group['name']}}</a>
+                            {% endfor %}
+                        {% else %}
+                            &nbsp;
+                        {% endif %}
+                    </td>
+                    <td class="{{ 'approved' if row['resulting_approval'] or dbuser.super_user else 'denied' }}">
+                        {% if row['resulting_approval'] or dbuser.super_user %}
+                            approved{{'*' if not row['resulting_approval'] and dbuser.super_user else ''}}
+                        {% else %}
+                            denied
+                        {% endif %}
+                    </td>
+                </tr>
+        {% if loop.last %}
+            </table>
+            {% if dbuser.super_user %}
+            <p>A '*' indicates a denied permission that was overriden because the user is a Super User.</p>
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+{% endblock primary_content %}
