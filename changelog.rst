@@ -1,10 +1,10 @@
 Change Log
 ----------
 
-0.2.5 released <in development>
+0.2.5 released 2016-06-17
 ==========================
 
-* ?
+* preserve user permissions when updating, if they are not specified
 
 0.2.4 released 2015-12-04
 ==========================
