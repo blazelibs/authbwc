@@ -2,8 +2,8 @@ from blazeweb.routing import url_for
 from webgrid import Column, DateTimeColumn, YesNoColumn, LinkColumnBase
 from webgrid.blazeweb import Grid
 from webgrid.filters import ops, FilterBase, OptionsFilterBase, Operator, TextFilter
-from webhelpers.html import literal
-from webhelpers.html.tags import link_to
+from webhelpers2.html import literal
+from webhelpers2.html.tags import link_to
 
 from compstack.auth.model.orm import Permission, Group, User
 
