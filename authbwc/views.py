@@ -6,8 +6,8 @@ from blazeweb.routing import url_for, current_url
 from blazeweb.utils import redirect, abort
 from blazeweb.views import View, SecureView
 from formencode.validators import String
+import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
-from werkzeug.exceptions import NotFound
 from compstack.auth.forms import ChangePasswordForm, NewPasswordForm, \
     LostPasswordForm, LoginForm, UserProfileForm, User as UserForm, Group as GroupForm, \
     Permission as PermissionForm
@@ -222,7 +222,7 @@ class LostPassword(View):
                     session_user.add_message(
                         'error',
                         'An error occurred while sending the notification email. Your '
-                        + 'password has not been reset.'
+                        'password has not been reset.'
                     )
                 url = current_url(root_only=True)
                 redirect(url)
@@ -347,7 +347,7 @@ class GroupCrud(CrudBase):
         d = self.form.get_values()
         existing_inactives = orm_User.query().join(orm_User.groups).filter(
             self.ormcls.id == self.objid,
-            orm_User.inactive == True
+            orm_User.inactive == sa.true(),
         ).all()
         d['assigned_users'] += [u.id for u in existing_inactives]
 

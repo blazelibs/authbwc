@@ -48,7 +48,7 @@ class TestNotAuthenticated(object):
     def test_logout(self):
         r = self.c.get('/users/logout')
         assert r.status_code == 302, r.status
-        assert '/users/login' in r.data
+        assert b'/users/login' in r.data
 
 
 class TestNoPerms(object):

@@ -6,7 +6,7 @@ import minimock
 from nose.tools import eq_
 import re
 import smtplib
-from werkzeug import BaseResponse, BaseRequest
+from werkzeug import BaseResponse
 
 from compstack.auth.lib.testing import login_client_with_permissions, \
     login_client_as_user, create_user_with_permissions
@@ -27,20 +27,20 @@ class TestUserViews(object):
         User.testing_create()
 
         r = self.c.get('/users/manage?onpage=2&perpage=1')
-        assert '<h2>Manage Users</h2>' in r.data
+        assert b'<h2>Manage Users</h2>' in r.data
 
     def test_users_manage_name_filter(self):
         u = User.testing_create()
         User.edit(u.id, name_first=u'Jack', name_last=u'Frost')
         r = self.c.get('/users/manage?op(name)=contains&v1(name)=Frost')
-        assert '<td>Jack Frost</td>' in r.data
+        assert b'<td>Jack Frost</td>' in r.data
 
     def test_groups_manage_paging(self):
         Group.testing_create()
         Group.testing_create()
 
         r = self.c.get('/groups/manage?onpage=2&perpage=1')
-        assert '<h2>Manage Groups</h2>' in r.data
+        assert b'<h2>Manage Groups</h2>' in r.data
 
     def test_permissions_manage_paging(self):
         x = Permission.testing_create()
@@ -53,7 +53,7 @@ class TestUserViews(object):
         Permission.delete(x.id)
         Permission.delete(y.id)
 
-        assert '<h2>Manage Permissions</h2>' in r.data
+        assert b'<h2>Manage Permissions</h2>' in r.data
 
     def test_required_fields(self):
         topost = {
@@ -61,8 +61,8 @@ class TestUserViews(object):
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Email: field is required' in r.data
-        assert 'Login Id: field is required' in r.data
+        assert b'Email: field is required' in r.data
+        assert b'Login Id: field is required' in r.data
 
     def test_loginid_unique(self):
         user = User.get(self.userid)
@@ -79,16 +79,16 @@ class TestUserViews(object):
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Login Id: that user already exists' in r.data
+        assert b'Login Id: that user already exists' in r.data
 
     def test_loginid_maxlength(self):
         topost = {
-            'login_id': 'r'*151,
+            'login_id': 'r' * 151,
             'email_address': 'test@example.com',
             'user-submit-flag': 'submitted'
         }
         r = self.c.post('users/add', data=topost)
-        assert 'Login Id: Enter a value not greater than 150 characters long' in r.data, r.data
+        assert b'Login Id: Enter a value not greater than 150 characters long' in r.data, r.data
 
     def test_email_unique(self):
         user = User.get(self.userid)
@@ -106,17 +106,17 @@ class TestUserViews(object):
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Email: a user with that email address already exists' in r.data
+        assert b'Email: a user with that email address already exists' in r.data
 
     def test_email_maxlength(self):
         topost = {
             'login_id': randchars(10),
-            'email_address': 'r'*140 + '@example.com',
+            'email_address': ('r' * 140) + '@example.com',
             'user-submit-flag': 'submitted'
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Email: Enter a value not greater than 150 characters long' in r.data
+        assert b'Email: Enter a value not greater than 150 characters long' in r.data
 
     def test_email_format(self):
         topost = {
@@ -125,7 +125,7 @@ class TestUserViews(object):
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Email: An email address must contain a single @' in r.data
+        assert b'Email: An email address must contain a single @' in r.data
 
     def test_bad_confirm(self):
         topost = {
@@ -138,11 +138,11 @@ class TestUserViews(object):
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Confirm Password: does not match field &#34;Password&#34;' in r.data
+        assert b'Confirm Password: does not match field &#34;Password&#34;' in r.data
 
     def test_super_user_protection(self):
         r = self.c.get('users/add')
-        assert 'name="super_user"' not in r.data
+        assert b'name="super_user"' not in r.data
 
     def test_perms_legit(self):
         p = Permission.get_by(name=u'users-test1')
@@ -159,8 +159,8 @@ class TestUserViews(object):
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Denied: you can not approve and deny the same permission' in r.data
-        assert 'Approved: you can not approve and deny the same permission' in r.data
+        assert b'Denied: you can not approve and deny the same permission' in r.data
+        assert b'Approved: you can not approve and deny the same permission' in r.data
 
     def test_fields_saved(self):
         ap = Permission.get_by(name=u'users-test1').id
@@ -191,7 +191,7 @@ class TestUserViews(object):
 
         req, r = self.c.post('users/add', data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
-        assert 'User added' in r.data
+        assert b'User added' in r.data
         assert req.url.endswith('users/manage')
 
         mmdump = tt.dump()
@@ -247,7 +247,7 @@ class TestUserViews(object):
         smtplib.SMTP.mock_returns = minimock.Mock('smtp_connection', tracker=tt)
 
         req, r = self.c.post('users/edit/%s' % user.id, data=topost, follow_redirects=True)
-        assert 'User edited successfully' in r.data
+        assert b'User edited successfully' in r.data
         assert req.url.endswith('users/manage')
 
         assert tt.check(
@@ -303,7 +303,7 @@ class TestUserViews(object):
             'email_notify': 1
         }
         req, r = self.c.post('users/edit/%s' % user.id, data=topost, follow_redirects=True)
-        assert 'User edited successfully' in r.data
+        assert b'User edited successfully' in r.data
         assert req.url.endswith('users/manage')
 
         db.sess.expire(user)
@@ -316,7 +316,7 @@ class TestUserViews(object):
         # now test a delete
         req, r = self.c.get('users/delete/%s' % user.id, follow_redirects=True)
         assert r.status_code == 200, r.status
-        assert 'User deleted' in r.data
+        assert b'User deleted' in r.data
         assert req.url.endswith('users/manage')
 
     def test_email_fail(self):
@@ -341,8 +341,8 @@ class TestUserViews(object):
         smtplib.SMTP = None
 
         req, r = self.c.post('users/add', data=topost, follow_redirects=True)
-        assert 'User added successfully' in r.data
-        assert 'An error occurred while sending the user notification email.' in r.data
+        assert b'User added successfully' in r.data
+        assert b'An error occurred while sending the user notification email.' in r.data
         assert req.url.endswith('users/manage')
 
         topost['password'] = 'new_password'
@@ -350,8 +350,8 @@ class TestUserViews(object):
         user = User.get_by_email('%s@example.com' % userlogin)
 
         req, r = self.c.post('users/edit/%s' % user.id, data=topost, follow_redirects=True)
-        assert 'User edited successfully' in r.data, r.data
-        assert 'An error occurred while sending the user notification email.' in r.data
+        assert b'User edited successfully' in r.data, r.data
+        assert b'An error occurred while sending the user notification email.' in r.data
         assert req.url.endswith('users/manage')
 
         smtplib.SMTP = smtp_orig
@@ -367,24 +367,24 @@ class TestUserViews(object):
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Password: Enter a value at least 6 characters long' in r.data
+        assert b'Password: Enter a value at least 6 characters long' in r.data
 
         topost = {
             'login_id': 'newuser',
-            'password': 't'*26,
+            'password': 't' * 26,
             'email_address': 'abc@example.com',
-            'password-confirm': 't'*26,
+            'password-confirm': 't' * 26,
             'email': 'test@exacmple.com',
             'user-submit-flag': 'submitted'
         }
         r = self.c.post('users/add', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Password: Enter a value less than 25 characters long' in r.data
+        assert b'Password: Enter a value less than 25 characters long' in r.data
 
     def test_same_user_delete(self):
         resp, r = self.c.get('users/delete/%s' % self.userid, follow_redirects=True)
         assert r.status_code == 403, r.status
-        assert 'You cannot delete your own user account' in r.data
+        assert b'You cannot delete your own user account' in r.data
         assert resp.url.endswith('users/delete/%s' % self.userid)
 
     def test_non_existing_id(self):
@@ -393,10 +393,10 @@ class TestUserViews(object):
             non_existing_id += 1000
         req, resp = self.c.get('users/edit/%s' % non_existing_id, follow_redirects=True)
         assert req.url.endswith('/users/edit/%s' % non_existing_id), req.url
-        assert resp.status_code == 404, r.status
+        assert resp.status_code == 404, resp.status
         req, resp = self.c.get('users/delete/%s' % non_existing_id, follow_redirects=True)
         assert req.url.endswith('users/delete/%s' % non_existing_id), req.url
-        assert resp.status_code == 404, r.status
+        assert resp.status_code == 404, resp.status
 
     def test_no_email_notify(self):
         topost = {
@@ -420,7 +420,7 @@ class TestUserViews(object):
 
         req, r = self.c.post('users/add', data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
-        assert 'User added' in r.data
+        assert b'User added' in r.data
         assert req.url.endswith('users/manage')
 
         assert len(tt.dump()) == 0
@@ -456,30 +456,30 @@ class TestUserProfileView(object):
         r = self.c.get('users/profile')
         assert r.status_code == 200, r.status
         user = User.get(self.userid)
-        assert user.email_address in r.data
-        assert user.login_id in r.data
+        assert user.email_address.encode() in r.data
+        assert user.login_id.encode() in r.data
 
         r = self.c.post('users/profile', data=self.get_to_post())
         assert r.status_code == 200, r.status
         user = User.get(self.userid)
-        assert user.email_address in r.data
-        assert user.login_id in r.data
-        assert 'usersfirstname' in r.data
-        assert 'userslastname' in r.data
-        assert 'profile updated succesfully' in r.data
+        assert user.email_address.encode() in r.data
+        assert user.login_id.encode() in r.data
+        assert b'usersfirstname' in r.data
+        assert b'userslastname' in r.data
+        assert b'profile updated succesfully' in r.data
 
     def test_required_fields(self):
         topost = self.get_to_post()
         topost['email_address'] = None
         r = self.c.post('users/profile', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Email: field is required' in r.data
+        assert b'Email: field is required' in r.data
 
         topost = self.get_to_post()
         topost['login_id'] = None
         r = self.c.post('users/profile', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Login Id: field is required' in r.data
+        assert b'Login Id: field is required' in r.data
 
     def test_password_confirm(self):
         topost = self.get_to_post()
@@ -487,7 +487,7 @@ class TestUserProfileView(object):
         topost['password-confirm'] = 'nomatch'
         r = self.c.post('users/profile', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Confirm Password: does not match field &#34;Password&#34;' in r.data, r.data
+        assert b'Confirm Password: does not match field &#34;Password&#34;' in r.data, r.data
 
     def test_email_dups(self):
         user2 = User.get(self.userid2)
@@ -495,7 +495,7 @@ class TestUserProfileView(object):
         topost['email_address'] = user2.email_address
         r = self.c.post('users/profile', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Email: a user with that email address already exists' in r.data
+        assert b'Email: a user with that email address already exists' in r.data
 
     def test_login_id_dups(self):
         user2 = User.get(self.userid2)
@@ -503,14 +503,14 @@ class TestUserProfileView(object):
         topost['login_id'] = user2.login_id
         r = self.c.post('users/profile', data=topost)
         assert r.status_code == 200, r.status
-        assert 'Login Id: that user already exists' in r.data
+        assert b'Login Id: that user already exists' in r.data
 
     def test_cancel(self):
         topost = self.get_to_post()
         topost['cancel'] = 'submitted'
         req, r = self.c.post('users/profile', data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
-        assert 'no changes made to your profile' in r.data
+        assert b'no changes made to your profile' in r.data
         assert req.url == 'http://localhost/'
 
     def test_password_changes(self):
@@ -568,7 +568,7 @@ class TestUserViewsSuperUser(object):
 
     def test_super_user_protection(self):
         r = self.c.get('users/add')
-        assert 'name="super_user"' in r.data
+        assert b'name="super_user"' in r.data
 
     def test_fields_saved(self):
         ap = Permission.get_by(name=u'users-test1').id
@@ -595,7 +595,7 @@ class TestUserViewsSuperUser(object):
         }
         req, r = self.c.post('users/add', data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
-        assert 'User added' in r.data
+        assert b'User added' in r.data
         assert req.url.endswith('users/manage')
 
         user = User.get_by_email(u'usersavedsu@example.com')
@@ -620,13 +620,13 @@ class TestUserViewsSuperUser(object):
         su = create_user_with_permissions(super_user=True)
         r = self.c.get('users/edit/%s' % su.id)
         assert r.status_code == 200, r.status
-        assert 'Edit User' in r.data
+        assert b'Edit User' in r.data
 
     def test_super_delete(self):
         su = create_user_with_permissions(super_user=True)
         req, r = self.c.get('users/delete/%s' % su.id, follow_redirects=True)
         assert r.status_code == 200, r.status
-        assert 'User deleted' in r.data
+        assert b'User deleted' in r.data
         assert req.url.endswith('users/manage')
 
 
@@ -647,7 +647,7 @@ class TestUserLogins(object):
         }
         resp = client.post('users/login', data=topost)
         assert resp.status_code == 200, resp.status
-        assert 'Login failed!' in resp.data
+        assert b'Login failed!' in resp.data
 
     def test_inactive_login(self):
         user = self.user
@@ -664,7 +664,7 @@ class TestUserLogins(object):
         }
         req, resp = client.post('users/login', data=topost, follow_redirects=True)
         assert resp.status_code == 200, resp.status
-        assert 'That user is inactive.' in resp.data
+        assert b'That user is inactive.' in resp.data
         assert req.url == 'http://localhost/users/login'
 
     def test_cleared_login(self):
@@ -702,25 +702,24 @@ class TestRecoverPassword(object):
         }
         r = self.c.post('users/recover-password', data=topost)
         assert r.status_code == 200, r.status
-        assert 'email address is not associated with a user' in r.data
+        assert b'email address is not associated with a user' in r.data
 
     def test_invalid_reset_link(self):
 
         req, resp = self.c.get('users/reset-password/nothere/invalidkey', follow_redirects=True)
         assert resp.status_code == 200, resp.status
-        assert 'Recover Password' in resp.data
-        assert 'invalid reset request, use the form below to resend reset link' in resp.data
+        assert b'Recover Password' in resp.data
+        assert b'invalid reset request, use the form below to resend reset link' in resp.data
         assert req.url.endswith('users/recover-password')
 
     def test_password_reset(self):
         """ has to be done in the same test function so that order is assured"""
 
         user = create_user_with_permissions()
-        user_id = user.id
 
         r = self.c.get('users/recover-password')
         assert r.status_code == 200, r.status
-        assert 'Recover Password' in r.data
+        assert b'Recover Password' in r.data
 
         # setup the mock objects so we can test the email getting sent out
         tt = minimock.TraceTracker()
@@ -735,7 +734,7 @@ class TestRecoverPassword(object):
         }
         req, r = self.c.post('users/recover-password', data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
-        assert 'email with a link to reset your password has been sent' in r.data, r.data
+        assert b'email with a link to reset your password has been sent' in r.data, r.data
         assert req.url == 'http://localhost/'
 
         # test the mock strings (i.e. test the email that was sent out)
@@ -748,8 +747,8 @@ class TestRecoverPassword(object):
         # now test resetting the password
         r = self.c.get('/users/reset-password/%s/%s' % (user.login_id, user.pass_reset_key))
         assert r.status_code == 200, r.status_code
-        assert 'Reset Password' in r.data
-        assert 'Please choose a new password to complete the reset request' in r.data
+        assert b'Reset Password' in r.data
+        assert b'Please choose a new password to complete the reset request' in r.data
 
         # expire the date
         db.sess.expire(user)
@@ -761,8 +760,8 @@ class TestRecoverPassword(object):
         req, resp = self.c.get('/users/reset-password/%s/%s' % (user.login_id, user.pass_reset_key),
                                follow_redirects=True)
         assert resp.status_code == 200, resp.status
-        assert 'Recover Password' in resp.data
-        assert 'password reset link expired, use the form below to resend reset link' in resp.data
+        assert b'Recover Password' in resp.data
+        assert b'password reset link expired, use the form below to resend reset link' in resp.data
         assert req.url.endswith('users/recover-password')
 
         # unexpire the date
@@ -779,7 +778,7 @@ class TestRecoverPassword(object):
         req, r = self.c.post('/users/reset-password/%s/%s' % (user.login_id, user.pass_reset_key),
                              data=topost, follow_redirects=True)
         assert r.status_code == 200, r.status
-        assert 'Your password has been reset successfully' in r.data
+        assert b'Your password has been reset successfully' in r.data
         assert req.url == 'http://localhost/'
 
 
@@ -824,7 +823,7 @@ class TestGroupViews(object):
         }
         req, resp = self.c.post('groups/add', data=topost, follow_redirects=True)
         assert resp.status_code == 200, resp.status
-        assert 'Group Name: field is required' in resp.data
+        assert b'Group Name: field is required' in resp.data
 
     def test_group_name_unique(self):
         topost = {
@@ -838,7 +837,7 @@ class TestGroupViews(object):
         req, resp = self.c.post('groups/add', data=topost, follow_redirects=True)
         assert resp.status_code == 200, resp.status
         assert '/groups/manage' in req.url, req.url
-        assert 'Group added successfully' in resp.data
+        assert b'Group added successfully' in resp.data
 
         topost = {
             'approved_permissions': [],
@@ -850,7 +849,7 @@ class TestGroupViews(object):
         }
         resp = self.c.post('groups/add', data=topost)
         assert resp.status_code == 200, resp.status
-        assert 'Group Name: the value for this field is not unique' in resp.data
+        assert b'Group Name: the value for this field is not unique' in resp.data
 
 
 class TestPasswordResetRequired(object):
@@ -867,7 +866,7 @@ class TestPasswordResetRequired(object):
     def test_reset_required(self):
         req, resp = self.c.get('/users/profile', follow_redirects=True)
         assert '/users/profile' in req.url
-        assert '<h1>Change Password</h1>' in resp.data
+        assert b'<h1>Change Password</h1>' in resp.data
 
         topost = {
             'change-password-form-submit-flag': u'submitted',
@@ -878,7 +877,7 @@ class TestPasswordResetRequired(object):
         }
         req, resp = self.c.post('/users/profile', data=topost, follow_redirects=True)
         assert '/users/profile' in req.url
-        assert '<h1>Change Password</h1>' not in resp.data, resp.data
+        assert b'<h1>Change Password</h1>' not in resp.data, resp.data
 
 
 class TestPermissionMap(object):
@@ -912,7 +911,7 @@ class TestPermissionMap(object):
         u = User.testing_create(groups=g)
 
         resp = self.tam.get('/users/permissions/{0}'.format(u.id))
-        assert '<h1>Permissions for: ' in resp
+        assert b'<h1>Permissions for: ' in resp
 
         d = resp.pyq
         db.sess.add(g)
@@ -927,7 +926,7 @@ class TestPermissionMap(object):
         db.sess.commit()
 
         resp = self.tam.get('/users/permissions/{0}'.format(u.id))
-        assert '<h1>Permissions for: ' in resp
+        assert b'<h1>Permissions for: ' in resp
 
         d = resp.pyq
         assert str(d('td.approved a[href="/users/edit/{0}"]'.format(u.id)))

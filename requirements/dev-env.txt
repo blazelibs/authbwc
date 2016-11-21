@@ -1,0 +1,9 @@
+-r common.txt
+
+codecov
+coverage
+nose
+pyquery
+tox
+webtest
+wheel

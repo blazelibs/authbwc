@@ -4,6 +4,7 @@ from hashlib import sha512
 from blazeutils.helpers import tolist
 from blazeutils.strings import randchars
 from blazeweb.globals import settings
+import six
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -189,7 +190,7 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
     def set_password(self, password, record_salt=None):
         if password:
             _, record_salt = self.calc_salt(record_salt)
-            self.pass_salt = record_salt
+            self.pass_salt = record_salt.decode()
             self.pass_hash = self.calc_pass_hash(password, record_salt)
             self.text_password = password
     password = property(None, set_password)
@@ -207,7 +208,7 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
         return sasql.case(
             [(
                 sasql.or_(
-                    cls.inactive_flag == True,
+                    cls.inactive_flag == sa.true(),
                     sasql.and_(
                         cls.inactive_date.isnot(None),
                         cls.inactive_date < datetime.now()
@@ -248,15 +249,22 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
     @classmethod
     def calc_salt(cls, record_salt=None):
         record_salt = record_salt or randchars(32, 'all')
-        if settings.components.auth.password_salt:
-            full_salt = settings.components.auth.password_salt + record_salt
-            return full_salt, record_salt
-        return record_salt, record_salt
+        if isinstance(record_salt, six.text_type):
+            record_salt = record_salt.encode()
+        full_salt = record_salt
+        password_salt = settings.components.auth.password_salt
+        if password_salt:
+            if isinstance(password_salt, six.text_type):
+                password_salt = password_salt.encode()
+            full_salt = password_salt + record_salt
+        return full_salt, record_salt
 
     @classmethod
     def calc_pass_hash(cls, password, record_salt=None):
         full_salt, record_salt = cls.calc_salt(record_salt)
-        return sha512(password+full_salt).hexdigest()
+        if isinstance(password, six.text_type):
+            password = password.encode()
+        return sha512(password + full_salt).hexdigest()
 
     @classmethod
     def validate(cls, login_id, password):
@@ -301,7 +309,7 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
         if kwargs.get('password') and kwargs.get('pass_reset_ok', True):
             kwargs['reset_required'] = True
 
-        for k, v in kwargs.iteritems():
+        for k, v in six.iteritems(kwargs):
             try:
                 # some values can not be set directly
                 if k not in (
@@ -476,7 +484,7 @@ class GroupMixin(DefaultMixin):
         else:
             g = cls.get(oid)
 
-        for k, v in kwargs.iteritems():
+        for k, v in six.iteritems(kwargs):
             try:
                 # some values can not be set directly
                 if k in ('assigned_users', 'approved_permissions', 'denied_permissions'):
@@ -525,12 +533,12 @@ class GroupMixin(DefaultMixin):
     def assign_permissions_by_name(cls, group_name, approved_perm_list=[], denied_perm_list=[]):
         # Note: this function is a wrapper for assign_permissions and will commit db trans
         from compstack.auth.model.orm import Permission
-        group = cls.get_by(name=unicode(group_name))
+        group = cls.get_by(name=six.text_type(group_name))
         approved_perm_ids = [item.id for item in [
-            Permission.get_by(name=unicode(perm)) for perm in tolist(approved_perm_list)
+            Permission.get_by(name=six.text_type(perm)) for perm in tolist(approved_perm_list)
         ]]
         denied_perm_ids = [item.id for item in [
-            Permission.get_by(name=unicode(perm)) for perm in tolist(denied_perm_list)
+            Permission.get_by(name=six.text_type(perm)) for perm in tolist(denied_perm_list)
         ]]
         group.assign_permissions(approved_perm_ids, denied_perm_ids)
 

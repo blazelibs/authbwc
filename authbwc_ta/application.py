@@ -22,5 +22,6 @@ def make_wsgi(profile='Dev'):
 def script_entry():
     application_entry(make_wsgi)
 
+
 if __name__ == '__main__':
     script_entry()

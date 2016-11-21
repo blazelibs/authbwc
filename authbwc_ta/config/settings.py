@@ -12,8 +12,6 @@ class Default(DefaultSettings):
         self.app_package = app_package
         DefaultSettings.init(self)
 
-        self.supporting_apps.append('basebwa')
-
         self.name.full = 'authbwc Test App'
         self.name.short = 'authbwc_ta'
 
@@ -49,11 +47,14 @@ class Test(Default):
         self.db.url = 'sqlite://'
 
         # uncomment this if you want to use a database you can inspect
-        #from os import path
-        #self.db.url = 'sqlite:///%s' % path.join(self.dirs.data, 'test_application.db')
+        # from os import path
+        # self.db.url = 'sqlite:///%s' % path.join(self.dirs.data, 'test_application.db')
+
 
 try:
-    from site_settings import *
-except ImportError, e:
-    if 'No module named site_settings' not in str(e):
+    from .site_settings import *  # noqa
+except ImportError as e:
+    msg = str(e).replace("'", '')
+    if 'No module named site_settings' not in msg and \
+            'No module named authbwc_ta.config.site_settings' not in msg:
         raise

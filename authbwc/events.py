@@ -8,4 +8,5 @@ def check_reset_required(sender, endpoint, urlargs):
     if user.is_authenticated and user.reset_required and endpoint not in skip_endpoints:
         forward('auth:ChangePassword')
 
+
 signal('blazeweb.response_cycle.started').connect(check_reset_required)

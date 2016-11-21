@@ -1,10 +1,15 @@
 from blazeutils.strings import randchars
 from blazeweb.globals import settings
+import six
 
 
 def add_administrative_user(allow_profile_defaults=True):
     from getpass import getpass
     from compstack.auth.model.orm import User
+
+    input_function = input
+    if six.PY2:
+        input_function = raw_input  # noqa
 
     defaults = settings.components.auth.admin
     # add a default administrative user
@@ -13,16 +18,16 @@ def add_administrative_user(allow_profile_defaults=True):
         uemail = defaults.email
         p1 = defaults.password
     else:
-        ulogin = raw_input("User's Login id:\n> ")
-        uemail = raw_input("User's email:\n> ")
+        ulogin = input_function("User's Login id:\n> ")
+        uemail = input_function("User's email:\n> ")
         while True:
             p1 = getpass("User's password:\n> ")
             p2 = getpass("confirm password:\n> ")
             if p1 == p2:
                 break
     User.add_iu(
-        login_id=unicode(ulogin),
-        email_address=unicode(uemail),
+        login_id=six.text_type(ulogin),
+        email_address=six.text_type(uemail),
         password=p1,
         super_user=True,
         reset_required=False,

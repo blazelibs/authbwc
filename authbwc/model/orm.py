@@ -1,14 +1,10 @@
-from blazeutils.helpers import tolist
 from blazeutils.strings import randchars
 from blazeweb.globals import settings
 from savalidation import validators as val
 from sqlalchemy import Column, Unicode
-from sqlalchemy.sql import select, and_
 
 from compstack.auth.model.declarative import UserMixin, GroupMixin
-from compstack.sqlalchemy import db
 from compstack.sqlalchemy.lib.declarative import declarative_base, DefaultMixin
-from compstack.sqlalchemy.lib.decorators import transaction
 from compstack.sqlalchemy.lib.validators import validates_unique
 
 Base = declarative_base()

@@ -47,9 +47,7 @@ setup(
         'BlazeWeb>=0.3.1',
         'SQLAlchemyBWC',
         'TemplatingBWC>=0.3.0',  # for Select2
-        # need for control panel code.  This should go away eventually, see
-        # #5607.
-        'BaseBWA'
+        'six',
     ],
     entry_points="""
         [blazeweb.app_command]
