@@ -208,7 +208,7 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
         return sasql.case(
             [(
                 sasql.or_(
-                    cls.inactive_flag == True,
+                    cls.inactive_flag == sa.true(),
                     sasql.and_(
                         cls.inactive_date.isnot(None),
                         cls.inactive_date < datetime.now()
@@ -264,7 +264,7 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
         full_salt, record_salt = cls.calc_salt(record_salt)
         if isinstance(password, six.text_type):
             password = password.encode()
-        return sha512(password+full_salt).hexdigest()
+        return sha512(password + full_salt).hexdigest()
 
     @classmethod
     def validate(cls, login_id, password):

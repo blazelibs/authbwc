@@ -7,6 +7,10 @@ def add_administrative_user(allow_profile_defaults=True):
     from getpass import getpass
     from compstack.auth.model.orm import User
 
+    input_function = input
+    if six.PY2:
+        input_function = raw_input  # noqa
+
     defaults = settings.components.auth.admin
     # add a default administrative user
     if allow_profile_defaults and defaults.username and defaults.password and defaults.email:
@@ -14,8 +18,8 @@ def add_administrative_user(allow_profile_defaults=True):
         uemail = defaults.email
         p1 = defaults.password
     else:
-        ulogin = raw_input("User's Login id:\n> ")
-        uemail = raw_input("User's email:\n> ")
+        ulogin = input_function("User's Login id:\n> ")
+        uemail = input_function("User's email:\n> ")
         while True:
             p1 = getpass("User's password:\n> ")
             p2 = getpass("confirm password:\n> ")

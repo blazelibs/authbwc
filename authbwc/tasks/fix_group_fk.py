@@ -52,11 +52,11 @@ def fix_sqlite():
 
 def action_020_run_sql_files():
     if is_group_fk_present():
-        print 'fix not needed'
+        print('fix not needed')
     else:
         if db.engine.dialect.name == 'sqlite':
             fix_sqlite()
         else:
             run_component_sql('auth', 'fix_group_fk')
         db.sess.commit()
-        print 'fixed the FK'
+        print('fixed the FK')

@@ -1,4 +1,3 @@
-from blazeweb.globals import settings
 from sqlalchemy import Table, Column, ForeignKey, CheckConstraint, Index, Integer
 
 from compstack.auth.model.orm import User, Group

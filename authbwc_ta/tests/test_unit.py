@@ -1,19 +1,13 @@
 import datetime
-import minimock
-import re
-import smtplib
 
 from blazeweb.globals import settings
 from blazeweb.testing import inrequest
 from blazeutils import randchars
-from nose.tools import nottest, eq_
+from nose.tools import eq_
 import six
 
 from compstack.auth.helpers import after_login_url
 from compstack.auth.lib.testing import create_user_with_permissions
-from compstack.auth.model.queries import query_denied_group_permissions, \
-    query_approved_group_permissions, query_user_group_permissions, \
-    query_users_permissions
 from compstack.auth.model.orm import User, Group, Permission
 from compstack.sqlalchemy import db
 

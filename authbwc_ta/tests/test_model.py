@@ -1,5 +1,6 @@
 import datetime as dt
 from nose.tools import eq_
+import sqlalchemy as sa
 
 from authbwc.model.orm import User, Permission, Group
 from authbwc.model.metadata import user_permission_assignments as upa, \
@@ -36,14 +37,14 @@ class TestUser(object):
         u.inactive_flag = True
         db.sess.commit()
         assert u.inactive
-        eq_(User.list_where(User.inactive == True)[0], u)
+        eq_(User.list_where(User.inactive == sa.true())[0], u)
 
     def test_inactive_dated(self):
         u = User.testing_create()
         u.inactive_date = dt.date(2000, 1, 1)
         db.sess.commit()
         assert u.inactive
-        eq_(User.list_where(User.inactive == True)[0], u)
+        eq_(User.list_where(User.inactive == sa.true())[0], u)
 
     def test_permission_dict(self):
         u = User.testing_create()
@@ -250,7 +251,7 @@ class TestGroups(object):
     def test_ugmap_fk(self):
         g = Group.testing_create()
         gid = g.id
-        u = User.testing_create(groups=g)
+        User.testing_create(groups=g)
 
         eq_(db.sess.query(tbl_ugm).count(), 1)
 

@@ -1,9 +1,8 @@
 from blazeform.exceptions import ValueInvalid
 from blazeutils.helpers import tolist, toset
 from blazeweb.globals import user
-from blazeweb.routing import url_for
-from formencode import Invalid
-from formencode.validators import FancyValidator, MaxLength, MinLength
+from formencode.validators import MaxLength
+import sqlalchemy as sa
 import six
 
 from compstack.auth.helpers import validate_password_complexity, note_password_complexity
@@ -182,12 +181,12 @@ class Group(Form):
         self.add_text('name', 'Group Name', required=True)
 
     def add_user_membership_section(self):
-        el = self.add_header('group_membership_header', 'Users In Group')
+        self.add_header('group_membership_header', 'Users In Group')
 
         # list only active users, using the "inactive" hybrid property to account
         #   for all cases
         users = orm_User.list_where(
-            orm_User.inactive == False,
+            orm_User.inactive == sa.false(),
             order_by=[orm_User.name, orm_User.login_id]
         )
         user_opts = [
@@ -196,21 +195,21 @@ class Group(Form):
                 '{0} ({1})'.format(u.name, u.login_id) if u.name else u.login_id
             ) for u in users
         ]
-        el = self.add_mselect('assigned_users', user_opts, 'Assign', choose=None)
+        self.add_mselect('assigned_users', user_opts, 'Assign', choose=None)
 
     def add_group_permissions_section(self):
-        el = self.add_header('group_permissions_header', 'Group Permissions')
+        self.add_header('group_permissions_header', 'Group Permissions')
 
         perm_opts = orm_Permission.pairs('id:name', orm_Permission.name)
-        el = self.add_mselect('approved_permissions', perm_opts, 'Approved', choose=None)
+        self.add_mselect('approved_permissions', perm_opts, 'Approved', choose=None)
 
-        el = self.add_mselect('denied_permissions', perm_opts, 'Denied', choose=None)
+        self.add_mselect('denied_permissions', perm_opts, 'Denied', choose=None)
 
     def add_submit_buttons(self):
         self.add_header('submit-fields-header', '')
         sg = self.add_elgroup('submit-group', class_='submit-only')
-        el = sg.add_submit('submit')
-        el = sg.add_cancel('cancel')
+        sg.add_submit('submit')
+        sg.add_cancel('cancel')
 
     def init(self):
         self.req_note_level = 'form'
@@ -233,14 +232,14 @@ class Permission(Form):
 
     def init(self):
         self.req_note_level = 'form'
-        el = self.add_static('name', 'Permission Name', required=True)
+        self.add_static('name', 'Permission Name', required=True)
 
-        el = self.add_text('description', 'Description')
+        self.add_text('description', 'Description')
 
         self.add_header('submit-fields-header', '')
         sg = self.add_elgroup('submit-group', class_='submit-only')
-        el = sg.add_submit('submit')
-        el = sg.add_cancel('cancel')
+        sg.add_submit('submit')
+        sg.add_cancel('cancel')
 
 
 class LoginForm(Form):

@@ -1,7 +1,8 @@
 from blazeweb.routing import url_for
-from webgrid import Column, DateTimeColumn, YesNoColumn, LinkColumnBase
+import sqlalchemy as sa
+from webgrid import Column, YesNoColumn, LinkColumnBase
 from webgrid.blazeweb import Grid
-from webgrid.filters import ops, FilterBase, OptionsFilterBase, Operator, TextFilter
+from webgrid.filters import FilterBase, Operator, TextFilter
 from webhelpers2.html import literal
 from webhelpers2.html.tags import link_to
 
@@ -94,9 +95,9 @@ class YesNoFilter(FilterBase):
         if self.op == 'a':
             return query
         if self.op == 'y':
-            return query.filter(self.sa_col == True)
+            return query.filter(self.sa_col == sa.true())
         if self.op == 'n':
-            return query.filter(self.sa_col == False)
+            return query.filter(self.sa_col == sa.false())
         return FilterBase.apply(self, query)
 
 

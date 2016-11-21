@@ -1,4 +1,4 @@
-from sqlalchemy.sql import select, and_, alias
+from sqlalchemy.sql import select, and_
 from sqlalchemy.sql.functions import sum
 from sqlalchemy.orm import outerjoin
 from compstack.auth.model.orm import User, Group, Permission

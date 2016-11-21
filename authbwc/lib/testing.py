@@ -1,6 +1,5 @@
 import paste.fixture
 from blazeutils import tolist, randchars
-from blazeweb.globals import settings
 from blazeweb.testing import Client
 from werkzeug import BaseRequest, Client as WerkzeugClient
 

@@ -6,7 +6,7 @@ import minimock
 from nose.tools import eq_
 import re
 import smtplib
-from werkzeug import BaseResponse, BaseRequest
+from werkzeug import BaseResponse
 
 from compstack.auth.lib.testing import login_client_with_permissions, \
     login_client_as_user, create_user_with_permissions
@@ -83,7 +83,7 @@ class TestUserViews(object):
 
     def test_loginid_maxlength(self):
         topost = {
-            'login_id': 'r'*151,
+            'login_id': 'r' * 151,
             'email_address': 'test@example.com',
             'user-submit-flag': 'submitted'
         }
@@ -111,7 +111,7 @@ class TestUserViews(object):
     def test_email_maxlength(self):
         topost = {
             'login_id': randchars(10),
-            'email_address': 'r'*140 + '@example.com',
+            'email_address': ('r' * 140) + '@example.com',
             'user-submit-flag': 'submitted'
         }
         r = self.c.post('users/add', data=topost)
@@ -371,9 +371,9 @@ class TestUserViews(object):
 
         topost = {
             'login_id': 'newuser',
-            'password': 't'*26,
+            'password': 't' * 26,
             'email_address': 'abc@example.com',
-            'password-confirm': 't'*26,
+            'password-confirm': 't' * 26,
             'email': 'test@exacmple.com',
             'user-submit-flag': 'submitted'
         }
@@ -393,10 +393,10 @@ class TestUserViews(object):
             non_existing_id += 1000
         req, resp = self.c.get('users/edit/%s' % non_existing_id, follow_redirects=True)
         assert req.url.endswith('/users/edit/%s' % non_existing_id), req.url
-        assert resp.status_code == 404, r.status
+        assert resp.status_code == 404, resp.status
         req, resp = self.c.get('users/delete/%s' % non_existing_id, follow_redirects=True)
         assert req.url.endswith('users/delete/%s' % non_existing_id), req.url
-        assert resp.status_code == 404, r.status
+        assert resp.status_code == 404, resp.status
 
     def test_no_email_notify(self):
         topost = {
@@ -716,7 +716,6 @@ class TestRecoverPassword(object):
         """ has to be done in the same test function so that order is assured"""
 
         user = create_user_with_permissions()
-        user_id = user.id
 
         r = self.c.get('users/recover-password')
         assert r.status_code == 200, r.status

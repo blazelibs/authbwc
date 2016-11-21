@@ -47,8 +47,9 @@ class Test(Default):
         self.db.url = 'sqlite://'
 
         # uncomment this if you want to use a database you can inspect
-        #from os import path
-        #self.db.url = 'sqlite:///%s' % path.join(self.dirs.data, 'test_application.db')
+        # from os import path
+        # self.db.url = 'sqlite:///%s' % path.join(self.dirs.data, 'test_application.db')
+
 
 try:
     from .site_settings import *  # noqa
