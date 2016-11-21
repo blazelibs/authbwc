@@ -1,5 +1,10 @@
-from basebwa.lib.cpanel import ControlPanelSection, ControlPanelGroup, ControlPanelLink
 from blazeweb.config import ComponentSettings
+
+try:
+    from basebwa.lib.cpanel import ControlPanelSection, ControlPanelGroup, ControlPanelLink
+    base_bwa = True
+except ImportError:
+    base_bwa = False
 
 
 class Settings(ComponentSettings):
@@ -20,22 +25,23 @@ class Settings(ComponentSettings):
         self.add_route('/permissions/<action>/<int:objid>', endpoint='auth:PermissionCrud')
         self.add_route('/users/profile', 'auth:UserProfile')
 
-        self.for_me.cp_nav.enabled = True
-        self.for_me.cp_nav.section = ControlPanelSection(
-            "Users",
-            'auth-manage',
-            ControlPanelGroup(
-                ControlPanelLink('User Add', 'auth:UserCrud', action='add'),
-                ControlPanelLink('Users Manage', 'auth:UserCrud', action='manage'),
-            ),
-            ControlPanelGroup(
-                ControlPanelLink('Group Add', 'auth:GroupCrud', action='add'),
-                ControlPanelLink('Groups Manage', 'auth:GroupCrud', action='manage'),
-            ),
-            ControlPanelGroup(
-                ControlPanelLink('Permissions Manage', 'auth:PermissionCrud', action='manage'),
+        self.for_me.cp_nav.enabled = base_bwa
+        if base_bwa:
+            self.for_me.cp_nav.section = ControlPanelSection(
+                "Users",
+                'auth-manage',
+                ControlPanelGroup(
+                    ControlPanelLink('User Add', 'auth:UserCrud', action='add'),
+                    ControlPanelLink('Users Manage', 'auth:UserCrud', action='manage'),
+                ),
+                ControlPanelGroup(
+                    ControlPanelLink('Group Add', 'auth:GroupCrud', action='add'),
+                    ControlPanelLink('Groups Manage', 'auth:GroupCrud', action='manage'),
+                ),
+                ControlPanelGroup(
+                    ControlPanelLink('Permissions Manage', 'auth:PermissionCrud', action='manage'),
+                )
             )
-        )
 
         # where should we go after a user logins in?  If nothing is set,
         # default to current_url(root_only=True)
