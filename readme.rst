@@ -1,3 +1,15 @@
+AuthBWC
+=======
+
+.. image:: https://ci.appveyor.com/api/projects/status/igcgxyne23vlubs2?svg=true
+    :target: https://ci.appveyor.com/project/level12/authbwc
+
+.. image:: https://circleci.com/gh/blazelibs/authbwc.svg?style=shield
+    :target: https://circleci.com/gh/blazelibs/authbwc
+
+.. image:: https://codecov.io/gh/blazelibs/authbwc/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/blazelibs/authbwc
+
 Introduction
 ---------------
 

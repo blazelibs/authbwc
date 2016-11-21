@@ -1,0 +1,21 @@
+machine:
+  services:
+    - docker
+
+dependencies:
+  override:
+    # Need to override the dependencies or ciricle will do something bad, ask Nick what that is,
+    # he couldn't remember.  :)
+    - pwd
+
+test:
+  override:
+    - ls -la
+    - /home/ubuntu/$CIRCLE_PROJECT_REPONAME/docker-run-tests
+
+deployment:
+  codecov:
+    branch: /.*/
+    commands:
+      - bash <(curl -s https://codecov.io/bash) -t  "3fc6a71e-d050-4197-bbc6-7cd930a64a91"
+
