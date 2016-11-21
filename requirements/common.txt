@@ -1,4 +1,5 @@
 commonbwc
+six
 sqlalchemybwc
 templatingbwc
 webgrid

@@ -49,7 +49,7 @@ def login_client_as_user(client, username, password, validate_login_response=Tru
             req = BaseRequest(environ)
         if validate_login_response:
             assert resp.status_code == 200, resp.status
-            assert 'You logged in successfully!' in resp.data, resp.data[0:500]
+            assert b'You logged in successfully!' in resp.data, resp.data[0:500]
             assert req.url.endswith(after_login_url()), '%s != %s' % (req.url, after_login_url())
         return req, resp
     elif isinstance(client, (paste.fixture.TestApp, TestApp)):

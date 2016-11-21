@@ -1,5 +1,6 @@
 from blazeutils.strings import randchars
 from blazeweb.globals import settings
+import six
 
 
 def add_administrative_user(allow_profile_defaults=True):
@@ -21,8 +22,8 @@ def add_administrative_user(allow_profile_defaults=True):
             if p1 == p2:
                 break
     User.add_iu(
-        login_id=unicode(ulogin),
-        email_address=unicode(uemail),
+        login_id=six.text_type(ulogin),
+        email_address=six.text_type(uemail),
         password=p1,
         super_user=True,
         reset_required=False,

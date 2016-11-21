@@ -32,7 +32,7 @@ def send_reset_password_email(user_obj):
 def send_email_or_log_error(email):
     try:
         email.send()
-    except Exception, e:
+    except Exception as e:
         log.error('Exception while sending email in auth component: %s' % str(e))
         mail_programmers(
             '%s - email send error' % settings.name.short,

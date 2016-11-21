@@ -47,6 +47,7 @@ setup(
         'BlazeWeb>=0.3.1',
         'SQLAlchemyBWC',
         'TemplatingBWC>=0.3.0',  # for Select2
+        'six',
     ],
     entry_points="""
         [blazeweb.app_command]

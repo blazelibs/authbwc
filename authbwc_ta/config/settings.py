@@ -51,7 +51,9 @@ class Test(Default):
         #self.db.url = 'sqlite:///%s' % path.join(self.dirs.data, 'test_application.db')
 
 try:
-    from site_settings import *
-except ImportError, e:
-    if 'No module named site_settings' not in str(e):
+    from .site_settings import *  # noqa
+except ImportError as e:
+    msg = str(e).replace("'", '')
+    if 'No module named site_settings' not in msg and \
+            'No module named authbwc_ta.config.site_settings' not in msg:
         raise
