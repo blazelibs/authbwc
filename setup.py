@@ -12,11 +12,10 @@ class DevelopCmd(STDevelopCmd):
         ])
         STDevelopCmd.run(self)
 
-from authbwc import VERSION
-
 cdir = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(cdir, 'readme.rst')).read()
 CHANGELOG = open(os.path.join(cdir, 'changelog.rst')).read()
+VERSION = open(os.path.join(cdir, 'authbwc', 'version.txt')).read().strip()
 
 setup(
     name='AuthBWC',
@@ -28,14 +27,14 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2.5',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Topic :: Internet :: WWW/HTTP'
     ],
     author='Randy Syring',
-    author_email='rsyring@gmail.com',
-    url='http://bitbucket.org/blazelibs/authbwc/',
+    author_email='randy.syring@level12.io',
+    url='https://github.com/blazelibs/authbwc/',
     license='BSD',
     packages=find_packages(exclude=['authbwc_*']),
     include_package_data=True,
