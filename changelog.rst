@@ -1,10 +1,13 @@
 Change Log
 ----------
 
-0.2.6 released <in development>
+0.3.0 released 2016-11-29
 ==========================
 
-* ?
+* add support for Python 3 (3.4 and 3.5)
+* set up continuous integration testing on CircleCI and AppVeyor
+* test coverage is on CodeCov
+* remove BaseBWA dependency
 
 0.2.5 released 2016-06-17
 ==========================
