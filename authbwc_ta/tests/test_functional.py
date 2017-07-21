@@ -704,6 +704,20 @@ class TestRecoverPassword(object):
         assert r.status_code == 200, r.status
         assert b'email address is not associated with a user' in r.data
 
+    def test_inactive_user(self):
+
+        user = create_user_with_permissions()
+        user.inactive_flag = True
+        db.sess.commit()
+
+        topost = {
+            'email_address': user.email_address,
+            'lost-password-form-submit-flag': 'submitted',
+        }
+        r = self.c.post('users/recover-password', data=topost)
+        assert r.status_code == 200, r.status
+        assert b'Did not find a user with email address:' in r.data
+
     def test_invalid_reset_link(self):
 
         req, resp = self.c.get('users/reset-password/nothere/invalidkey', follow_redirects=True)

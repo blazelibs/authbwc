@@ -1,10 +1,10 @@
 Change Log
 ----------
 
-0.3.1 released <in development>
+0.3.1 released 2017-07-21
 ==========================
 
-* ?
+* fixed vulnerability in password reset process that allowed users to log in when inactive
 
 0.3.0 released 2016-11-29
 ==========================

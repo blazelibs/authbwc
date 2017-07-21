@@ -337,7 +337,7 @@ class UserMixin(DefaultMixin, AuthRelationsMixin):
     @transaction
     def reset_password(cls, email_address):
         u = cls.get_by_email(email_address)
-        if not u:
+        if not u or u.inactive:
             return False
 
         u.pass_reset_key = randchars(12)

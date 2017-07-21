@@ -155,7 +155,7 @@ class ResetPassword(View):
         if not key or not login_id:
             self.abort()
         user = orm_User.get_by(login_id=login_id)
-        if not user:
+        if not user or user.inactive:
             self.abort()
         if key != user.pass_reset_key:
             self.abort()
