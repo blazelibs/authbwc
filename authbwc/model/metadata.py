@@ -11,7 +11,9 @@ group_permission_assignments = Table(
     Column('group_id', Integer, ForeignKey("auth_groups.id", ondelete='cascade'), nullable=False),
     Column('permission_id', Integer, ForeignKey("auth_permissions.id", ondelete='cascade'),
            nullable=False),
-    Column('approved', Integer, CheckConstraint('approved in (-1, 1)'), nullable=False),
+    Column('approved', Integer,
+           CheckConstraint('approved in (-1, 1)', name='group_permission_assignments_approved'),
+           nullable=False),
     extend_existing=True
 )
 Index(
@@ -28,7 +30,9 @@ user_permission_assignments = Table(
     Column('user_id', Integer, ForeignKey("auth_users.id", ondelete='cascade'), nullable=False),
     Column('permission_id', Integer, ForeignKey("auth_permissions.id", ondelete='cascade'),
            nullable=False),
-    Column('approved', Integer, CheckConstraint('approved in (-1, 1)'), nullable=False),
+    Column('approved', Integer,
+           CheckConstraint('approved in (-1, 1)', name='user_permission_assignments_approved'),
+           nullable=False),
     extend_existing=True
 )
 
