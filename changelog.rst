@@ -1,10 +1,10 @@
 Change Log
 ----------
 
-0.3.2 released <in development>
+0.3.2 released 2017-12-01
 ==========================
 
-* ?
+* add check constraint names to aid with setting naming convention for SQLAlchemy
 
 0.3.1 released 2017-07-21
 ==========================
