@@ -6,7 +6,7 @@ import minimock
 from nose.tools import eq_
 import re
 import smtplib
-from werkzeug import BaseResponse
+from werkzeug.wrappers import BaseResponse
 
 from compstack.auth.lib.testing import login_client_with_permissions, \
     login_client_as_user, create_user_with_permissions

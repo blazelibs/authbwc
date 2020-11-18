@@ -1,5 +1,6 @@
 from blazeweb.globals import ag
-from werkzeug import Client, BaseResponse, BaseRequest
+from werkzeug.test import Client
+from werkzeug.wrappers import BaseResponse, BaseRequest
 from compstack.auth.lib.testing import login_client_with_permissions, create_user_with_permissions
 from compstack.auth.model.orm import Group, Permission
 

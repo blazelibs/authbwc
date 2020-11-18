@@ -48,6 +48,19 @@ setup(
         'TemplatingBWC>=0.3.0',  # for Select2
         'six',
     ],
+    extras_require={
+        'dev': [
+            'codecov',
+            'coverage',
+            'flake8',
+            'minimock',
+            'nose',
+            'pyquery',
+            'tox',
+            'webtest',
+            'wheel',
+        ]
+    },
     entry_points="""
         [blazeweb.app_command]
         add-admin-user = authbwc.commands:AddAdministrator

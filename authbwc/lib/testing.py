@@ -1,7 +1,8 @@
 import paste.fixture
 from blazeutils import tolist, randchars
 from blazeweb.testing import Client
-from werkzeug import BaseRequest, Client as WerkzeugClient
+from werkzeug.test import Client as WerkzeugClient
+from werkzeug.wrappers import BaseRequest
 
 from compstack.auth.helpers import after_login_url
 from compstack.sqlalchemy import db
