@@ -1,10 +1,10 @@
 Change Log
 ----------
 
-0.3.3 released <in development>
+0.3.3 released 2020-11-18
 ==========================
 
-* ?
+* support werkzeug 1.0.0+
 
 0.3.2 released 2017-12-01
 ==========================
